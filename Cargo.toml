@@ -1,0 +1,21 @@
+[package]
+name = "c-trace-engine"
+version = "0.1.0"
+edition = "2021"
+description = "Standalone Rust C execution & memory tracing engine: GCC builds, GDB/MI2 execution snapshots, allocation instrumentation, and Valgrind forensics for a future offline-first visual C IDE."
+license = "MIT"
+
+[dependencies]
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+nom = "7"
+thiserror = "2"
+bytes = "1"
+regex = "1"
+libc = "0.2"
+clap = { version = "4", features = ["derive"] }
+roxmltree = "0.20"
+
+[profile.release]
+debug = true

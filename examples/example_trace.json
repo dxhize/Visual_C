@@ -1,0 +1,1978 @@
+{
+  "compiled_successfully": true,
+  "compile_errors": [],
+  "snapshots": [
+    {
+      "step_index": 0,
+      "file": "sample.c",
+      "line": 30,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 30,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x000000000040058e"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "breakpoint-hit",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 1,
+      "file": "/tmp/c-trace-141170-1794660020187317971/alloc_tracker.c",
+      "line": 225,
+      "func": "__wrap_malloc",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "__wrap_malloc",
+          "file": "/tmp/c-trace-141170-1794660020187317971/alloc_tracker.c",
+          "line": 225,
+          "full_file": "/tmp/c-trace-141170-1794660020187317971/alloc_tracker.c",
+          "address": "0x0000000000400b9a"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 30,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400598"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 2,
+      "file": "sample.c",
+      "line": 30,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 30,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400598"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "000000000000000000000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "function-finished",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 3,
+      "file": "sample.c",
+      "line": 31,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 31,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x000000000040059c"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "000000000000000000000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 4,
+      "file": "sample.c",
+      "line": 35,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 35,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005aa"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "000000000000000000000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 5,
+      "file": "sample.c",
+      "line": 36,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 36,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005b4"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a0000000000000000000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 6,
+      "file": "sample.c",
+      "line": 37,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 37,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005c2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a0000001400000000000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 7,
+      "file": "sample.c",
+      "line": 39,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 39,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005d0"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 0, y = 0}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 8,
+      "file": "sample.c",
+      "line": 40,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 40,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005de"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 1, y = 2}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0100000002000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x0",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x0",
+          "raw_bytes_hex": "0000000000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 9,
+      "file": "sample.c",
+      "line": 41,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005e6"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 1, y = 2}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0100000002000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 10,
+      "file": "sample.c",
+      "line": 22,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 22,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x000000000040054e"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 11,
+      "file": "sample.c",
+      "line": 23,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 23,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400555"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "7360528",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "10507000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 12,
+      "file": "sample.c",
+      "line": 24,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 24,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x000000000040055e"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 13,
+      "file": "sample.c",
+      "line": 23,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 23,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400577"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "0",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "10",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "0a000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 14,
+      "file": "sample.c",
+      "line": 24,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 24,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x000000000040055e"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "1",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "01000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "10",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "0a000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 15,
+      "file": "sample.c",
+      "line": 23,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 23,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400577"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "1",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "01000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "30",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "1e000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 16,
+      "file": "sample.c",
+      "line": 24,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 24,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x000000000040055e"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "2",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "02000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "30",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "1e000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 17,
+      "file": "sample.c",
+      "line": 23,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 23,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400577"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "i",
+          "c_type": "int",
+          "value": "2",
+          "address": "0x7fffffffd9e8",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "02000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 18,
+      "file": "sample.c",
+      "line": 26,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 26,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400581"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 19,
+      "file": "sample.c",
+      "line": 27,
+      "func": "sum_of_three",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "sum_of_three",
+          "file": "sample.c",
+          "line": 27,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400584"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 41,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f2"
+        }
+      ],
+      "variables": [
+        {
+          "name": "values",
+          "c_type": "const int *",
+          "value": "0x705010",
+          "address": "0x7fffffffd9d8",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": true,
+          "read_error": null
+        },
+        {
+          "name": "total",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffd9ec",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 20,
+      "file": "sample.c",
+      "line": 43,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 43,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x00000000004005f5"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 1, y = 2}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0100000002000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 21,
+      "file": "sample.c",
+      "line": 45,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 45,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400616"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 1, y = 2}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0100000002000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "sum=60 p.y=2 ptr[2]=30\r\n",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 22,
+      "file": "/tmp/c-trace-141170-1794660020187317971/alloc_tracker.c",
+      "line": 312,
+      "func": "__wrap_free",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "__wrap_free",
+          "file": "/tmp/c-trace-141170-1794660020187317971/alloc_tracker.c",
+          "line": 312,
+          "full_file": "/tmp/c-trace-141170-1794660020187317971/alloc_tracker.c",
+          "address": "0x0000000000400f4e"
+        },
+        {
+          "level": 1,
+          "func": "main",
+          "file": "sample.c",
+          "line": 45,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400622"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [
+        {
+          "allocation_id": 1,
+          "address": "0x705010",
+          "size_bytes": 12,
+          "allocation_type": "malloc",
+          "is_freed": false,
+          "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+          "allocation_line": 30,
+          "raw_bytes_hex": "0a000000140000001e000000",
+          "memory_read_error": null,
+          "realloc_from_id": null
+        }
+      ],
+      "stdout_so_far": "sum=60 p.y=2 ptr[2]=30\r\n",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 23,
+      "file": "sample.c",
+      "line": 46,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 46,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400622"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 1, y = 2}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0100000002000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [],
+      "stdout_so_far": "sum=60 p.y=2 ptr[2]=30\r\n",
+      "stopped_reason": "function-finished",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 24,
+      "file": "sample.c",
+      "line": 47,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "sample.c",
+          "line": 47,
+          "full_file": "/home/xe/Documents/visual_c/sample.c",
+          "address": "0x0000000000400627"
+        }
+      ],
+      "variables": [
+        {
+          "name": "arr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda18",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "p",
+          "c_type": "struct Point",
+          "value": "{x = 1, y = 2}",
+          "address": "0x7fffffffda04",
+          "size_bytes": 8,
+          "points_to": null,
+          "raw_bytes_hex": "0100000002000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "ptr",
+          "c_type": "int *",
+          "value": "0x705010",
+          "address": "0x7fffffffda10",
+          "size_bytes": 8,
+          "points_to": "0x705010",
+          "raw_bytes_hex": "1050700000000000",
+          "is_argument": false,
+          "read_error": null
+        },
+        {
+          "name": "sum",
+          "c_type": "int",
+          "value": "60",
+          "address": "0x7fffffffda0c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "3c000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [],
+      "stdout_so_far": "sum=60 p.y=2 ptr[2]=30\r\n",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "step_index": 25,
+      "file": "",
+      "line": 0,
+      "func": "__libc_start_call_main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "__libc_start_call_main",
+          "file": null,
+          "line": null,
+          "full_file": null,
+          "address": "0x00007ffff7da2681"
+        },
+        {
+          "level": 1,
+          "func": "__libc_start_main_impl",
+          "file": null,
+          "line": null,
+          "full_file": null,
+          "address": "0x00007ffff7da2798"
+        },
+        {
+          "level": 2,
+          "func": "_start",
+          "file": null,
+          "line": null,
+          "full_file": null,
+          "address": "0x0000000000400485"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [],
+      "stdout_so_far": "sum=60 p.y=2 ptr[2]=30\r\n",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    }
+  ],
+  "heap_events": [
+    {
+      "sequence": 1,
+      "pid": 141212,
+      "allocation_id": 1,
+      "event_type": "allocated",
+      "address": "0x705010",
+      "size_bytes": 12,
+      "source_file": "/home/xe/Documents/visual_c/sample.c",
+      "source_line": 30,
+      "old_allocation_id": null,
+      "heap_usage_after": 12,
+      "detail": null
+    },
+    {
+      "sequence": 2,
+      "pid": 141212,
+      "allocation_id": 1,
+      "event_type": "freed",
+      "address": "0x705010",
+      "size_bytes": 12,
+      "source_file": "/home/xe/Documents/visual_c/sample.c",
+      "source_line": 46,
+      "old_allocation_id": null,
+      "heap_usage_after": 0,
+      "detail": null
+    }
+  ],
+  "heap_state": [
+    {
+      "allocation_id": 1,
+      "address": "0x705010",
+      "size_bytes": 12,
+      "allocation_type": "malloc",
+      "is_freed": true,
+      "allocation_file": "/home/xe/Documents/visual_c/sample.c",
+      "allocation_line": 30,
+      "raw_bytes_hex": "0a000000140000001e000000",
+      "memory_read_error": null,
+      "realloc_from_id": null
+    }
+  ],
+  "crash_report": null,
+  "valgrind_report": {
+    "total_allocs": 2,
+    "total_frees": 2,
+    "bytes_allocated": 0,
+    "definitely_lost_bytes": 0,
+    "indirectly_lost_bytes": 0,
+    "possibly_lost_bytes": 0,
+    "still_reachable_bytes": 0,
+    "errors": [],
+    "detailed_errors": [],
+    "blocks_in_use_at_exit": 0,
+    "bytes_in_use_at_exit": 0,
+    "all_heap_blocks_freed": true,
+    "exit_code": 0,
+    "timed_out": false
+  },
+  "execution_status": "completed",
+  "resource_usage": {
+    "wall_time_ms": 3419,
+    "gdb_commands_issued": 455,
+    "snapshots_captured": 26,
+    "allocation_events_ingested": 2,
+    "program_output_bytes": 24,
+    "program_output_truncated": false,
+    "limits_triggered": [],
+    "inferior_exit_code": 0
+  },
+  "sanitizer_report": null,
+  "session_meta": {
+    "session_dir": "/tmp/c-trace-141170-1794660020187317971",
+    "debug_binary": "/tmp/c-trace-141170-1794660020187317971/program_debug",
+    "sanitized_binary": "/tmp/c-trace-141170-1794660020187317971/program_asan",
+    "gcc_version": "gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+    "gdb_version": "GNU gdb (Fedora Linux) 18.1-1.fc44",
+    "valgrind_version": "valgrind-3.27.1",
+    "addr2line_version": "GNU addr2line version 2.46.1-1.fc44",
+    "cgroup_enforced": false,
+    "build": {
+      "source_file": "sample.c",
+      "additional_sources": [],
+      "object_files": [],
+      "include_dirs": [],
+      "defines": [],
+      "compiler_flags": [],
+      "linker_flags": [],
+      "library_dirs": [],
+      "libraries": [],
+      "output_name": null,
+      "working_directory": null
+    },
+    "program_args": [],
+    "working_directory": null
+  },
+  "analysis_notes": []
+}
