@@ -1,0 +1,137 @@
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.11s
+     Running unittests src/lib.rs (target/debug/deps/c_trace_engine-c98ebe1ca5f2a80a)
+
+running 87 tests
+test allocation_tracker::tests::allocation_id_stable_and_reused_addresses_get_new_ids ... ok
+test allocation_tracker::tests::block_cap_marks_flag ... ok
+test allocation_tracker::tests::calloc_records_total_size ... ok
+test allocation_tracker::tests::double_free_detected ... ok
+test allocation_tracker::tests::failed_malloc_recorded ... ok
+test allocation_tracker::tests::failed_realloc_preserves_original ... ok
+test allocation_tracker::tests::free_null_is_noop ... ok
+test allocation_tracker::tests::malloc_free_lifecycle ... ok
+test allocation_tracker::tests::global_id_widening_only_when_multi_pid ... ok
+test allocation_tracker::tests::multiple_allocations_keep_ordering_and_usage ... ok
+test allocation_tracker::tests::parse_event_line_malloc ... ok
+test allocation_tracker::tests::parse_event_line_realloc_moved ... ok
+test allocation_tracker::tests::parse_rejects_garbage ... ok
+test allocation_tracker::tests::partial_line_is_buffered_not_lost ... ok
+test allocation_tracker::tests::realloc_in_place_keeps_id_and_updates_size ... ok
+test allocation_tracker::tests::realloc_move_retires_old_block_and_links_new ... ok
+test allocation_tracker::tests::realloc_null_behaves_like_malloc ... ok
+test allocation_tracker::tests::realloc_zero_frees_on_glibc ... ok
+test allocation_tracker::tests::untracked_free_recorded_with_zero_id ... ok
+test cli::tests::flag_accumulation_and_program_args ... ok
+test cli::tests::config_file_merge_precedence ... ok
+test cli::tests::missing_source_is_config_error ... ok
+test cli::tests::limit_flags_override_defaults ... ok
+test cli::tests::no_source_is_config_error ... ok
+test compiler::diagnostic_tests::gcc_legacy_caret_locations_and_streams_are_preserved ... ok
+test cli::tests::positional_source ... ok
+test compiler::diagnostic_tests::gcc_sarif_stream_and_camel_case_region ... ok
+test gdb_mi::routing_regressions::async_token_cannot_acknowledge_command ... ok
+test gdb_mi::routing_regressions::late_and_unexpected_results_are_preserved_not_reassigned ... ok
+test gdb_mi::routing_regressions::partial_or_malformed_response_never_becomes_zero ... ok
+test gdb_mi::tests::frames_parse_from_real_output ... ok
+test gdb_mi::tests::hex_extraction ... ok
+test gdb_mi::tests::mi_quoting ... ok
+test gdb_mi::tests::program_buffer_cap ... ok
+test gdb_mi::tests::runtime_origin_uses_owned_source_not_user_name_prefixes ... ok
+test gdb_mi::tests::stopped_exit_and_signal ... ok
+test gdb_mi::tests::stopped_info_from_real_record ... ok
+test gdb_mi::tests::user_code_classification ... ok
+test gdb_mi::tests::variables_parse_from_real_output ... ok
+test gdb_mi::tests::whatis_type_extraction ... ok
+test memory::tests::dangling_is_not_null_and_address_reuse_prefers_latest_identity ... ok
+test mi_parser::tests::backslash_and_special_characters ... ok
+test mi_parser::tests::deep_nesting ... ok
+test mi_parser::tests::empty_string_and_empty_containers ... ok
+test mi_parser::tests::error_result_with_escaped_quotes ... ok
+test mi_parser::tests::exec_stopped_with_frame_tuple ... ok
+test mi_parser::tests::list_of_plain_values ... ok
+test mi_parser::tests::list_of_results_only ... ok
+test mi_parser::tests::malformed_records_error ... ok
+test mi_parser::tests::missing_optional_token ... ok
+test mi_parser::tests::notify_library_loaded_with_ranges_list ... ok
+test mi_parser::tests::prompt_and_blank_lines ... ok
+test mi_parser::tests::real_gdb_transcript_fixture ... ok
+test mi_parser::tests::result_with_flat_results ... ok
+test mi_parser::tests::running_result ... ok
+test mi_parser::tests::simple_result_record ... ok
+test mi_parser::tests::stream_records ... ok
+test mi_parser::tests::token_overflow_is_error ... ok
+test mi_parser::tests::unknown_escape_is_lenient ... ok
+test mi_parser::tests::unknown_record_class_preserved ... ok
+test mi_parser::tests::whitespace_tolerant ... ok
+test models::schema_tests::legacy_trace_deserializes_as_schema_v2_with_unstarted_stages ... ok
+test processor::tests::broken_reference_and_duplicate_event_id_are_rejected ... ok
+test processor::tests::deltas_reconstruct_and_unavailable_invalidates_previous_values ... ok
+test sanitizer::tests::clean_output_is_not_reproduction ... ok
+test sanitizer::tests::parses_asan_heap_overflow ... ok
+test sanitizer::tests::parses_ubsan_runtime_error ... ok
+test sanitizer::tests::truncation_respects_char_boundary ... ok
+test storage::tests::bounded_and_no_overwrite ... ok
+test storage::tests::torn_last_record_is_recoverable_and_existing_file_is_not_overwritten ... ok
+test supervisor::tests::cancellation_wakes_stalled_process_wait_and_retains_partial_output ... ok
+test supervisor::tests::stalled_process_and_inherited_pipes_are_bounded ... ok
+test supervisor::tests::successful_parent_cannot_leave_pipe_holding_grandchild_or_zombie ... ok
+test supervisor::tests::timeout_retains_output_already_read ... ok
+test trace::tests::char_safe_head_respects_boundaries ... ok
+test trace::tests::event_ids_widen_only_for_multi_pid ... ok
+test trace::tests::exit_code_parsing ... ok
+test trace::tests::heap_state_uses_last_alive_contents ... ok
+test trace::tests::signal_classification ... ok
+test valgrind::tests::correlation_matches_by_file_line ... ok
+test valgrind::tests::empty_summary_report ... ok
+test valgrind::tests::grouped_native_counters_are_not_zero_and_missing_fields_remain_unknown ... ok
+test valgrind::tests::parses_leak_report ... ok
+test valgrind::tests::parses_uaf_report ... ok
+test valgrind::tests::rejects_bad_xml ... ok
+test valgrind::tests::truncated_xml_preserves_only_complete_native_errors ... ok
+test gdb_mi::routing_regressions::debugger_death_fails_wait_promptly ... ok
+
+test result: ok. 87 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.94s
+
+     Running unittests src/main.rs (target/debug/deps/c_trace_engine-455548f29455c947)
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running tests/integration.rs (target/debug/deps/integration-03fe1547de605fa4)
+
+running 12 tests
+test compile_failure_emits_partial_trace ... ok
+test compiles_sample_fixture ... ok
+test crash_is_reported_with_sanitizer_pass ... ok
+test failed_allocation_recorded ... ok
+test end_to_end_sample_records_execution ... ok
+test heap_events_follow_malloc_and_free ... ok
+test multi_file_project_steps_through_helper ... ok
+test realloc_chain_recorded ... ok
+test sanitizer_variant_fallback_reported ... ok
+test valgrind_flags_leak ... ok
+test step_limit_bounds_execution ... ok
+test valgrind_flags_use_after_free ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 28.38s
+
+     Running tests/v2.rs (target/debug/deps/v2-7398ba586048b6c1)
+
+running 13 tests
+test all_stop_thread_limitations_are_reported ... ok
+test allocation_identity_survives_move_and_reuse ... ok
+test callbacks_and_recursion_and_same_line_functions_remain_observable ... ok
+test deadline_includes_queries_and_does_not_start_valgrind_after_expiry ... ok
+test fault_is_an_attempt_at_the_actual_pc_and_keeps_native_diagnostics ... ok
+test instruction_limit_is_not_a_crash_and_journal_recovers_order ... ok
+test lexical_shadowing_never_pairs_an_outer_value_with_the_inner_address ... ok
+test loop_events_are_dynamic_cached_and_registers_replay ... ok
+test native_memory_errors_and_nonzero_exit_preserve_execution_outcomes ... ok
+test pointers_globals_and_pie_allocation_locations_are_evidence_based ... ok
+test selected_memory_output_caps_and_missing_mappings_are_explicit ... ok
+test sigint_preserves_partial_source_trace_and_reaps_debugger_tree ... ok
+test source_mode_same_line_stall_is_also_bounded ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 112.93s
+

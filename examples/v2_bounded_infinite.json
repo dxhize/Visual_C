@@ -1,0 +1,3847 @@
+{
+  "execution_limits": {
+    "max_steps": 100000,
+    "timeout_seconds": 5,
+    "max_memory_mb": 256,
+    "max_output_bytes": 1048576,
+    "max_heap_allocations": 10000,
+    "max_snapshot_count": 1000,
+    "max_snapshot_memory_bytes": 1048576,
+    "max_memory_read_bytes": 4096,
+    "max_process_count": 16,
+    "max_variables_per_snapshot": 24,
+    "max_instruction_events": 100000,
+    "max_source_checkpoints": 1000,
+    "max_trace_bytes": 134217728,
+    "max_trace_memory_bytes": 33554432,
+    "max_register_snapshot_bytes": 65536,
+    "max_gdb_commands": 1000000,
+    "max_globals": 32,
+    "compiler_timeout_seconds": 30,
+    "debugger_timeout_seconds": 30,
+    "analysis_timeout_seconds": 10
+  },
+  "execution": {
+    "outcome": "timed_out",
+    "exit_code": null,
+    "signal": null,
+    "instruction_address": null,
+    "reason": "session_or_debugger_deadline"
+  },
+  "internal_diagnostics": [
+    "Reading symbols from /tmp/c-trace-415004-1794728452191472753/program_debug...",
+    "[Thread debugging using libthread_db enabled]",
+    "Using host libthread_db library \"/lib64/libthread_db.so.1\".",
+    "",
+    "Breakpoint 2, main () at fixtures/c/spin_same_line.c:1",
+    "1\tint main(void) {",
+    "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+    "C_TRACE_SCOPE:{\"ready\": [{\"c_type\": \"volatile int\", \"scope_id\": \"block:400536-400550:2\", \"file\": \"/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c\", \"line\": 2, \"storage\": \"automatic\"}]}",
+    "",
+    "Breakpoint 1, main () at fixtures/c/spin_same_line.c:2",
+    "2\t    volatile int ready = 0;",
+    "C_TRACE_SCOPE:{\"ready\": [{\"c_type\": \"volatile int\", \"scope_id\": \"block:400536-400550:2\", \"file\": \"/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c\", \"line\": 2, \"storage\": \"automatic\"}]}",
+    "C_TRACE_SCOPE:{\"ready\": [{\"c_type\": \"volatile int\", \"scope_id\": \"block:400536-400550:2\", \"file\": \"/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c\", \"line\": 2, \"storage\": \"automatic\"}]}"
+  ],
+  "disassembly_table": [
+    {
+      "instruction_id": 0,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400536",
+      "bytes": "55",
+      "text": "push   %rbp",
+      "function": "main"
+    },
+    {
+      "instruction_id": 1,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400537",
+      "bytes": "48 89 e5",
+      "text": "mov    %rsp,%rbp",
+      "function": "main"
+    },
+    {
+      "instruction_id": 2,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040053a",
+      "bytes": "c7 45 fc 00 00 00 00",
+      "text": "movl   $0x0,-0x4(%rbp)",
+      "function": "main"
+    },
+    {
+      "instruction_id": 3,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400541",
+      "bytes": "90",
+      "text": "nop",
+      "function": "main"
+    },
+    {
+      "instruction_id": 4,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400542",
+      "bytes": "8b 45 fc",
+      "text": "mov    -0x4(%rbp),%eax",
+      "function": "main"
+    },
+    {
+      "instruction_id": 5,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400545",
+      "bytes": "85 c0",
+      "text": "test   %eax,%eax",
+      "function": "main"
+    },
+    {
+      "instruction_id": 6,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400547",
+      "bytes": "74 f9",
+      "text": "je     0x400542 <main+12>",
+      "function": "main"
+    },
+    {
+      "instruction_id": 7,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400549",
+      "bytes": "b8 00 00 00 00",
+      "text": "mov    $0x0,%eax",
+      "function": "main"
+    },
+    {
+      "instruction_id": 8,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040054e",
+      "bytes": "5d",
+      "text": "pop    %rbp",
+      "function": "main"
+    },
+    {
+      "instruction_id": 9,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040054f",
+      "bytes": "c3",
+      "text": "ret",
+      "function": "main"
+    },
+    {
+      "instruction_id": 10,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400550",
+      "bytes": "55",
+      "text": "push   %rbp",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 11,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400551",
+      "bytes": "48 89 e5",
+      "text": "mov    %rsp,%rbp",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 12,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400554",
+      "bytes": "b8 00 00 00 00",
+      "text": "mov    $0x0,%eax",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 13,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400559",
+      "bytes": "ba 01 00 00 00",
+      "text": "mov    $0x1,%edx",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 14,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040055e",
+      "bytes": "f0 0f b1 15 1a 3b 30 00",
+      "text": "lock cmpxchg %edx,0x303b1a(%rip)        # 0x704080 <g_spin>",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 15,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400566",
+      "bytes": "0f 94 c0",
+      "text": "sete   %al",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 16,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400569",
+      "bytes": "84 c0",
+      "text": "test   %al,%al",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 17,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040056b",
+      "bytes": "75 0d",
+      "text": "jne    0x40057a <cte_lock+42>",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 18,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040056d",
+      "bytes": "90",
+      "text": "nop",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 19,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040056e",
+      "bytes": "8b 05 0c 3b 30 00",
+      "text": "mov    0x303b0c(%rip),%eax        # 0x704080 <g_spin>",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 20,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400574",
+      "bytes": "85 c0",
+      "text": "test   %eax,%eax",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 21,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400576",
+      "bytes": "75 f6",
+      "text": "jne    0x40056e <cte_lock+30>",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 22,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400578",
+      "bytes": "eb da",
+      "text": "jmp    0x400554 <cte_lock+4>",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 23,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040057a",
+      "bytes": "90",
+      "text": "nop",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 24,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040057b",
+      "bytes": "90",
+      "text": "nop",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 25,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040057c",
+      "bytes": "5d",
+      "text": "pop    %rbp",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 26,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040057d",
+      "bytes": "c3",
+      "text": "ret",
+      "function": "cte_lock"
+    },
+    {
+      "instruction_id": 27,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040057e",
+      "bytes": "55",
+      "text": "push   %rbp",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 28,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040057f",
+      "bytes": "48 89 e5",
+      "text": "mov    %rsp,%rbp",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 29,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400582",
+      "bytes": "b8 00 00 00 00",
+      "text": "mov    $0x0,%eax",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 30,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400587",
+      "bytes": "89 05 f3 3a 30 00",
+      "text": "mov    %eax,0x303af3(%rip)        # 0x704080 <g_spin>",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 31,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040058d",
+      "bytes": "90",
+      "text": "nop",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 32,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040058e",
+      "bytes": "5d",
+      "text": "pop    %rbp",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 33,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040058f",
+      "bytes": "c3",
+      "text": "ret",
+      "function": "cte_unlock"
+    },
+    {
+      "instruction_id": 34,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400590",
+      "bytes": "55",
+      "text": "push   %rbp",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 35,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400591",
+      "bytes": "48 89 e5",
+      "text": "mov    %rsp,%rbp",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 36,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400594",
+      "bytes": "48 89 7d f8",
+      "text": "mov    %rdi,-0x8(%rbp)",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 37,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x0000000000400598",
+      "bytes": "48 8b 45 f8",
+      "text": "mov    -0x8(%rbp),%rax",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 38,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x000000000040059c",
+      "bytes": "48 c1 e8 21",
+      "text": "shr    $0x21,%rax",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 39,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x00000000004005a0",
+      "bytes": "48 31 45 f8",
+      "text": "xor    %rax,-0x8(%rbp)",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 40,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x00000000004005a4",
+      "bytes": "48 8b 45 f8",
+      "text": "mov    -0x8(%rbp),%rax",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 41,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x00000000004005a8",
+      "bytes": "48 ba cd 8c 55 ed d7 af 51 ff",
+      "text": "movabs $0xff51afd7ed558ccd,%rdx",
+      "function": "cte_hash"
+    },
+    {
+      "instruction_id": 42,
+      "module_identity": "pid=415087:module_epoch=2:/tmp/c-trace-415004-1794728452191472753/program_debug:range=00400000-00402000:file_offset=00000000",
+      "address": "0x00000000004005b2",
+      "bytes": "48 0f af c2",
+      "text": "imul   %rdx,%rax",
+      "function": "cte_hash"
+    }
+  ],
+  "instruction_events": [
+    {
+      "stop_id_before": 1,
+      "stop_id_after": 2,
+      "event_id": 0,
+      "instruction_id": 0,
+      "address": "0x0000000000400536",
+      "next_address": "0x0000000000400537",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 1,
+        "function": "main"
+      },
+      "checkpoint_id": 0,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": true,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 0,
+            "name": "rax",
+            "value": "0x7ffff7f95de8",
+            "availability": "valid"
+          },
+          {
+            "number": 1,
+            "name": "rbx",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 2,
+            "name": "rcx",
+            "value": "0x403df8",
+            "availability": "valid"
+          },
+          {
+            "number": 3,
+            "name": "rdx",
+            "value": "0x7fffffffdba8",
+            "availability": "valid"
+          },
+          {
+            "number": 4,
+            "name": "rsi",
+            "value": "0x7fffffffdb98",
+            "availability": "valid"
+          },
+          {
+            "number": 5,
+            "name": "rdi",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 6,
+            "name": "rbp",
+            "value": "0x7fffffffdb10",
+            "availability": "valid"
+          },
+          {
+            "number": 7,
+            "name": "rsp",
+            "value": "0x7fffffffda60",
+            "availability": "valid"
+          },
+          {
+            "number": 8,
+            "name": "r8",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 9,
+            "name": "r9",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 10,
+            "name": "r10",
+            "value": "0x180",
+            "availability": "valid"
+          },
+          {
+            "number": 11,
+            "name": "r11",
+            "value": "0x202",
+            "availability": "valid"
+          },
+          {
+            "number": 12,
+            "name": "r12",
+            "value": "0x7fffffffdb98",
+            "availability": "valid"
+          },
+          {
+            "number": 13,
+            "name": "r13",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 14,
+            "name": "r14",
+            "value": "0x7ffff7ffd000",
+            "availability": "valid"
+          },
+          {
+            "number": 15,
+            "name": "r15",
+            "value": "0x403df8",
+            "availability": "valid"
+          },
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400537",
+            "availability": "valid"
+          },
+          {
+            "number": 17,
+            "name": "eflags",
+            "value": "0x246",
+            "availability": "valid"
+          },
+          {
+            "number": 18,
+            "name": "cs",
+            "value": "0x33",
+            "availability": "valid"
+          },
+          {
+            "number": 19,
+            "name": "ss",
+            "value": "0x2b",
+            "availability": "valid"
+          },
+          {
+            "number": 20,
+            "name": "ds",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 21,
+            "name": "es",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 22,
+            "name": "fs",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 23,
+            "name": "gs",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 24,
+            "name": "st0",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 25,
+            "name": "st1",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 26,
+            "name": "st2",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 27,
+            "name": "st3",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 28,
+            "name": "st4",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 29,
+            "name": "st5",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 30,
+            "name": "st6",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 31,
+            "name": "st7",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 32,
+            "name": "fctrl",
+            "value": "0x37f",
+            "availability": "valid"
+          },
+          {
+            "number": 33,
+            "name": "fstat",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 34,
+            "name": "ftag",
+            "value": "0xffff",
+            "availability": "valid"
+          },
+          {
+            "number": 35,
+            "name": "fiseg",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 36,
+            "name": "fioff",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 37,
+            "name": "foseg",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 38,
+            "name": "fooff",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 39,
+            "name": "fop",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 40,
+            "name": "xmm0",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 41,
+            "name": "xmm1",
+            "value": "{v8_bfloat16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v8_half = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_float = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_double = {0x544e4556455f4543, 0x742f3d454c49465f}, v16_int8 = {0x43, 0x45, 0x5f, 0x45, 0x56, 0x45, 0x4e, 0x54, 0x5f, 0x46, 0x49, 0x4c, 0x45, 0x3d, 0x2f, 0x74}, v8_int16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_int32 = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_int64 = {0x544e4556455f4543, 0x742f3d454c49465f}, uint128 = 0x742f3d454c49465f544e4556455f4543}",
+            "availability": "valid"
+          },
+          {
+            "number": 42,
+            "name": "xmm2",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v8_half = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_float = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_double = {0xffffffff00000000, 0xffffffffff}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_int32 = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_int64 = {0xffffffff00000000, 0xffffffffff}, uint128 = 0xffffffffffffffffff00000000}",
+            "availability": "valid"
+          },
+          {
+            "number": 43,
+            "name": "xmm3",
+            "value": "{v8_bfloat16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v8_half = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_float = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_double = {0xff000000, 0xff000000ff0000}, v16_int8 = {0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0xff, 0x0}, v8_int16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_int32 = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_int64 = {0xff000000, 0xff000000ff0000}, uint128 = 0xff000000ff000000000000ff000000}",
+            "availability": "valid"
+          },
+          {
+            "number": 44,
+            "name": "xmm4",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 45,
+            "name": "xmm5",
+            "value": "{v8_bfloat16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v8_half = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_float = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_double = {0x677361622f5f69, 0x522f3d4c4c454843}, v16_int8 = {0x69, 0x5f, 0x2f, 0x62, 0x61, 0x73, 0x67, 0x0, 0x43, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x52}, v8_int16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_int32 = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_int64 = {0x677361622f5f69, 0x522f3d4c4c454843}, uint128 = 0x522f3d4c4c45484300677361622f5f69}",
+            "availability": "valid"
+          },
+          {
+            "number": 46,
+            "name": "xmm6",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
+            "availability": "valid"
+          },
+          {
+            "number": 47,
+            "name": "xmm7",
+            "value": "{v8_bfloat16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0xff0000, 0x0, 0x0, 0x0}, v2_double = {0xff0000, 0x0}, v16_int8 = {0x0, 0x0, 0xff, 0x0 <repeats 13 times>}, v8_int16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0xff0000, 0x0, 0x0, 0x0}, v2_int64 = {0xff0000, 0x0}, uint128 = 0xff0000}",
+            "availability": "valid"
+          },
+          {
+            "number": 48,
+            "name": "xmm8",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
+            "availability": "valid"
+          },
+          {
+            "number": 49,
+            "name": "xmm9",
+            "value": "{v8_bfloat16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v8_half = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_float = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_double = {0x67756265645f6d, 0x622f3d4c4c454853}, v16_int8 = {0x6d, 0x5f, 0x64, 0x65, 0x62, 0x75, 0x67, 0x0, 0x53, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x62}, v8_int16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_int32 = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_int64 = {0x67756265645f6d, 0x622f3d4c4c454853}, uint128 = 0x622f3d4c4c4548530067756265645f6d}",
+            "availability": "valid"
+          },
+          {
+            "number": 50,
+            "name": "xmm10",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 51,
+            "name": "xmm11",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 52,
+            "name": "xmm12",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 53,
+            "name": "xmm13",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 54,
+            "name": "xmm14",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 55,
+            "name": "xmm15",
+            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+            "availability": "valid"
+          },
+          {
+            "number": 56,
+            "name": "mxcsr",
+            "value": "0x1f80",
+            "availability": "valid"
+          },
+          {
+            "number": 153,
+            "name": "fs_base",
+            "value": "0x7ffff7d9c780",
+            "availability": "valid"
+          },
+          {
+            "number": 154,
+            "name": "gs_base",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 155,
+            "name": "orig_rax",
+            "value": "0xffffffffffffffff",
+            "availability": "valid"
+          },
+          {
+            "number": 156,
+            "name": "al",
+            "value": "0xe8",
+            "availability": "valid"
+          },
+          {
+            "number": 157,
+            "name": "bl",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 158,
+            "name": "cl",
+            "value": "0xf8",
+            "availability": "valid"
+          },
+          {
+            "number": 159,
+            "name": "dl",
+            "value": "0xa8",
+            "availability": "valid"
+          },
+          {
+            "number": 160,
+            "name": "sil",
+            "value": "0x98",
+            "availability": "valid"
+          },
+          {
+            "number": 161,
+            "name": "dil",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 162,
+            "name": "bpl",
+            "value": "0x10",
+            "availability": "valid"
+          },
+          {
+            "number": 163,
+            "name": "spl",
+            "value": "0x60",
+            "availability": "valid"
+          },
+          {
+            "number": 164,
+            "name": "r8l",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 165,
+            "name": "r9l",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 166,
+            "name": "r10l",
+            "value": "0x80",
+            "availability": "valid"
+          },
+          {
+            "number": 167,
+            "name": "r11l",
+            "value": "0x2",
+            "availability": "valid"
+          },
+          {
+            "number": 168,
+            "name": "r12l",
+            "value": "0x98",
+            "availability": "valid"
+          },
+          {
+            "number": 169,
+            "name": "r13l",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 170,
+            "name": "r14l",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 171,
+            "name": "r15l",
+            "value": "0xf8",
+            "availability": "valid"
+          },
+          {
+            "number": 172,
+            "name": "ah",
+            "value": "0x5d",
+            "availability": "valid"
+          },
+          {
+            "number": 173,
+            "name": "bh",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 174,
+            "name": "ch",
+            "value": "0x3d",
+            "availability": "valid"
+          },
+          {
+            "number": 175,
+            "name": "dh",
+            "value": "0xdb",
+            "availability": "valid"
+          },
+          {
+            "number": 176,
+            "name": "ax",
+            "value": "0x5de8",
+            "availability": "valid"
+          },
+          {
+            "number": 177,
+            "name": "bx",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 178,
+            "name": "cx",
+            "value": "0x3df8",
+            "availability": "valid"
+          },
+          {
+            "number": 179,
+            "name": "dx",
+            "value": "0xdba8",
+            "availability": "valid"
+          },
+          {
+            "number": 180,
+            "name": "si",
+            "value": "0xdb98",
+            "availability": "valid"
+          },
+          {
+            "number": 181,
+            "name": "di",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 182,
+            "name": "bp",
+            "value": "0xdb10",
+            "availability": "valid"
+          },
+          {
+            "number": 184,
+            "name": "r8w",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 185,
+            "name": "r9w",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 186,
+            "name": "r10w",
+            "value": "0x180",
+            "availability": "valid"
+          },
+          {
+            "number": 187,
+            "name": "r11w",
+            "value": "0x202",
+            "availability": "valid"
+          },
+          {
+            "number": 188,
+            "name": "r12w",
+            "value": "0xdb98",
+            "availability": "valid"
+          },
+          {
+            "number": 189,
+            "name": "r13w",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 190,
+            "name": "r14w",
+            "value": "0xd000",
+            "availability": "valid"
+          },
+          {
+            "number": 191,
+            "name": "r15w",
+            "value": "0x3df8",
+            "availability": "valid"
+          },
+          {
+            "number": 192,
+            "name": "eax",
+            "value": "0xf7f95de8",
+            "availability": "valid"
+          },
+          {
+            "number": 193,
+            "name": "ebx",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 194,
+            "name": "ecx",
+            "value": "0x403df8",
+            "availability": "valid"
+          },
+          {
+            "number": 195,
+            "name": "edx",
+            "value": "0xffffdba8",
+            "availability": "valid"
+          },
+          {
+            "number": 196,
+            "name": "esi",
+            "value": "0xffffdb98",
+            "availability": "valid"
+          },
+          {
+            "number": 197,
+            "name": "edi",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 198,
+            "name": "ebp",
+            "value": "0xffffdb10",
+            "availability": "valid"
+          },
+          {
+            "number": 199,
+            "name": "esp",
+            "value": "0xffffda60",
+            "availability": "valid"
+          },
+          {
+            "number": 200,
+            "name": "r8d",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 201,
+            "name": "r9d",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 202,
+            "name": "r10d",
+            "value": "0x180",
+            "availability": "valid"
+          },
+          {
+            "number": 203,
+            "name": "r11d",
+            "value": "0x202",
+            "availability": "valid"
+          },
+          {
+            "number": 204,
+            "name": "r12d",
+            "value": "0xffffdb98",
+            "availability": "valid"
+          },
+          {
+            "number": 205,
+            "name": "r13d",
+            "value": "0x1",
+            "availability": "valid"
+          },
+          {
+            "number": 206,
+            "name": "r14d",
+            "value": "0xf7ffd000",
+            "availability": "valid"
+          },
+          {
+            "number": 207,
+            "name": "r15d",
+            "value": "0x403df8",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 2,
+      "stop_id_after": 3,
+      "event_id": 1,
+      "instruction_id": 1,
+      "address": "0x0000000000400537",
+      "next_address": "0x000000000040053a",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 1,
+        "function": "main"
+      },
+      "checkpoint_id": 0,
+      "outcome": "unknown",
+      "stopped_reason": "breakpoint-hit",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 6,
+            "name": "rbp",
+            "value": "0x7fffffffda60",
+            "availability": "valid"
+          },
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x40053a",
+            "availability": "valid"
+          },
+          {
+            "number": 162,
+            "name": "bpl",
+            "value": "0x60",
+            "availability": "valid"
+          },
+          {
+            "number": 182,
+            "name": "bp",
+            "value": "0xda60",
+            "availability": "valid"
+          },
+          {
+            "number": 198,
+            "name": "ebp",
+            "value": "0xffffda60",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 3,
+      "stop_id_after": 4,
+      "event_id": 2,
+      "instruction_id": 2,
+      "address": "0x000000000040053a",
+      "next_address": "0x0000000000400541",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 2,
+        "function": "main"
+      },
+      "checkpoint_id": 1,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400541",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 4,
+      "stop_id_after": 5,
+      "event_id": 3,
+      "instruction_id": 3,
+      "address": "0x0000000000400541",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 5,
+      "stop_id_after": 6,
+      "event_id": 4,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 0,
+            "name": "rax",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          },
+          {
+            "number": 156,
+            "name": "al",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 172,
+            "name": "ah",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 176,
+            "name": "ax",
+            "value": "0x0",
+            "availability": "valid"
+          },
+          {
+            "number": 192,
+            "name": "eax",
+            "value": "0x0",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 6,
+      "stop_id_after": 7,
+      "event_id": 5,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 7,
+      "stop_id_after": 8,
+      "event_id": 6,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 8,
+      "stop_id_after": 9,
+      "event_id": 7,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 9,
+      "stop_id_after": 10,
+      "event_id": 8,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 10,
+      "stop_id_after": 11,
+      "event_id": 9,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 11,
+      "stop_id_after": 12,
+      "event_id": 10,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 12,
+      "stop_id_after": 13,
+      "event_id": 11,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 13,
+      "stop_id_after": 14,
+      "event_id": 12,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 14,
+      "stop_id_after": 15,
+      "event_id": 13,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 15,
+      "stop_id_after": 16,
+      "event_id": 14,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 16,
+      "stop_id_after": 17,
+      "event_id": 15,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 17,
+      "stop_id_after": 18,
+      "event_id": 16,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 18,
+      "stop_id_after": 19,
+      "event_id": 17,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 19,
+      "stop_id_after": 20,
+      "event_id": 18,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 20,
+      "stop_id_after": 21,
+      "event_id": 19,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 21,
+      "stop_id_after": 22,
+      "event_id": 20,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 22,
+      "stop_id_after": 23,
+      "event_id": 21,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 23,
+      "stop_id_after": 24,
+      "event_id": 22,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 24,
+      "stop_id_after": 25,
+      "event_id": 23,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 25,
+      "stop_id_after": 26,
+      "event_id": 24,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 26,
+      "stop_id_after": 27,
+      "event_id": 25,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 27,
+      "stop_id_after": 28,
+      "event_id": 26,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 28,
+      "stop_id_after": 29,
+      "event_id": 27,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 29,
+      "stop_id_after": 30,
+      "event_id": 28,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 30,
+      "stop_id_after": 31,
+      "event_id": 29,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 31,
+      "stop_id_after": 32,
+      "event_id": 30,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 32,
+      "stop_id_after": 33,
+      "event_id": 31,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 33,
+      "stop_id_after": 34,
+      "event_id": 32,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 34,
+      "stop_id_after": 35,
+      "event_id": 33,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 35,
+      "stop_id_after": 36,
+      "event_id": 34,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 36,
+      "stop_id_after": 37,
+      "event_id": 35,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 37,
+      "stop_id_after": 38,
+      "event_id": 36,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 38,
+      "stop_id_after": 39,
+      "event_id": 37,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 39,
+      "stop_id_after": 40,
+      "event_id": 38,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 40,
+      "stop_id_after": 41,
+      "event_id": 39,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 41,
+      "stop_id_after": 42,
+      "event_id": 40,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 42,
+      "stop_id_after": 43,
+      "event_id": 41,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 43,
+      "stop_id_after": 44,
+      "event_id": 42,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 44,
+      "stop_id_after": 45,
+      "event_id": 43,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 45,
+      "stop_id_after": 46,
+      "event_id": 44,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 46,
+      "stop_id_after": 47,
+      "event_id": 45,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 47,
+      "stop_id_after": 48,
+      "event_id": 46,
+      "instruction_id": 4,
+      "address": "0x0000000000400542",
+      "next_address": "0x0000000000400545",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400545",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 48,
+      "stop_id_after": 49,
+      "event_id": 47,
+      "instruction_id": 5,
+      "address": "0x0000000000400545",
+      "next_address": "0x0000000000400547",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400547",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    },
+    {
+      "stop_id_before": 49,
+      "stop_id_after": 50,
+      "event_id": 48,
+      "instruction_id": 6,
+      "address": "0x0000000000400547",
+      "next_address": "0x0000000000400542",
+      "thread_id": "1",
+      "pid": 415087,
+      "source": {
+        "file": "fixtures/c/spin_same_line.c",
+        "line": 3,
+        "function": "main"
+      },
+      "checkpoint_id": 2,
+      "outcome": "completed",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "registers": {
+        "full_checkpoint": false,
+        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+        "thread_id": "1",
+        "values": [
+          {
+            "number": 16,
+            "name": "rip",
+            "value": "0x400542",
+            "availability": "valid"
+          }
+        ],
+        "complete": true,
+        "error": null
+      },
+      "memory": []
+    }
+  ],
+  "source_checkpoints": [
+    0,
+    1,
+    2
+  ],
+  "initial_registers": {
+    "full_checkpoint": true,
+    "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
+    "thread_id": "1",
+    "values": [
+      {
+        "number": 0,
+        "name": "rax",
+        "value": "0x7ffff7f95de8",
+        "availability": "valid"
+      },
+      {
+        "number": 1,
+        "name": "rbx",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 2,
+        "name": "rcx",
+        "value": "0x403df8",
+        "availability": "valid"
+      },
+      {
+        "number": 3,
+        "name": "rdx",
+        "value": "0x7fffffffdba8",
+        "availability": "valid"
+      },
+      {
+        "number": 4,
+        "name": "rsi",
+        "value": "0x7fffffffdb98",
+        "availability": "valid"
+      },
+      {
+        "number": 5,
+        "name": "rdi",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 6,
+        "name": "rbp",
+        "value": "0x7fffffffdb10",
+        "availability": "valid"
+      },
+      {
+        "number": 7,
+        "name": "rsp",
+        "value": "0x7fffffffda68",
+        "availability": "valid"
+      },
+      {
+        "number": 8,
+        "name": "r8",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 9,
+        "name": "r9",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 10,
+        "name": "r10",
+        "value": "0x180",
+        "availability": "valid"
+      },
+      {
+        "number": 11,
+        "name": "r11",
+        "value": "0x202",
+        "availability": "valid"
+      },
+      {
+        "number": 12,
+        "name": "r12",
+        "value": "0x7fffffffdb98",
+        "availability": "valid"
+      },
+      {
+        "number": 13,
+        "name": "r13",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 14,
+        "name": "r14",
+        "value": "0x7ffff7ffd000",
+        "availability": "valid"
+      },
+      {
+        "number": 15,
+        "name": "r15",
+        "value": "0x403df8",
+        "availability": "valid"
+      },
+      {
+        "number": 16,
+        "name": "rip",
+        "value": "0x400536",
+        "availability": "valid"
+      },
+      {
+        "number": 17,
+        "name": "eflags",
+        "value": "0x246",
+        "availability": "valid"
+      },
+      {
+        "number": 18,
+        "name": "cs",
+        "value": "0x33",
+        "availability": "valid"
+      },
+      {
+        "number": 19,
+        "name": "ss",
+        "value": "0x2b",
+        "availability": "valid"
+      },
+      {
+        "number": 20,
+        "name": "ds",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 21,
+        "name": "es",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 22,
+        "name": "fs",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 23,
+        "name": "gs",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 24,
+        "name": "st0",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 25,
+        "name": "st1",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 26,
+        "name": "st2",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 27,
+        "name": "st3",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 28,
+        "name": "st4",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 29,
+        "name": "st5",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 30,
+        "name": "st6",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 31,
+        "name": "st7",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 32,
+        "name": "fctrl",
+        "value": "0x37f",
+        "availability": "valid"
+      },
+      {
+        "number": 33,
+        "name": "fstat",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 34,
+        "name": "ftag",
+        "value": "0xffff",
+        "availability": "valid"
+      },
+      {
+        "number": 35,
+        "name": "fiseg",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 36,
+        "name": "fioff",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 37,
+        "name": "foseg",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 38,
+        "name": "fooff",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 39,
+        "name": "fop",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 40,
+        "name": "xmm0",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 41,
+        "name": "xmm1",
+        "value": "{v8_bfloat16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v8_half = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_float = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_double = {0x544e4556455f4543, 0x742f3d454c49465f}, v16_int8 = {0x43, 0x45, 0x5f, 0x45, 0x56, 0x45, 0x4e, 0x54, 0x5f, 0x46, 0x49, 0x4c, 0x45, 0x3d, 0x2f, 0x74}, v8_int16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_int32 = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_int64 = {0x544e4556455f4543, 0x742f3d454c49465f}, uint128 = 0x742f3d454c49465f544e4556455f4543}",
+        "availability": "valid"
+      },
+      {
+        "number": 42,
+        "name": "xmm2",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v8_half = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_float = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_double = {0xffffffff00000000, 0xffffffffff}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_int32 = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_int64 = {0xffffffff00000000, 0xffffffffff}, uint128 = 0xffffffffffffffffff00000000}",
+        "availability": "valid"
+      },
+      {
+        "number": 43,
+        "name": "xmm3",
+        "value": "{v8_bfloat16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v8_half = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_float = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_double = {0xff000000, 0xff000000ff0000}, v16_int8 = {0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0xff, 0x0}, v8_int16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_int32 = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_int64 = {0xff000000, 0xff000000ff0000}, uint128 = 0xff000000ff000000000000ff000000}",
+        "availability": "valid"
+      },
+      {
+        "number": 44,
+        "name": "xmm4",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 45,
+        "name": "xmm5",
+        "value": "{v8_bfloat16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v8_half = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_float = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_double = {0x677361622f5f69, 0x522f3d4c4c454843}, v16_int8 = {0x69, 0x5f, 0x2f, 0x62, 0x61, 0x73, 0x67, 0x0, 0x43, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x52}, v8_int16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_int32 = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_int64 = {0x677361622f5f69, 0x522f3d4c4c454843}, uint128 = 0x522f3d4c4c45484300677361622f5f69}",
+        "availability": "valid"
+      },
+      {
+        "number": 46,
+        "name": "xmm6",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
+        "availability": "valid"
+      },
+      {
+        "number": 47,
+        "name": "xmm7",
+        "value": "{v8_bfloat16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0xff0000, 0x0, 0x0, 0x0}, v2_double = {0xff0000, 0x0}, v16_int8 = {0x0, 0x0, 0xff, 0x0 <repeats 13 times>}, v8_int16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0xff0000, 0x0, 0x0, 0x0}, v2_int64 = {0xff0000, 0x0}, uint128 = 0xff0000}",
+        "availability": "valid"
+      },
+      {
+        "number": 48,
+        "name": "xmm8",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
+        "availability": "valid"
+      },
+      {
+        "number": 49,
+        "name": "xmm9",
+        "value": "{v8_bfloat16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v8_half = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_float = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_double = {0x67756265645f6d, 0x622f3d4c4c454853}, v16_int8 = {0x6d, 0x5f, 0x64, 0x65, 0x62, 0x75, 0x67, 0x0, 0x53, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x62}, v8_int16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_int32 = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_int64 = {0x67756265645f6d, 0x622f3d4c4c454853}, uint128 = 0x622f3d4c4c4548530067756265645f6d}",
+        "availability": "valid"
+      },
+      {
+        "number": 50,
+        "name": "xmm10",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 51,
+        "name": "xmm11",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 52,
+        "name": "xmm12",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 53,
+        "name": "xmm13",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 54,
+        "name": "xmm14",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 55,
+        "name": "xmm15",
+        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
+        "availability": "valid"
+      },
+      {
+        "number": 56,
+        "name": "mxcsr",
+        "value": "0x1f80",
+        "availability": "valid"
+      },
+      {
+        "number": 153,
+        "name": "fs_base",
+        "value": "0x7ffff7d9c780",
+        "availability": "valid"
+      },
+      {
+        "number": 154,
+        "name": "gs_base",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 155,
+        "name": "orig_rax",
+        "value": "0xffffffffffffffff",
+        "availability": "valid"
+      },
+      {
+        "number": 156,
+        "name": "al",
+        "value": "0xe8",
+        "availability": "valid"
+      },
+      {
+        "number": 157,
+        "name": "bl",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 158,
+        "name": "cl",
+        "value": "0xf8",
+        "availability": "valid"
+      },
+      {
+        "number": 159,
+        "name": "dl",
+        "value": "0xa8",
+        "availability": "valid"
+      },
+      {
+        "number": 160,
+        "name": "sil",
+        "value": "0x98",
+        "availability": "valid"
+      },
+      {
+        "number": 161,
+        "name": "dil",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 162,
+        "name": "bpl",
+        "value": "0x10",
+        "availability": "valid"
+      },
+      {
+        "number": 163,
+        "name": "spl",
+        "value": "0x68",
+        "availability": "valid"
+      },
+      {
+        "number": 164,
+        "name": "r8l",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 165,
+        "name": "r9l",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 166,
+        "name": "r10l",
+        "value": "0x80",
+        "availability": "valid"
+      },
+      {
+        "number": 167,
+        "name": "r11l",
+        "value": "0x2",
+        "availability": "valid"
+      },
+      {
+        "number": 168,
+        "name": "r12l",
+        "value": "0x98",
+        "availability": "valid"
+      },
+      {
+        "number": 169,
+        "name": "r13l",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 170,
+        "name": "r14l",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 171,
+        "name": "r15l",
+        "value": "0xf8",
+        "availability": "valid"
+      },
+      {
+        "number": 172,
+        "name": "ah",
+        "value": "0x5d",
+        "availability": "valid"
+      },
+      {
+        "number": 173,
+        "name": "bh",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 174,
+        "name": "ch",
+        "value": "0x3d",
+        "availability": "valid"
+      },
+      {
+        "number": 175,
+        "name": "dh",
+        "value": "0xdb",
+        "availability": "valid"
+      },
+      {
+        "number": 176,
+        "name": "ax",
+        "value": "0x5de8",
+        "availability": "valid"
+      },
+      {
+        "number": 177,
+        "name": "bx",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 178,
+        "name": "cx",
+        "value": "0x3df8",
+        "availability": "valid"
+      },
+      {
+        "number": 179,
+        "name": "dx",
+        "value": "0xdba8",
+        "availability": "valid"
+      },
+      {
+        "number": 180,
+        "name": "si",
+        "value": "0xdb98",
+        "availability": "valid"
+      },
+      {
+        "number": 181,
+        "name": "di",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 182,
+        "name": "bp",
+        "value": "0xdb10",
+        "availability": "valid"
+      },
+      {
+        "number": 184,
+        "name": "r8w",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 185,
+        "name": "r9w",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 186,
+        "name": "r10w",
+        "value": "0x180",
+        "availability": "valid"
+      },
+      {
+        "number": 187,
+        "name": "r11w",
+        "value": "0x202",
+        "availability": "valid"
+      },
+      {
+        "number": 188,
+        "name": "r12w",
+        "value": "0xdb98",
+        "availability": "valid"
+      },
+      {
+        "number": 189,
+        "name": "r13w",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 190,
+        "name": "r14w",
+        "value": "0xd000",
+        "availability": "valid"
+      },
+      {
+        "number": 191,
+        "name": "r15w",
+        "value": "0x3df8",
+        "availability": "valid"
+      },
+      {
+        "number": 192,
+        "name": "eax",
+        "value": "0xf7f95de8",
+        "availability": "valid"
+      },
+      {
+        "number": 193,
+        "name": "ebx",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 194,
+        "name": "ecx",
+        "value": "0x403df8",
+        "availability": "valid"
+      },
+      {
+        "number": 195,
+        "name": "edx",
+        "value": "0xffffdba8",
+        "availability": "valid"
+      },
+      {
+        "number": 196,
+        "name": "esi",
+        "value": "0xffffdb98",
+        "availability": "valid"
+      },
+      {
+        "number": 197,
+        "name": "edi",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 198,
+        "name": "ebp",
+        "value": "0xffffdb10",
+        "availability": "valid"
+      },
+      {
+        "number": 199,
+        "name": "esp",
+        "value": "0xffffda68",
+        "availability": "valid"
+      },
+      {
+        "number": 200,
+        "name": "r8d",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 201,
+        "name": "r9d",
+        "value": "0x0",
+        "availability": "valid"
+      },
+      {
+        "number": 202,
+        "name": "r10d",
+        "value": "0x180",
+        "availability": "valid"
+      },
+      {
+        "number": 203,
+        "name": "r11d",
+        "value": "0x202",
+        "availability": "valid"
+      },
+      {
+        "number": 204,
+        "name": "r12d",
+        "value": "0xffffdb98",
+        "availability": "valid"
+      },
+      {
+        "number": 205,
+        "name": "r13d",
+        "value": "0x1",
+        "availability": "valid"
+      },
+      {
+        "number": 206,
+        "name": "r14d",
+        "value": "0xf7ffd000",
+        "availability": "valid"
+      },
+      {
+        "number": 207,
+        "name": "r15d",
+        "value": "0x403df8",
+        "availability": "valid"
+      }
+    ],
+    "complete": true,
+    "error": null
+  },
+  "trace_gaps": [
+    {
+      "instruction_position": 0,
+      "start_address": null,
+      "end_address": "0x0000000000400536",
+      "origin": "unknown",
+      "reason": "startup_before_main"
+    },
+    {
+      "instruction_position": 49,
+      "start_address": "0x0000000000400542",
+      "end_address": null,
+      "origin": "unknown",
+      "reason": "recording_terminated"
+    }
+  ],
+  "instruction_count": 49,
+  "coverage": {
+    "scope": "user_code",
+    "instruction_capture_enabled": true,
+    "complete_for_scope": false,
+    "truncation_reasons": [
+      "execution_did_not_reach_observed_termination",
+      "session_or_debugger_deadline",
+      "overall_session_deadline"
+    ],
+    "stop_model": "gdb_all_stop",
+    "limitations": [
+      "Capture begins at main; startup and excluded-code intervals are gaps.",
+      "Memory is exact only at its recorded stopped observation, never inferred from registers.",
+      "Lexical DWARF DIE IDs and non-top-frame locals are not collected.",
+      "All-stop pauses inferior threads, not external processes sharing memory.",
+      "Disassembly assumes unchanged user code; self-modifying/JIT code is unsupported."
+    ]
+  },
+  "storage": {
+    "journal": null,
+    "finalized": true,
+    "bytes_written": 76490,
+    "resident_event_bytes": 58925
+  },
+  "profiling": {
+    "engine_peak_rss_kib": 11160,
+    "source_resolution_time_us": 1,
+    "command_time_us": 3704250,
+    "mi_parse_time_us": 441799,
+    "memory_read_time_us": 2427,
+    "enabled": false,
+    "step_time_us": 261661,
+    "disassembly_time_us": 4092,
+    "register_time_us": 1459731,
+    "capture_time_us": 42660,
+    "debugger_time_us": 3374199,
+    "disassembly_queries": 1,
+    "disassembly_cache_hits": 48,
+    "journal_time_us": 27186
+  },
+  "allocation_lifetimes": [],
+  "tracing_configuration": {
+    "mode": "dual",
+    "registers": true,
+    "static_disassembly": true,
+    "register_checkpoint_interval": 256,
+    "memory_regions": [],
+    "globals": [],
+    "discover_globals": true,
+    "journal": null,
+    "retain_instruction_events": true,
+    "profiling": false
+  },
+  "schema_version": 2,
+  "compiled_successfully": true,
+  "compile_errors": [],
+  "snapshots": [
+    {
+      "observation": {
+        "stop_id": 1,
+        "instruction_position": 0,
+        "instruction_address": "0x0000000000400536",
+        "thread_id": "1",
+        "pid": 415087,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 0,
+      "file": "fixtures/c/spin_same_line.c",
+      "line": 1,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/spin_same_line.c",
+          "line": 1,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c",
+          "address": "0x0000000000400536"
+        }
+      ],
+      "variables": [
+        {
+          "activation_id": 1,
+          "lexical_scope_id": "block:400536-400550:2",
+          "declaration_file": "/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c",
+          "declaration_line": 2,
+          "identity": "activation:1:block:400536-400550:2:ready",
+          "scope": "stack",
+          "target": null,
+          "read_status": "valid",
+          "bytes_status": "valid",
+          "name": "ready",
+          "c_type": "volatile int",
+          "value": "0",
+          "address": "0x7fffffffda5c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "breakpoint-hit",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "observation": {
+        "stop_id": 3,
+        "instruction_position": 2,
+        "instruction_address": "0x000000000040053a",
+        "thread_id": "1",
+        "pid": 415087,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 1,
+      "file": "fixtures/c/spin_same_line.c",
+      "line": 2,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/spin_same_line.c",
+          "line": 2,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c",
+          "address": "0x000000000040053a"
+        }
+      ],
+      "variables": [
+        {
+          "activation_id": 1,
+          "lexical_scope_id": "block:400536-400550:2",
+          "declaration_file": "/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c",
+          "declaration_line": 2,
+          "identity": "activation:1:block:400536-400550:2:ready",
+          "scope": "stack",
+          "target": null,
+          "read_status": "valid",
+          "bytes_status": "valid",
+          "name": "ready",
+          "c_type": "volatile int",
+          "value": "0",
+          "address": "0x7fffffffda5c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "breakpoint-hit",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "observation": {
+        "stop_id": 4,
+        "instruction_position": 3,
+        "instruction_address": "0x0000000000400541",
+        "thread_id": "1",
+        "pid": 415087,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 2,
+      "file": "fixtures/c/spin_same_line.c",
+      "line": 3,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/spin_same_line.c",
+          "line": 3,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c",
+          "address": "0x0000000000400541"
+        }
+      ],
+      "variables": [
+        {
+          "activation_id": 1,
+          "lexical_scope_id": "block:400536-400550:2",
+          "declaration_file": "/home/xe/Documents/visual_c/fixtures/c/spin_same_line.c",
+          "declaration_line": 2,
+          "identity": "activation:1:block:400536-400550:2:ready",
+          "scope": "stack",
+          "target": null,
+          "read_status": "valid",
+          "bytes_status": "valid",
+          "name": "ready",
+          "c_type": "volatile int",
+          "value": "0",
+          "address": "0x7fffffffda5c",
+          "size_bytes": 4,
+          "points_to": null,
+          "raw_bytes_hex": "00000000",
+          "is_argument": false,
+          "read_error": null
+        }
+      ],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    }
+  ],
+  "heap_events": [],
+  "heap_state": [],
+  "crash_report": null,
+  "valgrind_report": null,
+  "execution_status": "timeout",
+  "resource_usage": {
+    "wall_time_ms": 5130,
+    "gdb_commands_issued": 134,
+    "snapshots_captured": 3,
+    "allocation_events_ingested": 0,
+    "program_output_bytes": 0,
+    "program_output_truncated": false,
+    "limits_triggered": [
+      "session_or_debugger_deadline",
+      "overall_session_deadline"
+    ],
+    "inferior_exit_code": null
+  },
+  "sanitizer_report": null,
+  "session_meta": {
+    "sanitizer_variant": "address",
+    "session_dir": "/tmp/c-trace-415004-1794728452191472753",
+    "debug_binary": "/tmp/c-trace-415004-1794728452191472753/program_debug",
+    "sanitized_binary": "/tmp/c-trace-415004-1794728452191472753/program_asan",
+    "gcc_version": "gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+    "gdb_version": "GNU gdb (Fedora Linux) 18.1-1.fc44",
+    "valgrind_version": "valgrind-3.27.1",
+    "addr2line_version": "GNU addr2line version 2.46.1-1.fc44",
+    "cgroup_enforced": false,
+    "build": {
+      "source_file": "fixtures/c/spin_same_line.c",
+      "additional_sources": [],
+      "object_files": [],
+      "include_dirs": [],
+      "defines": [],
+      "compiler_flags": [],
+      "linker_flags": [],
+      "library_dirs": [],
+      "libraries": [],
+      "output_name": null,
+      "working_directory": null
+    },
+    "program_args": [],
+    "working_directory": null
+  },
+  "analysis_notes": [
+    "sanitizer build degraded to address; combined runtime unavailable",
+    "cgroup unavailable: per-tree memory/process limits not enforced; inferior rlimits remain active"
+  ],
+  "stage_results": {
+    "compiler": {
+      "status": "completed",
+      "start_offset_ms": 373,
+      "end_offset_ms": 961,
+      "duration_ms": 587,
+      "exit_code": 0,
+      "reason": null,
+      "output_complete": true,
+      "partial_results_available": false
+    },
+    "debugger": {
+      "status": "timed_out",
+      "start_offset_ms": 961,
+      "end_offset_ms": 5129,
+      "duration_ms": 4167,
+      "exit_code": null,
+      "reason": "session_or_debugger_deadline",
+      "output_complete": false,
+      "partial_results_available": true
+    },
+    "valgrind": {
+      "status": "skipped",
+      "start_offset_ms": null,
+      "end_offset_ms": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "reason": "overall session deadline exhausted",
+      "output_complete": false,
+      "partial_results_available": null
+    },
+    "sanitizer": {
+      "status": "skipped",
+      "start_offset_ms": null,
+      "end_offset_ms": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "reason": "no crash or sanitized build unavailable",
+      "output_complete": false,
+      "partial_results_available": null
+    },
+    "allocation_tracker": {
+      "status": "completed",
+      "start_offset_ms": 961,
+      "end_offset_ms": 5129,
+      "duration_ms": 4167,
+      "exit_code": null,
+      "reason": null,
+      "output_complete": false,
+      "partial_results_available": false
+    }
+  }
+}

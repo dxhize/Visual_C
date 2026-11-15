@@ -1,0 +1,1 @@
+/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/use_after_free.c --timeout 20

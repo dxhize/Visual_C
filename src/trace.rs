@@ -31,7 +31,7 @@ use crate::gdb_mi::{
 };
 use crate::models::{
     CrashReport, DebugSessionTrace, ExecutionSnapshot, ExecutionStatus, HeapBlockInfo,
-    ResourceUsage, SanitizerReport, SessionMeta, ValgrindReport,
+    ResourceUsage, SanitizerReport, SessionMeta, StageResult, StageStatus, ValgrindReport,
 };
 use crate::resource_limits::{CgroupGuard, ExecutionLimits};
 use crate::sanitizer;
@@ -44,9 +44,6 @@ const MAX_HEAP_BLOCKS_PER_SNAPSHOT: usize = 512;
 const STDOUT_HEAD_CAP: usize = 64 * 1024;
 /// Maximum consecutive `-exec-finish` commands through non-user frames.
 const MAX_FINISH_CHAIN: usize = 32;
-/// Safety margin over the configured wall timeout for the GDB run loop.
-const WALL_TIMEOUT_FACTOR: u64 = 4;
-const WALL_TIMEOUT_SLACK_SECS: u64 = 30;
 /// Maximum wait for one stepping command (the inferior should stop quickly;
 /// a hang here is bounded and mapped to the timeout status).
 const PER_STEP_TIMEOUT: Duration = Duration::from_secs(10);
@@ -54,19 +51,89 @@ const PER_STEP_TIMEOUT: Duration = Duration::from_secs(10);
 const FATAL_SIGNALS: [&str; 7] = [
     "SIGSEGV", "SIGBUS", "SIGILL", "SIGFPE", "SIGABRT", "SIGIOT", "SIGTRAP",
 ];
-const RESOURCE_SIGNALS: [&str; 3] = ["SIGKILL", "SIGXCPU", "SIGXFSZ"];
+const RESOURCE_SIGNALS: [&str; 2] = ["SIGXCPU", "SIGXFSZ"];
 const BENIGN_SIGNALS: [&str; 9] = [
-    "SIGUSR1", "SIGUSR2", "SIGPIPE", "SIGCHLD", "SIGWINCH", "SIGALRM", "SIGVTALRM", "SIGPROF",
+    "SIGUSR1",
+    "SIGUSR2",
+    "SIGPIPE",
+    "SIGCHLD",
+    "SIGWINCH",
+    "SIGALRM",
+    "SIGVTALRM",
+    "SIGPROF",
     "SIGCONT",
 ];
 
 /// Entry point: run the full pipeline for a prepared configuration.
 pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
+    config.limits.validate()?;
+    let tracing_configuration = config.tracing.clone();
+    let execution_limits = config.limits.clone();
+    crate::supervisor::scope(config.limits.timeout_seconds.max(1), async {
+        match trace_program_inner(config).await {
+            Err(EngineError::Cancelled) => Ok(DebugSessionTrace {
+                tracing_configuration,
+                execution_limits,
+                execution_status: ExecutionStatus::Interrupted,
+                execution: crate::models::ExecutionOutcome {
+                    outcome: crate::models::ProgramOutcome::Interrupted,
+                    reason: Some("session interrupted before execution".into()),
+                    ..Default::default()
+                },
+                stage_results: crate::models::StageResults {
+                    compiler: StageResult {
+                        status: Some(StageStatus::Cancelled),
+                        reason: Some("session interrupted".into()),
+                        output_complete: Some(false),
+                        ..Default::default()
+                    },
+                    debugger: skipped_stage("session interrupted"),
+                    valgrind: skipped_stage("session interrupted"),
+                    sanitizer: skipped_stage("session interrupted"),
+                    allocation_tracker: skipped_stage("session interrupted"),
+                },
+                ..Default::default()
+            }),
+            result => result,
+        }
+    })
+    .await
+}
+
+async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     let started = Instant::now();
+    let session_deadline = crate::supervisor::deadline();
     let limits = config.limits.clone();
     limits.validate()?;
+    if !config.tracing.retain_instruction_events && config.tracing.journal.is_none() {
+        return Err(EngineError::Config(
+            "journal-only recording requires a journal path".into(),
+        ));
+    }
+    for expression in config
+        .tracing
+        .globals
+        .iter()
+        .chain(config.tracing.memory_regions.iter().map(|r| &r.address))
+    {
+        if expression.contains('=')
+            || expression.contains(';')
+            || expression.contains("++")
+            || expression.contains("--")
+            || expression.contains('{')
+            || expression.contains('}')
+        {
+            return Err(EngineError::Config(
+                "inspection expressions must not contain side effects".into(),
+            ));
+        }
+    }
 
-    let mut trace = DebugSessionTrace::default();
+    let mut trace = DebugSessionTrace {
+        tracing_configuration: config.tracing.clone(),
+        execution_limits: limits.clone(),
+        ..Default::default()
+    };
     let mut notes: Vec<String> = Vec::new();
 
     // ---- tool verification ------------------------------------------------
@@ -92,12 +159,90 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
     let tracker_source = crate::allocation_tracker::write_runtime_source(&session_dir)?;
 
     // ---- compilation -------------------------------------------------------
-    let (debug_build, asan_build) =
-        compiler::compile_project(&config.build, &session_dir, Some(tracker_source)).await?;
+    let compiler_started = Instant::now();
+    let build_deadline = crate::supervisor::stage_deadline(limits.compiler_timeout_seconds);
+    let build = crate::supervisor::scope_until(
+        build_deadline,
+        compiler::compile_project(&config.build, &session_dir, Some(tracker_source)),
+    )
+    .await;
+    let (debug_build, asan_build) = match build {
+        Ok(build) => build,
+        Err(error) => {
+            let reason = error.to_string();
+            let timed_out = Instant::now() >= build_deadline || reason.contains("deadline");
+            trace.execution_status = if crate::supervisor::cancelled() {
+                ExecutionStatus::Interrupted
+            } else if timed_out {
+                ExecutionStatus::Timeout
+            } else {
+                ExecutionStatus::ExecutionFailure
+            };
+            trace.execution.outcome = if crate::supervisor::cancelled() {
+                crate::models::ProgramOutcome::Interrupted
+            } else if timed_out {
+                crate::models::ProgramOutcome::TimedOut
+            } else {
+                crate::models::ProgramOutcome::InternalFailure
+            };
+            trace.execution.reason = Some(reason.clone());
+            trace.stage_results.compiler = crate::supervisor::stage(
+                started,
+                compiler_started,
+                if crate::supervisor::cancelled() {
+                    StageStatus::Cancelled
+                } else if timed_out {
+                    StageStatus::TimedOut
+                } else {
+                    StageStatus::Failed
+                },
+                None,
+                Some(reason.clone()),
+                false,
+                false,
+            );
+            trace.analysis_notes.push(reason);
+            trace.stage_results.debugger = skipped_stage("compilation did not complete");
+            trace.stage_results.valgrind = skipped_stage("compilation did not complete");
+            trace.stage_results.sanitizer = skipped_stage("compilation did not complete");
+            trace.stage_results.allocation_tracker = skipped_stage("program not started");
+            trace.resource_usage.wall_time_ms = started.elapsed().as_millis() as u64;
+            if timed_out {
+                trace
+                    .resource_usage
+                    .limits_triggered
+                    .push("compiler_deadline".into());
+            }
+            if !config.keep_temp {
+                let _ = std::fs::remove_dir_all(&session_dir);
+            }
+            return Ok(trace);
+        }
+    };
+    trace.stage_results.compiler = crate::supervisor::stage(
+        started,
+        compiler_started,
+        if debug_build.success {
+            StageStatus::Completed
+        } else {
+            StageStatus::Failed
+        },
+        Some(debug_build.exit_code),
+        (!debug_build.success).then(|| {
+            debug_build
+                .diagnostics
+                .first()
+                .map(|d| d.message.clone())
+                .unwrap_or_else(|| debug_build.raw_stderr.clone())
+        }),
+        true,
+        false,
+    );
     trace.compiled_successfully = debug_build.success;
     trace.compile_errors = debug_build.diagnostics.clone();
 
     let mut meta = SessionMeta {
+        sanitizer_variant: asan_build.sanitizer_variant.clone(),
         session_dir: session_dir.display().to_string(),
         debug_binary: debug_build.binary_path.display().to_string(),
         sanitized_binary: if asan_build.success {
@@ -120,7 +265,12 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
     };
 
     if !debug_build.success {
+        trace.stage_results.debugger = skipped_stage("compilation failed");
+        trace.stage_results.valgrind = skipped_stage("compilation failed");
+        trace.stage_results.sanitizer = skipped_stage("compilation failed");
+        trace.stage_results.allocation_tracker = skipped_stage("program not started");
         trace.execution_status = ExecutionStatus::CompileFailed;
+        trace.execution.outcome = crate::models::ProgramOutcome::CompileFailed;
         notes.push("compilation failed; no execution or memory analysis was run".into());
         trace.analysis_notes = notes;
         trace.session_meta = Some(meta);
@@ -135,9 +285,21 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
             .iter()
             .find(|d| !d.message.is_empty())
             .map(|d| d.message.clone())
-            .unwrap_or_else(|| asan_build.raw_stderr.lines().last().unwrap_or_default().to_string());
+            .unwrap_or_else(|| {
+                asan_build
+                    .raw_stderr
+                    .lines()
+                    .last()
+                    .unwrap_or_default()
+                    .to_string()
+            });
         notes.push(format!(
             "sanitized binary could not be built ({reason}); sanitizer diagnostics disabled"
+        ));
+    } else if asan_build.sanitizer_variant.as_deref() != Some("address,undefined") {
+        notes.push(format!(
+            "sanitizer build degraded to {}; combined runtime unavailable",
+            asan_build.sanitizer_variant.as_deref().unwrap_or("unknown")
         ));
     }
 
@@ -147,6 +309,7 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
     let mut timeline = HeapTimeline::new(limits.max_heap_allocations);
     let mut reader = EventFileReader::new(event_file.clone());
 
+    let debugger_started = Instant::now();
     let phase = match run_gdb_phase(
         &config,
         &limits,
@@ -162,23 +325,103 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
         Ok(p) => p,
         Err(e) => {
             notes.push(format!("gdb phase failed: {e}"));
+            let limited = matches!(e, EngineError::LimitReached(_));
+            let mut recording = crate::models::RecordingData::default();
+            recording.coverage.truncation_reasons.push(e.to_string());
             GdbPhaseResult {
-                status: ExecutionStatus::DebuggerFailure,
+                status: if limited {
+                    ExecutionStatus::StepLimitReached
+                } else {
+                    ExecutionStatus::ExecutionFailure
+                },
+                termination_signal: None,
                 crash: None,
                 exit_code: None,
                 inferior_pid: None,
                 commands_issued: 0,
-                limits_triggered: Vec::new(),
+                limits_triggered: if limited {
+                    vec![e.to_string()]
+                } else {
+                    Vec::new()
+                },
                 program_output_bytes: 0,
                 program_output_truncated: false,
                 snapshots: Vec::new(),
                 cgroup_enforced: false,
+                recording,
+                executable_bias: None,
             }
         }
     };
+    trace.stage_results.debugger = crate::supervisor::stage(
+        started,
+        debugger_started,
+        match phase.status {
+            ExecutionStatus::Interrupted if crate::supervisor::cancelled() => {
+                StageStatus::Cancelled
+            }
+            ExecutionStatus::Timeout => StageStatus::TimedOut,
+            ExecutionStatus::DebuggerFailure | ExecutionStatus::ExecutionFailure => {
+                StageStatus::Failed
+            }
+            _ => StageStatus::Completed,
+        },
+        phase.exit_code,
+        phase
+            .limits_triggered
+            .first()
+            .cloned()
+            .or_else(|| crate::supervisor::cancelled().then(|| "session interrupted".into()))
+            .or_else(|| {
+                matches!(
+                    phase.status,
+                    ExecutionStatus::DebuggerFailure | ExecutionStatus::ExecutionFailure
+                )
+                .then(|| notes.last().cloned())
+                .flatten()
+            }),
+        matches!(
+            phase.status,
+            ExecutionStatus::Completed | ExecutionStatus::Crashed
+        ),
+        !phase.snapshots.is_empty(),
+    );
+    trace.stage_results.allocation_tracker = crate::supervisor::stage(
+        started,
+        debugger_started,
+        if reader.parse_errors.is_empty() {
+            StageStatus::Completed
+        } else {
+            StageStatus::Failed
+        },
+        None,
+        reader.parse_errors.first().cloned(),
+        matches!(
+            phase.status,
+            ExecutionStatus::Completed | ExecutionStatus::Crashed
+        ) && reader.parse_errors.is_empty(),
+        !timeline.events().is_empty(),
+    );
+    if phase.inferior_pid.is_none() {
+        trace.stage_results.allocation_tracker = skipped_stage("inferior was not started");
+    } else if !event_file.is_file() {
+        trace.stage_results.allocation_tracker = crate::supervisor::stage(
+            started,
+            debugger_started,
+            StageStatus::Failed,
+            None,
+            Some("allocation telemetry file unavailable".into()),
+            false,
+            false,
+        );
+    }
 
     // ---- caller location resolution (batched addr2line) ---------------------
-    if addr2line_version.is_some() {
+    let source_resolution_started = Instant::now();
+    if addr2line_version.is_some()
+        && Instant::now() < session_deadline
+        && !crate::supervisor::cancelled()
+    {
         let mut callers: Vec<u64> = timeline
             .blocks()
             .iter()
@@ -187,24 +430,48 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
             .collect();
         callers.extend(timeline.event_callers().iter().copied().filter(|c| *c != 0));
         if !callers.is_empty() {
-            match resolve_caller_locations(&debug_build.binary_path, &callers).await {
-                Ok(resolved) => {
+            let normalized: Vec<u64> = callers
+                .iter()
+                .filter_map(|pc| pc.checked_sub(phase.executable_bias?))
+                .collect();
+            match tokio::time::timeout_at(
+                session_deadline.into(),
+                resolve_caller_locations(&debug_build.binary_path, &normalized),
+            )
+            .await
+            {
+                Ok(Ok(resolved)) => {
                     if resolved.is_empty() {
                         notes.push("addr2line resolved no allocation call sites".into());
                     }
-                    apply_caller_locations(&mut timeline, &resolved);
+                    let relocated = resolved
+                        .into_iter()
+                        .filter_map(|(pc, info)| {
+                            Some((pc.checked_add(phase.executable_bias?)?, info))
+                        })
+                        .collect();
+                    apply_caller_locations(&mut timeline, &relocated);
                 }
-                Err(e) => notes.push(format!("addr2line failed: {e}")),
+                Ok(Err(e)) => notes.push(format!("addr2line failed: {e}")),
+                Err(_) => {
+                    notes.push("source resolution deadline exhausted; raw PCs retained".into())
+                }
             }
         }
     }
 
+    let source_resolution_time_us = source_resolution_started.elapsed().as_micros() as u64;
     // ---- crash → sanitizer diagnostic pass ----------------------------------
     let status = phase.status.clone();
     let mut crash: Option<CrashReport> = phase.crash.clone();
     let mut sanitizer_report: Option<SanitizerReport> = None;
-    if status == ExecutionStatus::Crashed && asan_build.success {
-        let report = sanitizer::run_sanitized(
+    let sanitizer_started = Instant::now();
+    if status == ExecutionStatus::Crashed
+        && asan_build.success
+        && Instant::now() < session_deadline
+        && !crate::supervisor::cancelled()
+    {
+        let mut report = sanitizer::run_sanitized(
             &asan_build.binary_path,
             &config.program_args,
             config
@@ -214,6 +481,13 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
             &limits,
         )
         .await;
+        if report.reproduction == "reproduced"
+            && !crash
+                .as_ref()
+                .is_some_and(|c| sanitizer::matches_crash(&report, c))
+        {
+            report.reproduction = "diagnostic_observed".into();
+        }
         notes.push(format!("sanitizer pass: {}", report.reproduction));
         if report.reproduction == "reproduced" {
             let summary = report
@@ -225,12 +499,41 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
                 c.asan_summary = summary;
             }
         }
+        trace.stage_results.sanitizer = crate::supervisor::stage(
+            started,
+            sanitizer_started,
+            if report.cancelled {
+                StageStatus::Cancelled
+            } else if report.timed_out {
+                StageStatus::TimedOut
+            } else if report.reproduction == "inconclusive" || report.reproduction == "skipped" {
+                StageStatus::Failed
+            } else {
+                StageStatus::Completed
+            },
+            report.exit_code,
+            Some(report.reproduction.clone()),
+            report.output_complete,
+            report.sanitizer.is_some(),
+        );
         sanitizer_report = Some(report);
+    } else if status == ExecutionStatus::Crashed && asan_build.success {
+        trace.stage_results.sanitizer = skipped_stage(if crate::supervisor::cancelled() {
+            "session interrupted"
+        } else {
+            "overall session deadline exhausted"
+        });
+    } else {
+        trace.stage_results.sanitizer = skipped_stage("no crash or sanitized build unavailable");
     }
 
     // ---- Valgrind (independent analysis) ------------------------------------
     let mut valgrind_report: Option<ValgrindReport> = None;
-    if valgrind_version.is_some() {
+    let valgrind_started = Instant::now();
+    if valgrind_version.is_some()
+        && Instant::now() < session_deadline
+        && !crate::supervisor::cancelled()
+    {
         let vg_xml = session_dir.join("valgrind.xml");
         let vg_events = session_dir.join("valgrind_alloc_events.txt");
         match valgrind::run_valgrind(
@@ -248,6 +551,8 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
         {
             Ok(run) => {
                 if let Some(mut report) = run.report {
+                    let output_complete =
+                        report.output_complete && !run.timed_out && !run.cancelled;
                     if run.timed_out {
                         notes.push("valgrind exceeded its timeout: XML may be incomplete".into());
                     }
@@ -263,12 +568,74 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
                         .collect();
                     valgrind::correlate_with_allocations(&mut report, &sites);
                     valgrind_report = Some(report);
+                    trace.stage_results.valgrind = crate::supervisor::stage(
+                        started,
+                        valgrind_started,
+                        if run.cancelled {
+                            StageStatus::Cancelled
+                        } else if run.timed_out {
+                            StageStatus::TimedOut
+                        } else if !output_complete {
+                            StageStatus::Failed
+                        } else {
+                            StageStatus::Completed
+                        },
+                        run.exit_code,
+                        valgrind_report.as_ref().and_then(|r| r.parse_error.clone()),
+                        output_complete,
+                        true,
+                    );
+                    if run.timed_out {
+                        trace.stage_results.valgrind.status = Some(StageStatus::TimedOut);
+                        trace.stage_results.valgrind.output_complete = Some(false);
+                        trace.stage_results.valgrind.reason =
+                            Some("Valgrind stage timed out".into());
+                    }
                 } else {
                     notes.push("valgrind XML could not be parsed (execution terminated?)".into());
+                    trace.stage_results.valgrind = crate::supervisor::stage(
+                        started,
+                        valgrind_started,
+                        if run.cancelled {
+                            StageStatus::Cancelled
+                        } else if run.timed_out {
+                            StageStatus::TimedOut
+                        } else {
+                            StageStatus::Failed
+                        },
+                        run.exit_code,
+                        run.failure_reason
+                            .or_else(|| Some("Valgrind XML was missing or invalid".into())),
+                        false,
+                        false,
+                    );
                 }
             }
-            Err(e) => notes.push(format!("valgrind failed: {e}")),
+            Err(e) => {
+                notes.push(format!("valgrind failed: {e}"));
+                trace.stage_results.valgrind = crate::supervisor::stage(
+                    started,
+                    valgrind_started,
+                    if crate::supervisor::remaining().is_zero() {
+                        StageStatus::TimedOut
+                    } else {
+                        StageStatus::Failed
+                    },
+                    None,
+                    Some(e.to_string()),
+                    false,
+                    false,
+                );
+            }
         }
+    } else if valgrind_version.is_some() {
+        trace.stage_results.valgrind = skipped_stage(if crate::supervisor::cancelled() {
+            "session interrupted"
+        } else {
+            "overall session deadline exhausted"
+        });
+    } else {
+        trace.stage_results.valgrind = skipped_stage("Valgrind is unavailable");
     }
 
     // ---- assemble ------------------------------------------------------------
@@ -276,6 +643,35 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
     trace.snapshots = backfill_snapshots(&timeline, phase.snapshots, parent_pid);
     trace.heap_events = final_events(&timeline);
     trace.heap_state = build_heap_state(&timeline, &trace.snapshots, parent_pid);
+    trace.recording = phase.recording;
+    trace.recording.profiling.source_resolution_time_us = source_resolution_time_us;
+    trace.recording.profiling.engine_peak_rss_kib = std::fs::read_to_string("/proc/self/status")
+        .ok()
+        .and_then(|s| {
+            s.lines().find_map(|line| {
+                line.strip_prefix("VmHWM:")
+                    .and_then(|v| v.split_whitespace().next())
+                    .and_then(|v| v.parse().ok())
+            })
+        });
+    trace.recording.allocation_lifetimes = timeline
+        .blocks()
+        .iter()
+        .map(|b| crate::models::AllocationLifetime {
+            allocation_id: timeline.global_id(b.pid, b.allocation_id),
+            pid: b.pid,
+            allocation_sequence: b.alloc_seq,
+            free_sequence: (b.free_seq != 0).then_some(b.free_seq),
+            raw_caller_address: format!("0x{:x}", b.alloc_caller),
+            module: Some(debug_build.binary_path.display().to_string()),
+            resolution: if b.caller_file.is_some() {
+                "resolved"
+            } else {
+                "unresolved"
+            }
+            .into(),
+        })
+        .collect();
     trace.crash_report = crash;
     trace.sanitizer_report = sanitizer_report;
     trace.valgrind_report = valgrind_report;
@@ -298,6 +694,46 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
         inferior_exit_code: phase.exit_code,
     };
     trace.execution_status = status;
+    use crate::models::ProgramOutcome;
+    trace.execution = crate::models::ExecutionOutcome {
+        outcome: match trace.execution_status {
+            ExecutionStatus::Completed => ProgramOutcome::Completed,
+            ExecutionStatus::Crashed => ProgramOutcome::Crashed,
+            ExecutionStatus::Timeout => ProgramOutcome::TimedOut,
+            ExecutionStatus::StepLimitReached if phase.inferior_pid.is_none() => {
+                ProgramOutcome::NotStarted
+            }
+            ExecutionStatus::StepLimitReached
+                if trace
+                    .resource_usage
+                    .limits_triggered
+                    .iter()
+                    .any(|r| r == "max_output_bytes") =>
+            {
+                ProgramOutcome::OutputLimitReached
+            }
+            ExecutionStatus::StepLimitReached => ProgramOutcome::StepLimitReached,
+            ExecutionStatus::ResourceLimitReached => ProgramOutcome::Interrupted,
+            ExecutionStatus::Interrupted => ProgramOutcome::Interrupted,
+            ExecutionStatus::CompileFailed => ProgramOutcome::CompileFailed,
+            ExecutionStatus::DebuggerFailure => ProgramOutcome::DebuggerFailed,
+            ExecutionStatus::ExecutionFailure => ProgramOutcome::InternalFailure,
+        },
+        exit_code: trace.resource_usage.inferior_exit_code,
+        signal: phase
+            .termination_signal
+            .or_else(|| trace.crash_report.as_ref().map(|r| r.signal_name.clone())),
+        instruction_address: trace
+            .crash_report
+            .as_ref()
+            .and_then(|c| c.instruction_address.clone()),
+        reason: trace
+            .resource_usage
+            .limits_triggered
+            .first()
+            .cloned()
+            .or_else(|| trace.stage_results.debugger.reason.clone()),
+    };
     trace.analysis_notes = notes;
     meta.cgroup_enforced = phase.cgroup_enforced;
     trace.session_meta = Some(meta);
@@ -314,6 +750,9 @@ pub async fn trace_program(config: TraceConfig) -> Result<DebugSessionTrace> {
 
 /// Everything the GDB execution phase produced.
 pub struct GdbPhaseResult {
+    pub termination_signal: Option<String>,
+    pub executable_bias: Option<u64>,
+    pub recording: crate::models::RecordingData,
     pub status: ExecutionStatus,
     pub crash: Option<CrashReport>,
     pub exit_code: Option<i32>,
@@ -342,11 +781,24 @@ pub async fn run_gdb_phase(
     timeline: &mut HeapTimeline,
     notes: &mut Vec<String>,
 ) -> Result<GdbPhaseResult> {
+    let mut runtime_classifier = classifier.clone();
+    runtime_classifier.instrumentation_file = binary.parent().map(|dir| {
+        let source = dir.join("alloc_tracker.c");
+        std::fs::canonicalize(&source)
+            .unwrap_or(source)
+            .display()
+            .to_string()
+    });
+    let classifier = &runtime_classifier;
     let timeout_secs = limits.timeout_seconds.max(1);
-    let wall_deadline = Instant::now()
-        + Duration::from_secs(timeout_secs * WALL_TIMEOUT_FACTOR + WALL_TIMEOUT_SLACK_SECS);
+    let wall_deadline = crate::supervisor::stage_deadline(limits.debugger_timeout_seconds);
+    let mut recorder = crate::recorder::Recorder::new(&config.tracing, limits)?;
+    let dual = config.tracing.mode == crate::config::TraceMode::Dual;
 
     let mut result = GdbPhaseResult {
+        termination_signal: None,
+        recording: Default::default(),
+        executable_bias: None,
         status: ExecutionStatus::ExecutionFailure,
         crash: None,
         exit_code: None,
@@ -358,6 +810,15 @@ pub async fn run_gdb_phase(
         snapshots: Vec::new(),
         cgroup_enforced: false,
     };
+    if crate::supervisor::remaining().is_zero() {
+        result.status = ExecutionStatus::Timeout;
+        result
+            .limits_triggered
+            .push("overall_session_deadline".into());
+        recorder.truncate("overall_session_deadline");
+        result.recording = recorder.finish();
+        return Ok(result);
+    }
 
     // Best-effort cgroup v2 enforcement for the inferior tree.
     let cgroup = CgroupGuard::create(limits);
@@ -383,40 +844,95 @@ pub async fn run_gdb_phase(
         Ok(s) => s,
         Err(e) => {
             notes.push(format!("could not launch gdb: {e}"));
-            result.status = ExecutionStatus::DebuggerFailure;
+            result.status = if Instant::now() >= wall_deadline {
+                ExecutionStatus::Timeout
+            } else {
+                ExecutionStatus::DebuggerFailure
+            };
+            if let EngineError::LimitReached(name) = &e {
+                result.status = ExecutionStatus::StepLimitReached;
+                result.limits_triggered.push((*name).into());
+                if *name == "max_gdb_commands" {
+                    result.commands_issued = limits.max_gdb_commands;
+                }
+            }
+            if result.status == ExecutionStatus::Timeout {
+                result
+                    .limits_triggered
+                    .push("session_or_debugger_deadline".into());
+            }
+            recorder.truncate(&e.to_string());
+            if crate::supervisor::cancelled() {
+                result.status = ExecutionStatus::Interrupted;
+            }
+            result.recording = recorder.finish();
             return Ok(result);
         }
     };
-    result.commands_issued = session.commands_issued.load(std::sync::atomic::Ordering::SeqCst);
+    result.commands_issued = session
+        .commands_issued
+        .load(std::sync::atomic::Ordering::SeqCst);
 
     // Breakpoint at main; without it we can still run to completion (no
     // stepping, no snapshots before exit).
     let have_breakpoint = match session.insert_breakpoint("main").await {
         Ok(_) => true,
         Err(e) => {
-            notes.push(format!("no breakpoint at main ({e}); running to completion"));
+            notes.push(format!(
+                "no breakpoint at main ({e}); running to completion"
+            ));
             false
         }
     };
+    // Entry-address breakpoints catch callbacks from excluded library intervals.
+    let entry_errors = session.install_user_entries(classifier).await;
+    if !entry_errors.is_empty() {
+        recorder.truncate("callback_entry_breakpoints_incomplete");
+        notes.extend(entry_errors);
+    }
 
     // Run the inferior; the first stop is the breakpoint (or exit).
-    let run_timeout = remaining(wall_deadline).min(Duration::from_secs(timeout_secs * 2 + 10));
+    let run_timeout = remaining(wall_deadline).min(Duration::from_secs(
+        timeout_secs.saturating_mul(2).saturating_add(10),
+    ));
     let mut stop = match session.run(run_timeout).await {
         Ok(stop) => stop,
         Err(e) => {
+            debug_dump_console(&session, "exec-run failed");
             notes.push(format!("gdb run failed: {e}"));
+            result.inferior_pid = session.observed_inferior_pid();
             if remaining(wall_deadline).is_zero() {
                 result.status = ExecutionStatus::Timeout;
                 result.limits_triggered.push("timeout_seconds".into());
             } else {
-                result.status = ExecutionStatus::ExecutionFailure;
+                result.status = ExecutionStatus::DebuggerFailure;
+            }
+            if let EngineError::LimitReached(name) = &e {
+                result.status = ExecutionStatus::StepLimitReached;
+                result.limits_triggered.push((*name).into());
             }
             terminate(&mut session, cgroup.as_ref()).await;
+            if crate::supervisor::cancelled() {
+                result.status = ExecutionStatus::Interrupted;
+            }
             finish_phase(&mut result, &session, timeline, reader, notes);
+            recorder.truncate(&e.to_string());
+            result.recording = recorder.finish();
             return Ok(result);
         }
     };
     result.inferior_pid = session.inferior_pid;
+    if let Some(pid) = session.inferior_pid {
+        if let Err(e) = crate::resource_limits::limit_stopped_inferior(pid, limits) {
+            notes.push(format!("inferior prlimit enforcement failed: {e}"));
+        }
+    }
+    result.executable_bias = session
+        .inferior_pid
+        .and_then(|pid| crate::memory::executable_bias(binary, pid));
+    if cgroup.is_none() {
+        notes.push("cgroup unavailable: per-tree memory/process limits not enforced; inferior rlimits remain active".into());
+    }
     if let (Some(cg), Some(pid)) = (cgroup.as_ref(), session.inferior_pid) {
         result.cgroup_enforced = cg.attach(pid);
         if !result.cgroup_enforced {
@@ -434,16 +950,97 @@ pub async fn run_gdb_phase(
     };
 
     let mut steps: usize = 0;
+    let debugger_begin = Instant::now();
+    let mut stop_id = 0u64;
+    let mut last_source = None;
+    let mut global_names = config.tracing.globals.clone();
+    if config.tracing.discover_globals {
+        global_names.extend(
+            session
+                .discover_globals(classifier, limits.max_globals)
+                .await,
+        );
+    }
+    let globals_capped = global_names.len() >= limits.max_globals && limits.max_globals != 0;
+    if globals_capped {
+        notes.push("global discovery/inspection reached max_globals".into());
+    }
+    global_names.truncate(limits.max_globals);
+    let mut startup_record = recorder.gap(
+        None,
+        stop.frame.as_ref().and_then(|f| f.address.clone()),
+        "unknown",
+        "startup_before_main",
+    );
+    if !stop
+        .frame
+        .as_ref()
+        .is_some_and(|f| classifier.is_user_file(f))
+    {
+        recorder.truncate("initial_source_mapping_unavailable");
+    }
+    if dual && startup_record.is_ok() && !stop.is_exit() {
+        let initial = match recorder
+            .registers(&mut session, stop.thread_id.clone())
+            .await
+        {
+            Ok(registers) => registers,
+            Err(error) => {
+                notes.push(format!("initial registers unavailable: {error}"));
+                None
+            }
+        };
+        startup_record = recorder.initial_registers(initial);
+    }
+    if let Err(error) = startup_record {
+        result.termination_signal = stop.signal_name.clone();
+        result.status = observed_terminal(&stop).unwrap_or(ExecutionStatus::StepLimitReached);
+        if result.status == ExecutionStatus::Crashed {
+            result.crash = Some(crash_from(&stop, &Default::default()));
+        }
+        if stop.is_exit() {
+            result.exit_code = exit_code_from(&mut session, &stop);
+        }
+        result.limits_triggered.push(error.to_string());
+        recorder.truncate(&error.to_string());
+        session.kill().await;
+        finish_phase(&mut result, &session, timeline, reader, notes);
+        result.recording = recorder.finish();
+        return Ok(result);
+    }
     let mut finish_chain: usize = 0;
     let mut snapshot_cap_noted = false;
     let mut memory_cap_noted = false;
     let mut read_cap_noted = false;
 
     loop {
+        stop_id += 1;
+        let terminal_observed = observed_terminal(&stop).is_some() || stop.is_exit();
+        if terminal_observed {
+            result.termination_signal = stop.signal_name.clone();
+        }
+        if !terminal_observed
+            && session
+                .commands_issued
+                .load(std::sync::atomic::Ordering::SeqCst)
+                >= limits.max_gdb_commands
+        {
+            result.status = ExecutionStatus::StepLimitReached;
+            result.limits_triggered.push("max_gdb_commands".into());
+            break;
+        }
         // Ingest allocation events emitted since the last stop. The inferior
         // is stopped here, so the event file is complete up to now.
         for ev in reader.read_new() {
             timeline.ingest(&ev);
+        }
+        if let Err(e) = recorder.allocations(timeline.events(), stop_id) {
+            result.limits_triggered.push(e.to_string());
+            recorder.truncate(&e.to_string());
+            if !terminal_observed {
+                result.status = ExecutionStatus::StepLimitReached;
+                break;
+            }
         }
         let dbg = std::env::var_os("C_TRACE_DEBUG").is_some();
         if dbg {
@@ -462,12 +1059,31 @@ pub async fn run_gdb_phase(
             result.status = ExecutionStatus::Completed;
             break;
         }
+        if stop.reason.as_deref() == Some("exited-signalled")
+            || stop.signal_name.as_deref() == Some("SIGKILL")
+        {
+            result.status = if stop
+                .signal_name
+                .as_deref()
+                .is_some_and(|s| RESOURCE_SIGNALS.contains(&s))
+            {
+                ExecutionStatus::ResourceLimitReached
+            } else {
+                ExecutionStatus::Interrupted
+            };
+            notes.push(format!(
+                "inferior terminated by {:?}; no cause inferred",
+                stop.signal_name
+            ));
+            break;
+        }
         if stop.is_signal() {
             match classify_signal(stop.signal_name.as_deref()) {
                 SignalClass::Fatal => {
                     // Capture the crash state (registers are still valid).
                     let state = capture_or_empty(&mut session, &capture_opts).await;
                     let pid = inferior_pid_of(&session);
+                    let previous_count = result.snapshots.len();
                     push_snapshot(
                         &mut result,
                         &mut session,
@@ -482,6 +1098,37 @@ pub async fn run_gdb_phase(
                         notes,
                     )
                     .await;
+                    if let Some(snapshot) = result.snapshots.get_mut(previous_count) {
+                        for block in &mut snapshot.heap_blocks {
+                            if block.raw_bytes_hex.is_some() {
+                                block.observed_at_stop = Some(stop_id);
+                            }
+                        }
+                        snapshot.observation = crate::models::SnapshotObservation {
+                            stop_id,
+                            instruction_position: recorder.data.instruction_count,
+                            instruction_address: stop
+                                .frame
+                                .as_ref()
+                                .and_then(|f| f.address.clone()),
+                            thread_id: stop.thread_id.clone(),
+                            pid,
+                            origin: stop
+                                .frame
+                                .as_ref()
+                                .map(|f| classifier.origin(f))
+                                .unwrap_or("unknown")
+                                .into(),
+                            complete: !snapshot.memory_truncated && state.errors.is_empty(),
+                            errors: state.errors.clone(),
+                            heap_event_count: timeline.events().len(),
+                            ..Default::default()
+                        };
+                        crate::memory::enrich(&mut snapshot.variables, &[], timeline, pid);
+                        if let Err(e) = recorder.checkpoint(snapshot) {
+                            recorder.truncate(&e.to_string());
+                        }
+                    }
                     result.crash = Some(crash_from(&stop, &state));
                     result.status = ExecutionStatus::Crashed;
                     break;
@@ -519,23 +1166,143 @@ pub async fn run_gdb_phase(
             }
         }
 
-        // --- capture snapshot (exit stops broke out above) ------------------------
-        let state = capture_or_empty(&mut session, &capture_opts).await;
+        if Instant::now() >= wall_deadline {
+            result.status = ExecutionStatus::Timeout;
+            result
+                .limits_triggered
+                .push("session_or_debugger_deadline".into());
+            break;
+        }
+        if crate::supervisor::cancelled() {
+            result.status = ExecutionStatus::Interrupted;
+            break;
+        }
+        let frame = stop.frame.clone().unwrap_or_default();
+        let is_user_stop = classifier.is_user_file(&frame);
+        let source_key = (frame.file.clone(), frame.line, frame.func.clone());
+        let checkpoint = is_user_stop
+            && (!dual
+                || last_source.as_ref() != Some(&source_key)
+                || stop.reason.as_deref() == Some("breakpoint-hit"));
+        if checkpoint
+            && result.snapshots.len()
+                >= limits.max_source_checkpoints.min(limits.max_snapshot_count)
+        {
+            result.status = ExecutionStatus::StepLimitReached;
+            result
+                .limits_triggered
+                .push("max_source_checkpoints".into());
+            break;
+        }
+        // Rich dynamic state is read only at source transitions, while all-stop.
+        let capture_start = Instant::now();
+        let state = if checkpoint || !is_user_stop {
+            capture_or_empty(&mut session, &capture_opts).await
+        } else {
+            crate::gdb_mi::CapturedState {
+                current: Some(frame.clone()),
+                is_user_code: is_user_stop,
+                ..Default::default()
+            }
+        };
+        recorder.data.profiling.capture_time_us += capture_start.elapsed().as_micros() as u64;
         let pid = inferior_pid_of(&session);
-        push_snapshot(
-            &mut result,
-            &mut session,
-            &stop,
-            &state,
-            timeline,
-            pid,
-            limits,
-            &mut snapshot_cap_noted,
-            &mut memory_cap_noted,
-            &mut read_cap_noted,
-            notes,
-        )
-        .await;
+        if checkpoint {
+            for var in &state.variables {
+                if var.scope.as_deref() == Some("static") && global_names.len() < limits.max_globals
+                {
+                    let name = format!("{}::{}", frame.func, var.name);
+                    session.symbol_scopes.insert(name.clone(), "static".into());
+                    if !global_names.contains(&name) {
+                        global_names.push(name);
+                    }
+                }
+            }
+            push_snapshot(
+                &mut result,
+                &mut session,
+                &stop,
+                &state,
+                timeline,
+                pid,
+                limits,
+                &mut snapshot_cap_noted,
+                &mut memory_cap_noted,
+                &mut read_cap_noted,
+                notes,
+            )
+            .await;
+            if let Some(snapshot) = result.snapshots.last_mut() {
+                for block in &mut snapshot.heap_blocks {
+                    if block.raw_bytes_hex.is_some() {
+                        block.observed_at_stop = Some(stop_id);
+                    }
+                }
+                snapshot.observation = crate::models::SnapshotObservation {
+                    stop_id,
+                    instruction_position: recorder.data.instruction_count,
+                    instruction_address: frame.address.clone(),
+                    thread_id: stop.thread_id.clone(),
+                    pid,
+                    origin: classifier.origin(&frame).into(),
+                    globals: Vec::new(),
+                    complete: !snapshot.memory_truncated && state.errors.is_empty(),
+                    errors: state.errors.clone(),
+                    heap_event_count: timeline.events().len(),
+                };
+                let mut global_budget = limits
+                    .max_snapshot_memory_bytes
+                    .saturating_sub(state.memory_used);
+                global_budget = global_budget.saturating_sub(
+                    snapshot
+                        .heap_blocks
+                        .iter()
+                        .filter_map(|b| b.raw_bytes_hex.as_ref())
+                        .map(|s| s.len() / 2)
+                        .sum(),
+                );
+                for name in &global_names {
+                    let mut global_limits = limits.clone();
+                    global_limits.max_memory_read_bytes =
+                        global_limits.max_memory_read_bytes.min(global_budget);
+                    let global =
+                        crate::recorder::capture_global(&mut session, name, &global_limits).await;
+                    global_budget = global_budget
+                        .saturating_sub(global.raw_bytes_hex.as_ref().map_or(0, |s| s.len() / 2));
+                    snapshot.observation.globals.push(global);
+                }
+                crate::memory::enrich(
+                    &mut snapshot.variables,
+                    &snapshot.observation.globals,
+                    timeline,
+                    pid,
+                );
+                let symbols = snapshot.observation.globals.clone();
+                crate::memory::enrich(&mut snapshot.observation.globals, &symbols, timeline, pid);
+                snapshot.observation.complete &= snapshot
+                    .variables
+                    .iter()
+                    .chain(&snapshot.observation.globals)
+                    .all(|v| {
+                        v.read_status == crate::models::DataValidity::Valid
+                            && v.read_error.is_none()
+                            && v.bytes_status != crate::models::DataValidity::Truncated
+                    });
+                if globals_capped {
+                    snapshot.observation.complete = false;
+                    snapshot
+                        .observation
+                        .errors
+                        .push("max_globals: additional global symbols may be omitted".into());
+                }
+                if let Err(e) = recorder.checkpoint(snapshot) {
+                    result.status = ExecutionStatus::StepLimitReached;
+                    result.limits_triggered.push(e.to_string());
+                    break;
+                }
+            }
+            last_source = Some(source_key);
+        }
 
         // --- resource checks -------------------------------------------------------
         if Instant::now() >= wall_deadline {
@@ -543,7 +1310,18 @@ pub async fn run_gdb_phase(
             result.limits_triggered.push("timeout_seconds".into());
             break;
         }
-        if steps >= limits.max_steps {
+        if session
+            .commands_issued
+            .load(std::sync::atomic::Ordering::SeqCst)
+            >= limits.max_gdb_commands
+        {
+            result.status = ExecutionStatus::StepLimitReached;
+            result.limits_triggered.push("max_gdb_commands".into());
+            break;
+        }
+        if (!dual && steps >= limits.max_steps)
+            || (dual && result.snapshots.len() >= limits.max_steps)
+        {
             result.limits_triggered.push("max_steps".into());
             result.status = ExecutionStatus::StepLimitReached;
             break;
@@ -551,7 +1329,7 @@ pub async fn run_gdb_phase(
 
         // --- decide the next stepping command ---------------------------------------
         let dbg = std::env::var_os("C_TRACE_DEBUG").is_some();
-        let is_user = state.is_user_code;
+        let is_user = is_user_stop;
         if dbg {
             eprintln!(
                 "[trace] step={} finish_chain={} is_user={} stop={:?} frame={:?}",
@@ -559,39 +1337,99 @@ pub async fn run_gdb_phase(
                 finish_chain,
                 is_user,
                 stop.reason,
-                stop.frame.as_ref().map(|f| (f.func.clone(), f.file.clone(), f.line))
+                stop.frame
+                    .as_ref()
+                    .map(|f| (f.func.clone(), f.file.clone(), f.line))
             );
         }
+        if dual && recorder.data.instruction_count >= limits.max_instruction_events as u64 {
+            result.status = ExecutionStatus::StepLimitReached;
+            result
+                .limits_triggered
+                .push("max_instruction_events".into());
+            break;
+        }
+        if session.program_output().2 {
+            result.status = ExecutionStatus::StepLimitReached;
+            result.limits_triggered.push("max_output_bytes".into());
+            break;
+        }
+        let instruction_id = if dual && is_user {
+            match recorder.disassemble(&mut session, &stop).await {
+                Ok(id) => id,
+                Err(e) => {
+                    notes.push(format!("disassembly unavailable: {e}"));
+                    None
+                }
+            }
+        } else {
+            None
+        };
+        let step_start = Instant::now();
         let next_stop = if is_user || !have_breakpoint {
             // User code: single-step (this enters calls too, which is how we
             // visit helper functions in the user's project).
             steps += 1;
             finish_chain = 0;
-            match session.exec_step(step_timeout(wall_deadline)).await {
+            let stepped = if dual {
+                session.exec_instruction(step_timeout(wall_deadline)).await
+            } else {
+                session.exec_step(step_timeout(wall_deadline)).await
+            };
+            match stepped {
                 Ok(s) => s,
                 Err(EngineError::GdbCommandTimeout { .. }) => {
                     // The inferior hung inside a step (blocking syscall, long
                     // loop): preserve partials and report the timeout.
                     debug_dump_console(&session, "exec-step timed out");
-                    result.status = ExecutionStatus::Timeout;
-                    result.limits_triggered.push("timeout_seconds".into());
+                    result.status = if Instant::now() >= wall_deadline {
+                        ExecutionStatus::Timeout
+                    } else {
+                        ExecutionStatus::DebuggerFailure
+                    };
+                    result.limits_triggered.push(
+                        if Instant::now() >= wall_deadline {
+                            "session_or_debugger_deadline"
+                        } else {
+                            "debugger_stop_wait_timeout"
+                        }
+                        .into(),
+                    );
+                    if dual && is_user {
+                        let _ = recorder.event(crate::models::InstructionEvent {
+                            stop_id_before: stop_id,
+                            stop_id_after: None,
+                            event_id: recorder.data.instruction_count,
+                            instruction_id,
+                            address: frame.address.clone().unwrap_or_default(),
+                            next_address: None,
+                            thread_id: stop.thread_id.clone(),
+                            pid,
+                            source: crate::models::SourceContext {
+                                file: frame.file.clone(),
+                                line: frame.line,
+                                function: Some(frame.func.clone()),
+                            },
+                            checkpoint_id: result.snapshots.last().map(|s| s.step_index),
+                            outcome: "unknown".into(),
+                            stopped_reason: Some("debugger_stop_wait_timeout".into()),
+                            signal: None,
+                            registers: None,
+                            memory: Vec::new(),
+                        });
+                    }
                     break;
                 }
                 Err(e) => {
-                    // Transient GDB states usually resolve on a plain
-                    // continue; try once, bounded.
-                    match session.exec_continue(step_timeout(wall_deadline)).await {
-                        Ok(s) => {
-                            notes.push(format!("recovered from `{e}` via continue"));
-                            s
-                        }
-                        Err(_) => {
-                            debug_dump_console(&session, "exec-step failed");
-                            notes.push(format!("step failed: {e}"));
-                            result.status = ExecutionStatus::ExecutionFailure;
-                            break;
-                        }
-                    }
+                    // Do not silently run past user instructions after a failed step.
+                    debug_dump_console(&session, "exec-step failed");
+                    notes.push(format!("step failed: {e}"));
+                    result.status = if Instant::now() >= wall_deadline {
+                        ExecutionStatus::Timeout
+                    } else {
+                        ExecutionStatus::DebuggerFailure
+                    };
+                    break;
                 }
             }
         } else {
@@ -637,8 +1475,19 @@ pub async fn run_gdb_phase(
                     }
                     Err(EngineError::GdbCommandTimeout { .. }) => {
                         debug_dump_console(&session, "exec-finish timed out");
-                        result.status = ExecutionStatus::Timeout;
-                        result.limits_triggered.push("timeout_seconds".into());
+                        result.status = if Instant::now() >= wall_deadline {
+                            ExecutionStatus::Timeout
+                        } else {
+                            ExecutionStatus::DebuggerFailure
+                        };
+                        result.limits_triggered.push(
+                            if Instant::now() >= wall_deadline {
+                                "session_or_debugger_deadline"
+                            } else {
+                                "debugger_stop_wait_timeout"
+                            }
+                            .into(),
+                        );
                         break;
                     }
                     Err(e) => {
@@ -661,6 +1510,77 @@ pub async fn run_gdb_phase(
                 }
             }
         };
+        recorder.data.profiling.step_time_us += step_start.elapsed().as_micros() as u64;
+        if dual && is_user {
+            let registers = if next_stop.is_exit() {
+                None
+            } else {
+                match recorder
+                    .registers(&mut session, next_stop.thread_id.clone())
+                    .await
+                {
+                    Ok(r) => r,
+                    Err(e) => {
+                        notes.push(format!("register observation failed: {e}"));
+                        None
+                    }
+                }
+            };
+            let event = crate::models::InstructionEvent {
+                stop_id_before: stop_id,
+                stop_id_after: Some(stop_id + 1),
+                event_id: recorder.data.instruction_count,
+                instruction_id,
+                address: frame.address.clone().unwrap_or_default(),
+                next_address: next_stop.frame.as_ref().and_then(|f| f.address.clone()),
+                thread_id: stop.thread_id.clone(),
+                pid,
+                source: crate::models::SourceContext {
+                    file: frame.file.clone(),
+                    line: frame.line,
+                    function: Some(frame.func.clone()),
+                },
+                checkpoint_id: result.snapshots.last().map(|s| s.step_index),
+                outcome: crate::recorder::event_outcome(&stop, &next_stop).into(),
+                stopped_reason: next_stop.reason.clone(),
+                signal: next_stop.signal_name.clone(),
+                registers,
+                memory: if next_stop.is_exit() {
+                    Vec::new()
+                } else {
+                    recorder.selected_memory(&mut session).await
+                },
+            };
+            if let Err(e) = recorder.event(event) {
+                result.termination_signal = next_stop.signal_name.clone();
+                result.status =
+                    observed_terminal(&next_stop).unwrap_or(ExecutionStatus::StepLimitReached);
+                if next_stop.is_exit() {
+                    result.exit_code = exit_code_from(&mut session, &next_stop);
+                }
+                if result.status == ExecutionStatus::Crashed {
+                    result.crash = Some(crash_from(&next_stop, &Default::default()));
+                }
+                recorder.truncate(&e.to_string());
+                result.limits_triggered.push(e.to_string());
+                break;
+            }
+        } else {
+            if let Err(e) = recorder.gap(
+                frame.address.clone(),
+                next_stop.frame.as_ref().and_then(|f| f.address.clone()),
+                classifier.origin(&frame),
+                if dual {
+                    "excluded_code"
+                } else {
+                    "source_only_stepping"
+                },
+            ) {
+                result.status = ExecutionStatus::StepLimitReached;
+                result.limits_triggered.push(e.to_string());
+                break;
+            }
+        }
         // The finish chain resets once execution is back in user code.
         if let Some(frame) = &next_stop.frame {
             if classifier.is_user_file(frame) {
@@ -670,6 +1590,37 @@ pub async fn run_gdb_phase(
         stop = next_stop;
     }
 
+    // Preserve observed native termination; only normalize nonterminal failures.
+    if !matches!(
+        result.status,
+        ExecutionStatus::Completed
+            | ExecutionStatus::Crashed
+            | ExecutionStatus::Interrupted
+            | ExecutionStatus::ResourceLimitReached
+    ) {
+        if crate::supervisor::cancelled() {
+            result.status = ExecutionStatus::Interrupted;
+        } else if session.program_output().2 {
+            result.status = ExecutionStatus::StepLimitReached;
+            if !result
+                .limits_triggered
+                .iter()
+                .any(|r| r == "max_output_bytes")
+            {
+                result.limits_triggered.push("max_output_bytes".into());
+            }
+        } else if Instant::now() >= wall_deadline {
+            result.status = ExecutionStatus::Timeout;
+            result.limits_triggered.push(
+                if crate::supervisor::remaining().is_zero() {
+                    "overall_session_deadline"
+                } else {
+                    "debugger_stage_deadline"
+                }
+                .into(),
+            );
+        }
+    }
     // --- termination -----------------------------------------------------------
     match result.status {
         // Normal and crash endings: GDB shuts down gracefully.
@@ -687,7 +1638,7 @@ pub async fn run_gdb_phase(
             }
             session.kill().await;
         }
-        ExecutionStatus::CompileFailed => {
+        ExecutionStatus::CompileFailed | ExecutionStatus::Interrupted => {
             terminate(&mut session, cgroup.as_ref()).await;
         }
     }
@@ -697,7 +1648,34 @@ pub async fn run_gdb_phase(
     for ev in reader.read_new() {
         timeline.ingest(&ev);
     }
+    if let Err(e) = recorder.allocations(timeline.events(), stop_id) {
+        recorder.truncate(&e.to_string());
+    }
     finish_phase(&mut result, &session, timeline, reader, notes);
+    if session.multi_threaded() {
+        recorder.truncate("multiple_threads_observed_instruction_coverage_is_selected_thread_only");
+    }
+    if !matches!(
+        result.status,
+        ExecutionStatus::Completed | ExecutionStatus::Crashed
+    ) {
+        let _ = recorder.gap(
+            stop.frame.as_ref().and_then(|f| f.address.clone()),
+            None,
+            "unknown",
+            "recording_terminated",
+        );
+        recorder.truncate("execution_did_not_reach_observed_termination");
+        for reason in &result.limits_triggered {
+            recorder.truncate(reason);
+        }
+    }
+    recorder.data.profiling.debugger_time_us = debugger_begin.elapsed().as_micros() as u64;
+    recorder.data.profiling.command_time_us = session.command_time_us;
+    recorder.data.profiling.mi_parse_time_us = session.parse_time_us();
+    recorder.data.profiling.memory_read_time_us = session.memory_read_time_us;
+    recorder.data.internal_diagnostics = session.console_log().lines().map(str::to_owned).collect();
+    result.recording = recorder.finish();
     Ok(result)
 }
 
@@ -721,14 +1699,39 @@ fn classify_signal(name: Option<&str>) -> SignalClass {
     }
 }
 
+fn observed_terminal(stop: &StoppedInfo) -> Option<ExecutionStatus> {
+    if stop.signal_name.as_deref() == Some("SIGKILL")
+        || stop.reason.as_deref() == Some("exited-signalled")
+    {
+        Some(ExecutionStatus::Interrupted)
+    } else if stop.is_signal() {
+        match classify_signal(stop.signal_name.as_deref()) {
+            SignalClass::Fatal => Some(ExecutionStatus::Crashed),
+            SignalClass::Resource => Some(ExecutionStatus::ResourceLimitReached),
+            SignalClass::Benign => None,
+        }
+    } else if stop.is_exit() {
+        Some(ExecutionStatus::Completed)
+    } else {
+        None
+    }
+}
+
 fn remaining(deadline: Instant) -> Duration {
     deadline.saturating_duration_since(Instant::now())
 }
 
 fn step_timeout(wall_deadline: Instant) -> Duration {
-    remaining(wall_deadline)
-        .min(PER_STEP_TIMEOUT)
-        .max(Duration::from_secs(1))
+    remaining(wall_deadline).min(PER_STEP_TIMEOUT)
+}
+
+fn skipped_stage(reason: &str) -> StageResult {
+    StageResult {
+        status: Some(StageStatus::Skipped),
+        reason: Some(reason.into()),
+        output_complete: Some(false),
+        ..Default::default()
+    }
 }
 
 fn inferior_pid_of(session: &GdbSession) -> Option<u32> {
@@ -742,13 +1745,17 @@ fn debug_dump_console(session: &GdbSession, why: &str) {
         return;
     }
     let log = session.console_log();
-    let tail_start = log.len().saturating_sub(6000);
+    let mut tail_start = log.len().saturating_sub(6000);
+    while !log.is_char_boundary(tail_start) {
+        tail_start += 1;
+    }
     eprintln!("[trace] console tail at {why}:\n{}", &log[tail_start..]);
 }
 
 /// Graceful shutdown (normal end): cgroup kill is a no-op safety net and GDB
 /// exits cleanly, closing the pty.
-async fn terminate(session: &mut GdbSession, cgroup: Option<&CgroupGuard>) {    if let Some(cg) = cgroup {
+async fn terminate(session: &mut GdbSession, cgroup: Option<&CgroupGuard>) {
+    if let Some(cg) = cgroup {
         cg.kill_all();
     }
     session.kill().await;
@@ -762,14 +1769,20 @@ fn finish_phase(
     reader: &EventFileReader,
     notes: &mut Vec<String>,
 ) {
-    result.commands_issued = session.commands_issued.load(std::sync::atomic::Ordering::SeqCst);
+    result.commands_issued = session
+        .commands_issued
+        .load(std::sync::atomic::Ordering::SeqCst);
     let (_, total, truncated) = session.program_output();
     result.program_output_bytes = total;
     result.program_output_truncated = truncated;
     if truncated {
         result.limits_triggered.push("max_output_bytes".into());
     }
-    if timeline.blocks_capped && !result.limits_triggered.contains(&"max_heap_allocations".into()) {
+    if timeline.blocks_capped
+        && !result
+            .limits_triggered
+            .contains(&"max_heap_allocations".into())
+    {
         result.limits_triggered.push("max_heap_allocations".into());
     }
     if timeline.events_capped {
@@ -789,10 +1802,15 @@ async fn capture_or_empty(
     session: &mut GdbSession,
     opts: &CaptureOptions,
 ) -> crate::gdb_mi::CapturedState {
-    capture_state(session, opts)
-        .await
-        .unwrap_or_default()
-}/// Build and append one snapshot (with live heap reads inside the budget).
+    match capture_state(session, opts).await {
+        Ok(state) => state,
+        Err(e) => crate::gdb_mi::CapturedState {
+            errors: vec![e.to_string()],
+            ..Default::default()
+        },
+    }
+}
+/// Build and append one snapshot (with live heap reads inside the budget).
 #[allow(clippy::too_many_arguments)]
 async fn push_snapshot(
     result: &mut GdbPhaseResult,
@@ -821,7 +1839,11 @@ async fn push_snapshot(
     let mut budget_left = limits
         .max_snapshot_memory_bytes
         .saturating_sub(state.memory_used);
-    let mut memory_truncated = budget_left == 0;
+    let mut memory_truncated = budget_left == 0
+        || state
+            .variables
+            .iter()
+            .any(|v| v.bytes_status == crate::models::DataValidity::Truncated);
     if let Some(pid) = pid {
         let alive = timeline.alive_blocks(pid);
         let over_block_cap = alive.len() > MAX_HEAP_BLOCKS_PER_SNAPSHOT;
@@ -832,6 +1854,7 @@ async fn push_snapshot(
                 .min(limits.max_memory_read_bytes as u64)
                 .min(budget_left as u64) as usize;
             let mut info = HeapBlockInfo {
+                observed_at_stop: None,
                 allocation_id: block.allocation_id,
                 address: addr.clone(),
                 size_bytes: block.size,
@@ -873,7 +1896,9 @@ async fn push_snapshot(
         }
     }
     if memory_truncated && !*memory_cap_noted {
-        result.limits_triggered.push("max_snapshot_memory_bytes".into());
+        result
+            .limits_triggered
+            .push("max_snapshot_memory_bytes".into());
         *memory_cap_noted = true;
     }
 
@@ -887,6 +1912,7 @@ async fn push_snapshot(
         .or_else(|| stop.frame.clone())
         .unwrap_or_default();
     result.snapshots.push(ExecutionSnapshot {
+        observation: Default::default(),
         step_index: result.snapshots.len(),
         file: frame.file.unwrap_or_default(),
         line: frame.line.unwrap_or(0),
@@ -898,7 +1924,7 @@ async fn push_snapshot(
         stopped_reason: stop.reason.clone(),
         signal: stop.signal_name.clone(),
         memory_truncated,
-        stdout_truncated: output_truncated,
+        stdout_truncated: output_truncated || output.len() > STDOUT_HEAD_CAP,
     });
 }
 
@@ -916,10 +1942,8 @@ fn char_safe_head(s: &str, cap_bytes: usize) -> String {
 fn crash_from(stop: &StoppedInfo, state: &crate::gdb_mi::CapturedState) -> CrashReport {
     let frame = stop.frame.clone().or_else(|| state.current.clone());
     CrashReport {
-        signal_name: stop
-            .signal_name
-            .clone()
-            .unwrap_or_else(|| "unknown".into()),
+        instruction_address: frame.as_ref().and_then(|f| f.address.clone()),
+        signal_name: stop.signal_name.clone().unwrap_or_else(|| "unknown".into()),
         file: frame.as_ref().and_then(|f| f.file.clone()),
         line: frame.as_ref().and_then(|f| f.line),
         func: frame
@@ -927,7 +1951,11 @@ fn crash_from(stop: &StoppedInfo, state: &crate::gdb_mi::CapturedState) -> Crash
             .map(|f| f.func.clone())
             .filter(|s| !s.is_empty()),
         asan_summary: None,
-        backtrace: state.frames.clone(),
+        backtrace: if state.frames.is_empty() {
+            stop.frame.clone().into_iter().collect()
+        } else {
+            state.frames.clone()
+        },
         detail: stop.signal_meaning.clone(),
     }
 }
@@ -958,6 +1986,12 @@ fn exit_code_from(session: &mut GdbSession, stop: &StoppedInfo) -> Option<i32> {
 }
 
 fn parse_mi_exit_code(text: &str) -> Option<i32> {
+    if let Some(hex) = text.strip_prefix("0x") {
+        return i32::from_str_radix(hex, 16).ok();
+    }
+    if text.starts_with('0') && text.len() > 1 {
+        return i32::from_str_radix(text, 8).ok();
+    }
     if let Ok(v) = text.parse::<i32>() {
         return Some(v);
     }
@@ -1028,13 +2062,13 @@ fn final_events(timeline: &HeapTimeline) -> Vec<crate::models::HeapEvent> {
 fn build_heap_state(
     timeline: &HeapTimeline,
     snapshots: &[ExecutionSnapshot],
-    parent_pid: Option<u32>,
+    _parent_pid: Option<u32>,
 ) -> Vec<HeapBlockInfo> {
-    let mut last_contents: HashMap<u64, String> = HashMap::new();
+    let mut last_contents: HashMap<u64, (String, Option<u64>)> = HashMap::new();
     for snap in snapshots {
         for b in &snap.heap_blocks {
             if let Some(hex) = &b.raw_bytes_hex {
-                last_contents.insert(b.allocation_id, hex.clone());
+                last_contents.insert(b.allocation_id, (hex.clone(), b.observed_at_stop));
             }
         }
     }
@@ -1042,10 +2076,9 @@ fn build_heap_state(
         .blocks()
         .iter()
         .map(|b| {
-            let global = parent_pid
-                .map(|p| timeline.global_id(p, b.allocation_id))
-                .unwrap_or(b.allocation_id);
+            let global = timeline.global_id(b.pid, b.allocation_id);
             HeapBlockInfo {
+                observed_at_stop: last_contents.get(&global).and_then(|(_, stop)| *stop),
                 allocation_id: global,
                 address: format!("0x{:x}", b.addr),
                 size_bytes: b.size,
@@ -1053,7 +2086,7 @@ fn build_heap_state(
                 is_freed: b.freed,
                 allocation_file: b.caller_file.clone(),
                 allocation_line: b.caller_line,
-                raw_bytes_hex: last_contents.get(&global).cloned(),
+                raw_bytes_hex: last_contents.get(&global).map(|(bytes, _)| bytes.clone()),
                 memory_read_error: None,
                 realloc_from_id: b.realloc_from_id.map(|id| timeline.global_id(b.pid, id)),
             }
@@ -1082,18 +2115,30 @@ mod tests {
 
     #[test]
     fn signal_classification() {
-        assert!(matches!(classify_signal(Some("SIGSEGV")), SignalClass::Fatal));
-        assert!(matches!(classify_signal(Some("SIGABRT")), SignalClass::Fatal));
+        assert!(matches!(
+            classify_signal(Some("SIGSEGV")),
+            SignalClass::Fatal
+        ));
+        assert!(matches!(
+            classify_signal(Some("SIGABRT")),
+            SignalClass::Fatal
+        ));
         assert!(matches!(
             classify_signal(Some("SIGXCPU")),
             SignalClass::Resource
         ));
         assert!(matches!(
             classify_signal(Some("SIGKILL")),
-            SignalClass::Resource
+            SignalClass::Fatal
         ));
-        assert!(matches!(classify_signal(Some("SIGUSR1")), SignalClass::Benign));
-        assert!(matches!(classify_signal(Some("SIGPIPE")), SignalClass::Benign));
+        assert!(matches!(
+            classify_signal(Some("SIGUSR1")),
+            SignalClass::Benign
+        ));
+        assert!(matches!(
+            classify_signal(Some("SIGPIPE")),
+            SignalClass::Benign
+        ));
         assert!(matches!(classify_signal(None), SignalClass::Fatal));
         assert!(matches!(
             classify_signal(Some("SIGUNKNOWN999")),
@@ -1106,6 +2151,8 @@ mod tests {
         assert_eq!(parse_mi_exit_code("0"), Some(0));
         assert_eq!(parse_mi_exit_code("42"), Some(42));
         assert_eq!(parse_mi_exit_code("ff"), Some(255));
+        assert_eq!(parse_mi_exit_code("052"), Some(42));
+        assert_eq!(parse_mi_exit_code("0x2a"), Some(42));
         assert_eq!(parse_mi_exit_code("bogus"), None);
     }
 
@@ -1121,10 +2168,10 @@ mod tests {
     #[test]
     fn heap_state_uses_last_alive_contents() {
         let mut timeline = HeapTimeline::new(100);
-        timeline.ingest(
-            &parse_event_line("102772 1 malloc 1 7f0000000000 4 0 0 401000 ok").unwrap(),
-        );
+        timeline
+            .ingest(&parse_event_line("102772 1 malloc 1 7f0000000000 4 0 0 401000 ok").unwrap());
         let snap = ExecutionSnapshot {
+            observation: Default::default(),
             step_index: 0,
             file: "x.c".into(),
             line: 1,
@@ -1132,6 +2179,7 @@ mod tests {
             call_stack: vec![],
             variables: vec![],
             heap_blocks: vec![HeapBlockInfo {
+                observed_at_stop: None,
                 allocation_id: 1,
                 address: "0x7f0000000000".into(),
                 size_bytes: 4,
@@ -1149,9 +2197,7 @@ mod tests {
             memory_truncated: false,
             stdout_truncated: false,
         };
-        timeline.ingest(
-            &parse_event_line("102772 2 free 1 7f0000000000 4 0 0 401000 ok").unwrap(),
-        );
+        timeline.ingest(&parse_event_line("102772 2 free 1 7f0000000000 4 0 0 401000 ok").unwrap());
         let state = build_heap_state(&timeline, &[snap], Some(102772));
         assert_eq!(state.len(), 1);
         assert!(state[0].is_freed);
@@ -1162,15 +2208,13 @@ mod tests {
     #[test]
     fn event_ids_widen_only_for_multi_pid() {
         let mut timeline = HeapTimeline::new(100);
-        timeline.ingest(
-            &parse_event_line("102772 1 malloc 1 7f0000000000 4 0 0 401000 ok").unwrap(),
-        );
+        timeline
+            .ingest(&parse_event_line("102772 1 malloc 1 7f0000000000 4 0 0 401000 ok").unwrap());
         let events = final_events(&timeline);
         assert_eq!(events[0].allocation_id, 1);
 
-        timeline.ingest(
-            &parse_event_line("102900 1 malloc 1 7f0000000010 4 0 0 401000 ok").unwrap(),
-        );
+        timeline
+            .ingest(&parse_event_line("102900 1 malloc 1 7f0000000010 4 0 0 401000 ok").unwrap());
         let events = final_events(&timeline);
         assert_eq!(events[0].allocation_id, (102772u64 << 32) | 1);
         assert_eq!(events[1].allocation_id, (102900u64 << 32) | 1);

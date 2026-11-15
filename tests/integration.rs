@@ -44,9 +44,7 @@ async fn require(tools: &[&str]) -> bool {
         match tool_version(tool).await {
             Some(v) => println!("using {tool}: {v}"),
             None => {
-                println!(
-                    "SKIPPED: required tool `{tool}` is not installed on this machine"
-                );
+                println!("SKIPPED: required tool `{tool}` is not installed on this machine");
                 return false;
             }
         }
@@ -76,6 +74,10 @@ fn config_for(source: &std::path::Path, extra: impl FnOnce(&mut TraceConfig)) ->
         output_file: None,
         pretty: true,
         keep_temp: false,
+        tracing: c_trace_engine::config::TracingConfig {
+            mode: c_trace_engine::config::TraceMode::Source,
+            ..Default::default()
+        },
     };
     extra(&mut config);
     config
@@ -83,6 +85,18 @@ fn config_for(source: &std::path::Path, extra: impl FnOnce(&mut TraceConfig)) ->
 
 fn bounded(config: &mut TraceConfig) {
     config.limits.timeout_seconds = 5;
+    config.limits.max_steps = 400;
+}
+
+/// Valgrind is the heaviest pipeline stage (~2 s alone). Running several
+/// Valgrind pipelines concurrently against a short session deadline can
+/// legitimately exhaust the budget before the stage starts — correct engine
+/// behavior, but it would make the leak assertions depend on machine load.
+/// Serialize Valgrind tests and give them a budget that fits one pipeline.
+static VALGRIND_SLOT: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
+
+fn valgrind_bounded(config: &mut TraceConfig) {
+    config.limits.timeout_seconds = 12;
     config.limits.max_steps = 400;
 }
 
@@ -140,7 +154,11 @@ async fn sanitizer_variant_fallback_reported() {
             .analysis_notes
             .iter()
             .any(|n| n.contains("sanitized binary could not be built"));
-        assert!(noted, "missing sanitized binary must be explained: {:?}", trace.analysis_notes);
+        assert!(
+            noted,
+            "missing sanitized binary must be explained: {:?}",
+            trace.analysis_notes
+        );
     }
 }
 
@@ -276,7 +294,10 @@ async fn crash_is_reported_with_sanitizer_pass() {
     // The sanitized binary may be impossible to build on some systems; the
     // reproduction field must reflect reality either way.
     if sanitizer.reproduction != "reproduced" {
-        println!("note: sanitizer pass did not reproduce: {}", sanitizer.reproduction);
+        println!(
+            "note: sanitizer pass did not reproduce: {}",
+            sanitizer.reproduction
+        );
     }
 }
 
@@ -289,9 +310,16 @@ async fn valgrind_flags_use_after_free() {
     if !require(&["gcc", "valgrind"]).await {
         return;
     }
-    let config = config_for(&fixture("use_after_free.c"), bounded);
+    let _slot = VALGRIND_SLOT.acquire().await.unwrap();
+    let config = config_for(&fixture("use_after_free.c"), valgrind_bounded);
     let trace = trace::trace_program(config).await.expect("trace");
-    let report = trace.valgrind_report.expect("valgrind report");
+    if trace.valgrind_report.is_none() {
+        panic!(
+            "valgrind report missing; stage: {:?} notes: {:?}",
+            trace.stage_results.valgrind, trace.analysis_notes
+        );
+    }
+    let report = trace.valgrind_report.unwrap();
     assert!(
         !report.errors.is_empty() || !report.detailed_errors.is_empty(),
         "use_after_free must produce at least one valgrind error"
@@ -303,9 +331,16 @@ async fn valgrind_flags_leak() {
     if !require(&["gcc", "valgrind"]).await {
         return;
     }
-    let config = config_for(&fixture("leaky.c"), bounded);
+    let _slot = VALGRIND_SLOT.acquire().await.unwrap();
+    let config = config_for(&fixture("leaky.c"), valgrind_bounded);
     let trace = trace::trace_program(config).await.expect("trace");
-    let report = trace.valgrind_report.expect("valgrind report");
+    if trace.valgrind_report.is_none() {
+        panic!(
+            "valgrind report missing; stage: {:?} notes: {:?}",
+            trace.stage_results.valgrind, trace.analysis_notes
+        );
+    }
+    let report = trace.valgrind_report.unwrap();
     assert!(
         report.definitely_lost_bytes > 0
             || report.possibly_lost_bytes > 0

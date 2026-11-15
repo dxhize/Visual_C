@@ -1,0 +1,1 @@
+/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/null_write.c --timeout 20

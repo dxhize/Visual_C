@@ -24,7 +24,6 @@ use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufReader, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use std::time::Duration;
 
 use crate::error::{EngineError, Result};
 use crate::models::{HeapEvent, HeapEventType};
@@ -53,6 +52,7 @@ pub enum RawKind {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum RawStatus {
+    Overflow,
     Ok,
     Failed,
     OkSame,
@@ -119,6 +119,7 @@ pub fn parse_event_line(line: &str) -> Result<RawEvent> {
     let status = match fields[9] {
         "ok" => RawStatus::Ok,
         "failed" => RawStatus::Failed,
+        "overflow" => RawStatus::Overflow,
         "ok_same" => RawStatus::OkSame,
         "ok_moved" => RawStatus::OkMoved,
         "new" => RawStatus::New,
@@ -242,7 +243,7 @@ pub struct BlockState {
 /// Reconstructed chronological heap state.
 pub struct HeapTimeline {
     blocks: Vec<BlockState>,
-    alive_by_key: HashMap<(u32, u64), usize>,  // (pid, id) -> block index
+    alive_by_key: HashMap<(u32, u64), usize>, // (pid, id) -> block index
     alive_by_addr: HashMap<(u32, u64), usize>, // (pid, addr) -> block index
     live_bytes: HashMap<u32, u64>,
     events: Vec<HeapEvent>,
@@ -290,12 +291,37 @@ impl HeapTimeline {
         let mut detail: Option<String> = None;
 
         match (ev.kind, ev.status) {
+            (RawKind::Calloc, RawStatus::Overflow) => {
+                self.push_event(
+                    HeapEventType::AllocationFailed,
+                    ev,
+                    Some(
+                        "calloc size product overflow; requested byte size is not representable"
+                            .into(),
+                    ),
+                );
+            }
             (RawKind::Malloc, RawStatus::Ok) | (RawKind::Calloc, RawStatus::Ok) => {
-                self.add_block(ev, if ev.kind == RawKind::Malloc { "malloc" } else { "calloc" }, None);
+                self.add_block(
+                    ev,
+                    if ev.kind == RawKind::Malloc {
+                        "malloc"
+                    } else {
+                        "calloc"
+                    },
+                    None,
+                );
                 self.push_event(HeapEventType::Allocated, ev, detail);
             }
             (RawKind::Malloc, RawStatus::Failed) | (RawKind::Calloc, RawStatus::Failed) => {
-                detail = Some("allocation failed (out of memory or invalid request)".into());
+                detail = Some(
+                    if ev.size == 0 {
+                        "zero-size allocation returned NULL; no allocation observed"
+                    } else {
+                        "allocation failed (out of memory or invalid request)"
+                    }
+                    .into(),
+                );
                 self.push_event(HeapEventType::AllocationFailed, ev, detail);
             }
             (RawKind::Realloc, RawStatus::New) => {
@@ -342,7 +368,14 @@ impl HeapTimeline {
             (RawKind::Realloc, RawStatus::Failed) => {
                 // Failure preserves the original allocation — never treat
                 // this as a free.
-                detail = Some("realloc failed: original allocation preserved".into());
+                detail = Some(
+                    if ev.old_addr == 0 {
+                        "realloc(NULL, n) failed: no prior allocation"
+                    } else {
+                        "realloc failed: original allocation preserved"
+                    }
+                    .into(),
+                );
                 self.push_event(HeapEventType::AllocationFailed, ev, detail);
             }
             (RawKind::Free, RawStatus::Ok) => {
@@ -376,7 +409,11 @@ impl HeapTimeline {
                     self.push_event(HeapEventType::Freed, &ev2, None);
                     return;
                 }
-                detail = if self.blocks.iter().any(|b| b.pid == ev.pid && b.addr == ev.addr && b.freed) {
+                detail = if self
+                    .blocks
+                    .iter()
+                    .any(|b| b.pid == ev.pid && b.addr == ev.addr && b.freed)
+                {
                     Some("double free detected".into())
                 } else {
                     Some("free of an untracked address (allocated outside instrumentation, e.g. inside a shared library)".into())
@@ -385,7 +422,11 @@ impl HeapTimeline {
             }
             // Unreachable pairs (kernel enum space) are recorded verbatim.
             _ => {
-                self.push_event(HeapEventType::AllocationFailed, ev, Some("unexpected event status".into()));
+                self.push_event(
+                    HeapEventType::AllocationFailed,
+                    ev,
+                    Some("unexpected event status".into()),
+                );
             }
         }
     }
@@ -431,15 +472,20 @@ impl HeapTimeline {
         };
         self.event_callers.push(ev.caller);
         self.events.push(HeapEvent {
+            raw_caller_address: Some(format!("0x{:x}", ev.caller)),
             sequence: ev.seq,
             pid: ev.pid,
             allocation_id: ev.id,
             event_type,
             address: addr_str(ev.addr),
-            size_bytes: Some(ev.size),
+            size_bytes: (ev.status != RawStatus::Overflow).then_some(ev.size),
             source_file: None,
             source_line: None,
-            old_allocation_id: if ev.old_id != 0 { Some(ev.old_id) } else { None },
+            old_allocation_id: if ev.old_id != 0 {
+                Some(ev.old_id)
+            } else {
+                None
+            },
             heap_usage_after: usage,
             detail,
         });
@@ -459,7 +505,9 @@ impl HeapTimeline {
 
     /// Look up a block by (pid, local allocation id).
     pub fn block_by_id(&self, pid: u32, id: u64) -> Option<&BlockState> {
-        self.blocks.iter().find(|b| b.pid == pid && b.allocation_id == id)
+        self.blocks
+            .iter()
+            .find(|b| b.pid == pid && b.allocation_id == id)
     }
 
     /// Distinct pids seen so far.
@@ -508,94 +556,44 @@ pub async fn resolve_caller_locations(
     binary: &Path,
     callers: &[u64],
 ) -> Result<HashMap<u64, CallerInfo>> {
-    let mut out = HashMap::new();
-    if callers.is_empty() {
-        return Ok(out);
-    }
     let mut unique: Vec<u64> = callers.to_vec();
     unique.sort_unstable();
     unique.dedup();
-
-    let mut child = tokio::process::Command::new("addr2line")        .args(["-f", "-C", "-e"])
-        .arg(binary)
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .stderr(std::process::Stdio::null())
-        .spawn()
-        .map_err(|e| crate::error::EngineError::MissingTool {
-            tool: "addr2line".into(),
-            reason: format!("could not spawn addr2line: {e}"),
-        })?;
-
-    let mut stdin = child.stdin.take().expect("addr2line stdin");
-    let stdout = child.stdout.take().expect("addr2line stdout");
-    const ADDR2LINE_TIMEOUT: Duration = Duration::from_secs(30);
-
-    let request: String = unique.iter().map(|pc| format!("0x{pc:x}\n")).collect();
-    // Stage 1: send the request, then DROP the stdin handle — dropping is the
-    // only reliable way to signal EOF (`ChildStdin::shutdown()` only flushes
-    // and does not close the descriptor, so addr2line would wait forever).
-    let written = tokio::time::timeout(ADDR2LINE_TIMEOUT, async {
-        use tokio::io::AsyncWriteExt;
-        stdin.write_all(request.as_bytes()).await
-    })
-    .await;
-    match written {
-        Ok(Ok(())) => {}
-        Ok(Err(e)) => return Err(EngineError::Other(format!("writing to addr2line failed: {e}"))),
-        Err(_) => {
-            let _ = child.kill().await;
-            return Err(EngineError::Other(
-                "addr2line did not accept input within 30s".into(),
-            ));
+    let mut out = HashMap::new();
+    for chunk in unique.chunks(512) {
+        let mut cmd = tokio::process::Command::new("addr2line");
+        cmd.args(["-f", "-C", "-e"])
+            .arg(binary)
+            .args(chunk.iter().map(|pc| format!("0x{pc:x}")));
+        let output =
+            crate::supervisor::output(&mut cmd, crate::supervisor::stage_deadline(3), 1024 * 1024)
+                .await?;
+        if output.timed_out || !output.status.is_some_and(|s| s.success()) {
+            return Err(EngineError::Other("addr2line failed or timed out".into()));
         }
-    }
-    drop(stdin);
-
-    // Stage 2: read every answer to EOF, then reap the child.
-    let read = tokio::time::timeout(ADDR2LINE_TIMEOUT, async move {
-        use tokio::io::AsyncBufReadExt;
-        let mut lines = Vec::new();
-        let mut reader = tokio::io::BufReader::new(stdout);
-        let mut line = String::new();
-        loop {
-            line.clear();
-            let n = reader.read_line(&mut line).await.unwrap_or(0);
-            if n == 0 {
-                break;
+        let text = String::from_utf8_lossy(&output.stdout);
+        let lines: Vec<String> = text.lines().map(str::to_owned).collect();
+        // Group pairwise: (func, "file:line") for each requested address.
+        for (i, pc) in chunk.iter().enumerate() {
+            let func_line = lines.get(i * 2).cloned().unwrap_or_default();
+            let loc_line = lines.get(i * 2 + 1).cloned().unwrap_or_default();
+            let (file, line_no) = split_addr2line_location(&loc_line);
+            if file.is_empty() || line_no == 0 {
+                continue;
             }
-            lines.push(line.trim_end_matches('\n').to_string());
+            out.insert(
+                *pc,
+                CallerInfo {
+                    func: if func_line == "??" {
+                        String::new()
+                    } else {
+                        func_line
+                    },
+                    file,
+                    line: line_no,
+                },
+            );
         }
-        lines
-    })
-    .await;
-    let lines = match read {
-        Ok(lines) => lines,
-        Err(_) => {
-            let _ = child.kill().await;
-            return Err(EngineError::Other(
-                "addr2line did not answer within 30s".into(),
-            ));
-        }
-    };
-    let _ = tokio::time::timeout(Duration::from_secs(5), child.wait()).await;
-
-    // Group pairwise: (func, "file:line") for each requested address.
-    for (i, pc) in unique.iter().enumerate() {
-        let func_line = lines.get(i * 2).cloned().unwrap_or_default();
-        let loc_line = lines.get(i * 2 + 1).cloned().unwrap_or_default();
-        let (file, line_no) = split_addr2line_location(&loc_line);
-        if file.is_empty() || line_no == 0 {
-            continue;
-        }
-        out.insert(
-            *pc,
-            CallerInfo {
-                func: if func_line == "??" { String::new() } else { func_line },
-                file,
-                line: line_no,
-            },
-        );
     }
     Ok(out)
 }
@@ -620,10 +618,7 @@ fn split_addr2line_location(loc: &str) -> (String, u32) {
 ///
 /// Events are located at their *call site* (file:line of the allocation or
 /// free), which is the information the C runtime captured per event.
-pub fn apply_caller_locations(
-    timeline: &mut HeapTimeline,
-    resolved: &HashMap<u64, CallerInfo>,
-) {
+pub fn apply_caller_locations(timeline: &mut HeapTimeline, resolved: &HashMap<u64, CallerInfo>) {
     for block in timeline.blocks.iter_mut() {
         if let Some(info) = resolved.get(&block.alloc_caller) {
             block.caller_file = Some(info.file.clone());
@@ -762,9 +757,7 @@ mod tests {
 
     #[test]
     fn realloc_null_behaves_like_malloc() {
-        let t = timeline(&[
-            "102772 1 realloc 1 7f0000000000 32 0 0 401000 new",
-        ]);
+        let t = timeline(&["102772 1 realloc 1 7f0000000000 32 0 0 401000 new"]);
         assert_eq!(t.blocks().len(), 1);
         assert_eq!(t.blocks()[0].alloc_type, "realloc");
         assert_eq!(t.events()[0].event_type, HeapEventType::Reallocated);
@@ -798,9 +791,7 @@ mod tests {
 
     #[test]
     fn failed_malloc_recorded() {
-        let t = timeline(&[
-            "102772 1 malloc 1 0 999999999999 0 0 401000 failed",
-        ]);
+        let t = timeline(&["102772 1 malloc 1 0 999999999999 0 0 401000 failed"]);
         assert!(t.blocks().is_empty(), "failed allocation creates no block");
         assert_eq!(t.events().len(), 1);
         assert_eq!(t.events()[0].event_type, HeapEventType::AllocationFailed);
@@ -808,9 +799,7 @@ mod tests {
 
     #[test]
     fn calloc_records_total_size() {
-        let t = timeline(&[
-            "102772 1 calloc 1 7f0000000000 40 0 0 401000 ok",
-        ]);
+        let t = timeline(&["102772 1 calloc 1 7f0000000000 40 0 0 401000 ok"]);
         assert_eq!(t.blocks()[0].size, 40);
         assert_eq!(t.blocks()[0].alloc_type, "calloc");
     }
@@ -829,9 +818,7 @@ mod tests {
 
     #[test]
     fn untracked_free_recorded_with_zero_id() {
-        let t = timeline(&[
-            "102772 1 free 0 7f0000000abc 0 0 0 401100 unknown",
-        ]);
+        let t = timeline(&["102772 1 free 0 7f0000000abc 0 0 0 401100 unknown"]);
         let e = t.events().last().unwrap();
         assert_eq!(e.allocation_id, 0, "0 = no tracked allocation");
         assert!(e.detail.as_deref().unwrap().contains("untracked"));
@@ -839,9 +826,7 @@ mod tests {
 
     #[test]
     fn free_null_is_noop() {
-        let t = timeline(&[
-            "102772 1 free 0 0 0 0 0 401100 null",
-        ]);
+        let t = timeline(&["102772 1 free 0 0 0 0 0 401100 null"]);
         let e = t.events().last().unwrap();
         assert_eq!(e.event_type, HeapEventType::Freed);
         assert_eq!(e.detail.as_deref(), Some("free(NULL) is a no-op"));
@@ -867,19 +852,25 @@ mod tests {
     fn block_cap_marks_flag() {
         let mut t = HeapTimeline::new(2);
         for i in 1..=5u64 {
-            let line = format!("102772 {} malloc {} 7f00000000{:02x} 10 0 0 401000 ok", i, i, i * 16);
+            let line = format!(
+                "102772 {} malloc {} 7f00000000{:02x} 10 0 0 401000 ok",
+                i,
+                i,
+                i * 16
+            );
             t.ingest(&ev(&line));
         }
         assert_eq!(t.blocks().len(), 2);
         assert!(t.blocks_capped);
-        assert!(t.events().len() >= 2, "events still recorded past block cap");
+        assert!(
+            t.events().len() >= 2,
+            "events still recorded past block cap"
+        );
     }
 
     #[test]
     fn global_id_widening_only_when_multi_pid() {
-        let t = timeline(&[
-            "102772 1 malloc 1 7f0000000000 10 0 0 401000 ok",
-        ]);
+        let t = timeline(&["102772 1 malloc 1 7f0000000000 10 0 0 401000 ok"]);
         assert!(!t.needs_pid_widening());
         assert_eq!(t.global_id(102772, 1), 1);
 
@@ -897,13 +888,20 @@ mod tests {
         let dir = std::env::temp_dir().join(format!("cte-test-{}", std::process::id()));
         std::fs::create_dir_all(&dir).unwrap();
         let path = dir.join("events_partial.txt");
-        std::fs::write(&path, b"102772 1 malloc 1 7f00 12 0 0 401000 ok\n102772 2 m").unwrap();
+        std::fs::write(
+            &path,
+            b"102772 1 malloc 1 7f00 12 0 0 401000 ok\n102772 2 m",
+        )
+        .unwrap();
         let mut reader = EventFileReader::new(path.clone());
         let first = reader.read_new();
         assert_eq!(first.len(), 1);
         // complete the second event
         use std::io::Write;
-        let mut f = std::fs::OpenOptions::new().append(true).open(&path).unwrap();
+        let mut f = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .unwrap();
         f.write_all(b"alloc 2 7f10 20 0 0 401000 ok\n").unwrap();
         let second = reader.read_new();
         assert_eq!(second.len(), 1);

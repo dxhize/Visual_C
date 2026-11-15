@@ -62,7 +62,7 @@ precedence:
   "linker_flags": ["-pthread"],
   "libraries": ["m"],
   "output_name": "mysim",
-  "working_directory": "build",
+  "working_directory": ".",
   "program_args": ["--iterations", "5"],
   "inferior_working_directory": "data",
   "limits": { "timeout_seconds": 5, "max_steps": 500 },
@@ -74,12 +74,22 @@ precedence:
 
 Notes:
 
-* Paths are relative to the engine's working directory when the config is
-  loaded, and are used as given (no rewriting) — the GUI should store
-  absolute paths or paths relative to the project root it manages.
-* Unknown keys in the config file are ignored, so the GUI can store extra
-  editor state in the same file without breaking the engine.
+* Source/include/object paths follow GCC's build working directory. Run/output
+  paths are relative to the engine cwd unless absolute. The GUI should store
+  absolute paths or consistently select its project root as the build cwd.
+* Unknown configuration keys are rejected to catch typos. Store GUI editor
+  state separately.
 * A compile failure never aborts the run: the trace still carries
   `compile_errors` with file/line/column/kind/message for the editor to
   surface inline (GCC 16 SARIF is parsed; older `-fdiagnostics-format=json`
   and plain-text diagnostics are fallbacks).
+
+V2 adds the `tracing` object and additional `limits` fields. See
+[V2 configuration and defaults](v2.md#configuration-example) and `--help`.
+Notable flags: `--trace-mode source|dual`, `--no-registers`, `--no-disassembly`,
+`--journal`, `--journal-only`, `--global`, `--no-global-discovery`, `--memory-region`,
+`--profile`,
+`--max-instruction-events`, `--max-gdb-commands`, `--max-source-checkpoints`,
+`--max-trace-bytes`, `--max-trace-memory-bytes`, `--max-register-snapshot-bytes`,
+`--max-globals`, `--compiler-timeout`, `--debugger-timeout`, `--analysis-timeout`.
+All stage deadlines are clamped to `--timeout`.

@@ -27,10 +27,15 @@ pub mod compiler;
 pub mod config;
 pub mod error;
 pub mod gdb_mi;
+pub mod memory;
 pub mod mi_parser;
 pub mod models;
+pub mod processor;
+pub mod recorder;
 pub mod resource_limits;
 pub mod sanitizer;
+pub mod storage;
+pub mod supervisor;
 pub mod trace;
 pub mod valgrind;
 

@@ -1,0 +1,4193 @@
+{
+ "test_suite": "c-trace-engine-v2-validation",
+ "tests": [
+  {
+   "id": "A1",
+   "fixture": "audit_a1_vars.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a1_vars.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.76,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=25 first=[0] last=[24]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "8 checkpoints validated"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "3 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "A1_product_value_42",
+     "PASS",
+     "snapshots=8"
+    ],
+    [
+     "A1_completed",
+     "PASS",
+     "status=completed"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 8,
+    "instruction_count": 25,
+    "gdb_commands": 192,
+    "wall_ms": 3728,
+    "limits": [],
+    "trace_bytes": 157192
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/A1"
+  },
+  {
+   "id": "A1D",
+   "fixture": "audit_a1_vars.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a1_vars.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.77,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=25 first=[0] last=[24]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "8 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=37 events=25"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "2 full checkpoints in 25 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "3 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 8,
+    "instruction_count": 25,
+    "gdb_commands": 192,
+    "wall_ms": 3737,
+    "limits": [],
+    "trace_bytes": 157192
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/A1D"
+  },
+  {
+   "id": "A2",
+   "fixture": "audit_a2_calls.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a2_calls.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.54,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=76 first=[0] last=[75]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "17 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=68 events=76"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 76 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "A2_functions_observed",
+     "PASS",
+     "funcs={'middle', 'main', 'leaf'}"
+    ],
+    [
+     "A2_nested_frames",
+     "PASS",
+     "max_stack_depth=3"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 17,
+    "instruction_count": 76,
+    "gdb_commands": 278,
+    "wall_ms": 4495,
+    "limits": [],
+    "trace_bytes": 223249
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/A2"
+  },
+  {
+   "id": "A3",
+   "fixture": "audit_a3_recurse.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a3_recurse.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 5.15,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=99 first=[0] last=[98]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "38 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=58 events=99"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 99 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "A3_distinct_n_values",
+     "PASS",
+     "n values=['0', '1', '1647263052', '2', '3', '4', '5', '6']"
+    ],
+    [
+     "A3_recursive_frames",
+     "PASS",
+     "max countdown depth=8"
+    ],
+    [
+     "A3_frame_identities_distinct",
+     "PASS",
+     "distinct identity keys=7"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 38,
+    "instruction_count": 99,
+    "gdb_commands": 448,
+    "wall_ms": 5095,
+    "limits": [],
+    "trace_bytes": 330808
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/A3"
+  },
+  {
+   "id": "A4",
+   "fixture": "audit_a4_globals.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a4_globals.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.15,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=41 first=[0] last=[40]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "16 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=56 events=41"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 41 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "A4_globals_captured",
+     "PASS",
+     "globals=[\"'/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a4_globals.c'::file_static\", \"'/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a4_globals.c'::global_counter\", 'bump::calls']"
+    ],
+    [
+     "A4_function_local_static",
+     "PASS",
+     "static vars=['calls', 'calls', 'calls', 'calls', 'calls']"
+    ],
+    [
+     "A4_pointer_to_global",
+     "PASS",
+     "gp obs=6 nonnull=4 kinds=['global', 'null']"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 16,
+    "instruction_count": 41,
+    "gdb_commands": 389,
+    "wall_ms": 4112,
+    "limits": [],
+    "trace_bytes": 198527
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/A4"
+  },
+  {
+   "id": "A5",
+   "fixture": "audit_a5_main.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a5_main.c --add-source /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a5_helper.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.0,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=33 first=[0] last=[32]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "9 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=43 events=33"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "2 full checkpoints in 33 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "3 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "A5_both_tus_observed",
+     "PASS",
+     "files={'/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a5_main.c', '/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a5_helper.c'}"
+    ],
+    [
+     "A5_completed",
+     "PASS",
+     "status=completed"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 9,
+    "instruction_count": 33,
+    "gdb_commands": 144,
+    "wall_ms": 3973,
+    "limits": [],
+    "trace_bytes": 154767
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/A5"
+  },
+  {
+   "id": "B1",
+   "fixture": "null_write.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/null_write.c --timeout 20",
+   "expected": "crashed",
+   "engine_exit": 0,
+   "wall_seconds": 3.87,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=5 first=[0] last=[4]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "4 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=41 events=5"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 5 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=crashed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E15_crash_prehistory",
+     "PASS",
+     "snapshots=4 crash_report=yes last_event=faulted crash_pc=0x0000000000400546 signal=SIGSEGV"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "1 gaps; startup=yes"
+    ],
+    [
+     "E:E17_no_post_crash_events",
+     "PASS",
+     "faulted at index 4 of 4"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B1_pointer_is_null",
+     "PASS",
+     "p values=['0x0', '0x0', '0x0']"
+    ],
+    [
+     "B1_null_classification",
+     "PASS",
+     "4 null-classified"
+    ],
+    [
+     "B1_sigsegv",
+     "PASS",
+     "signal=SIGSEGV"
+    ],
+    [
+     "B1_faulted_last_event",
+     "PASS",
+     "outcome=faulted addr=0x0000000000400546 sig=SIGSEGV"
+    ],
+    [
+     "B1_pc_agreement",
+     "PASS",
+     "crash_pc=0x0000000000400546 event_addr=0x0000000000400546"
+    ],
+    [
+     "B1_source_assembly_agree",
+     "PASS",
+     "event line=3 snapshot lines=[1, 2, 3, 3]"
+    ],
+    [
+     "B1_valgrind_invalid_write",
+     "PASS",
+     "kinds=['InvalidWrite', 'InvalidWrite: Invalid write of size 4 (null_writ']"
+    ],
+    [
+     "B1_asan_reproduced",
+     "PASS",
+     "reproduction=reproduced category=SEGV"
+    ],
+    [
+     "B1_outcome_crashed",
+     "PASS",
+     "status=crashed"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "crashed",
+    "outcome": "crashed",
+    "snapshots": 4,
+    "instruction_count": 5,
+    "gdb_commands": 56,
+    "wall_ms": 3838,
+    "limits": [],
+    "trace_bytes": 81928
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B1"
+  },
+  {
+   "id": "B2",
+   "fixture": "audit_b2_heap.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b2_heap.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.84,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=28 first=[0] last=[27]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "9 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=36 events=28"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "3 full checkpoints in 28 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "4 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B2_malloc_and_free_events",
+     "PASS",
+     "alloc=1 freed=1 total=2"
+    ],
+    [
+     "B2_requested_size_16",
+     "PASS",
+     "size=16"
+    ],
+    [
+     "B2_raw_bytes_le",
+     "PASS",
+     "raw starts=['000000000000', '000000000000', '444342410000']"
+    ],
+    [
+     "B2_freed_state",
+     "PASS",
+     "heap_state=['freed']"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 9,
+    "instruction_count": 28,
+    "gdb_commands": 175,
+    "wall_ms": 3804,
+    "limits": [],
+    "trace_bytes": 177368
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B2"
+  },
+  {
+   "id": "B3",
+   "fixture": "audit_b3_realloc.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b3_realloc.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.28,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=47 first=[0] last=[46]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "14 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=70 events=47"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "6 full checkpoints in 47 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=4"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "7 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B3_realloc_events",
+     "PASS",
+     "realloc-evidence=[('reallocated', 1, 1), ('reallocated', 1, 1)]"
+    ],
+    [
+     "B3_final_freed",
+     "PASS",
+     "states=['freed']"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 14,
+    "instruction_count": 47,
+    "gdb_commands": 387,
+    "wall_ms": 4222,
+    "limits": [],
+    "trace_bytes": 333995
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B3"
+  },
+  {
+   "id": "B4",
+   "fixture": "audit_b4_alias.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b4_alias.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.91,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=29 first=[0] last=[28]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "10 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=36 events=29"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "3 full checkpoints in 29 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "4 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B4_alias_same_allocation",
+     "PASS",
+     "p=[('0x0', 'null')] q=[('0x0', 'null')] same_id=True off_ok=True addr_ok=True"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 10,
+    "instruction_count": 29,
+    "gdb_commands": 228,
+    "wall_ms": 3877,
+    "limits": [],
+    "trace_bytes": 194638
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B4"
+  },
+  {
+   "id": "B5",
+   "fixture": "use_after_free.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/use_after_free.c --timeout 20",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.86,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=24 first=[0] last=[23]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "9 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=36 events=24"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "4 full checkpoints in 24 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "5 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B5_free_captured",
+     "PASS",
+     "events=2 types=['allocated', 'freed']"
+    ],
+    [
+     "B5_freed_status",
+     "PASS",
+     "states=['freed']"
+    ],
+    [
+     "B5_valgrind_error",
+     "PASS",
+     "kinds=['InvalidRead', 'InvalidRead: Invalid read of size 4 (use_after_f']"
+    ],
+    [
+     "B5_asan",
+     "WARN",
+     "reproduction=None"
+    ],
+    [
+     "B5_pointer_value_preserved",
+     "PASS",
+     "p seen=True"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 9,
+    "instruction_count": 24,
+    "gdb_commands": 167,
+    "wall_ms": 3827,
+    "limits": [],
+    "trace_bytes": 192533
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B5"
+  },
+  {
+   "id": "B6",
+   "fixture": "audit_b6_double_free.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b6_double_free.c --timeout 20",
+   "expected": "crashed",
+   "engine_exit": 0,
+   "wall_seconds": 3.72,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=16 first=[0] last=[15]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "7 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=41 events=16"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "3 full checkpoints in 16 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=crashed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E15_crash_prehistory",
+     "PASS",
+     "snapshots=7 crash_report=yes last_event=completed crash_pc=0x00007ffff7e13d0c signal=SIGABRT"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "4 gaps; startup=yes"
+    ],
+    [
+     "E:E17_no_post_crash_events",
+     "PASS",
+     "crash in excluded/untraced code; no fabricated post-crash events (last traced event completed at 0x0000000000400577)"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B6_second_free_recorded",
+     "WARN",
+     "freed events=1 types=['allocated', 'freed']"
+    ],
+    [
+     "B6_tool_diagnostics",
+     "PASS",
+     "kinds=['InvalidFree', 'InvalidFree: Invalid free() / delete / delete[] ']"
+    ],
+    [
+     "B6_asan_category",
+     "PASS",
+     "category=double-free msg=SUMMARY: AddressSanitizer: double-free /home/xe/Documents/vi"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "crashed",
+    "outcome": "crashed",
+    "snapshots": 7,
+    "instruction_count": 16,
+    "gdb_commands": 102,
+    "wall_ms": 3687,
+    "limits": [],
+    "trace_bytes": 157609
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B6"
+  },
+  {
+   "id": "B7",
+   "fixture": "audit_b7_oob.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b7_oob.c --timeout 20",
+   "expected": "crashed",
+   "engine_exit": 0,
+   "wall_seconds": 3.74,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=22 first=[0] last=[21]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "8 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=39 events=22"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "3 full checkpoints in 22 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "4 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B7_asan_overflow",
+     "WARN",
+     "category= "
+    ],
+    [
+     "B7_valgrind_finding",
+     "PASS",
+     "kinds=['InvalidWrite', 'InvalidRead', 'InvalidWrite: Invalid write of size 4 (audit_b7_']"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 8,
+    "instruction_count": 22,
+    "gdb_commands": 152,
+    "wall_ms": 3712,
+    "limits": [],
+    "trace_bytes": 170014
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B7"
+  },
+  {
+   "id": "B8",
+   "fixture": "audit_b2_heap.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b2_heap.c --trace-mode source",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.53,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "no events"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "10 checkpoints validated"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "14 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B8_caller_site_resolved",
+     "PASS",
+     "caller=/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b2_heap.c:3"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 10,
+    "instruction_count": 0,
+    "gdb_commands": 136,
+    "wall_ms": 3519,
+    "limits": [],
+    "trace_bytes": 46314
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B8"
+  },
+  {
+   "id": "B9",
+   "fixture": "audit_b9_bytes.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b9_bytes.c --trace-mode dual",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.58,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=19 first=[0] last=[18]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "6 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=40 events=19"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 19 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B9_known_int_bytes",
+     "PASS",
+     "lifecycle=['00000000', '00000000', '44332211', '44332211', '44332211', '44332211'] (0x11223344 -> 44332211 LE; zeros pre-init are honest)"
+    ],
+    [
+     "B9_array_bytes",
+     "PASS",
+     "lifecycle=['000000000000000000000000', '000000000000000000000000', '000000000000000000000000', '01000000ffffffff00010000', '01000000ffffffff00010000', '01000000ffffffff00010000'] ({1,-1,256} -> 01000000 ffffffff 00010000)"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 6,
+    "instruction_count": 19,
+    "gdb_commands": 130,
+    "wall_ms": 3551,
+    "limits": [],
+    "trace_bytes": 114154
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/B9"
+  },
+  {
+   "id": "C1",
+   "fixture": "audit_c1_arith.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c1_arith.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.6,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=13 first=[0] last=[12]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "6 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=44 events=13"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 13 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "C1_completed",
+     "PASS",
+     "status=completed"
+    ],
+    [
+     "C1_checkpoints",
+     "PASS",
+     "6 checkpoints"
+    ],
+    [
+     "C1_instructions",
+     "PASS",
+     "13 events"
+    ],
+    [
+     "C1_addresses_valid",
+     "PASS",
+     "all event addresses parse"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 6,
+    "instruction_count": 13,
+    "gdb_commands": 118,
+    "wall_ms": 3573,
+    "limits": [],
+    "trace_bytes": 105308
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C1"
+  },
+  {
+   "id": "C2",
+   "fixture": "audit_c2_loop.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c2_loop.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.85,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=37 first=[0] last=[36]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "5 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=44 events=37"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 37 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "C2_repeated_instructions_kept",
+     "PASS",
+     "29 events on loop line 3 (5-iteration loop)"
+    ],
+    [
+     "C2_disassembly_not_duplicated",
+     "WARN",
+     "static table=44 unique instructions vs 37 dynamic events (table legitimately covers non-executed statics; no per-event duplication)"
+    ],
+    [
+     "C2_cache_effective",
+     "PASS",
+     "queries=1 hits=36"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 5,
+    "instruction_count": 37,
+    "gdb_commands": 127,
+    "wall_ms": 3828,
+    "limits": [],
+    "trace_bytes": 119123
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C2"
+  },
+  {
+   "id": "C3",
+   "fixture": "audit_a2_calls.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a2_calls.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.55,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=76 first=[0] last=[75]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "17 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=68 events=76"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 76 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 17,
+    "instruction_count": 76,
+    "gdb_commands": 278,
+    "wall_ms": 4512,
+    "limits": [],
+    "trace_bytes": 223249
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C3"
+  },
+  {
+   "id": "C4",
+   "fixture": "audit_c4_regs.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c4_regs.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.82,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=19 first=[0] last=[18]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "8 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=44 events=19"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 19 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "C4_register_capture",
+     "PASS",
+     "register_time_us=297159"
+    ],
+    [
+     "C4_deltas_present",
+     "PASS",
+     "19 events with register blocks"
+    ],
+    [
+     "C4_sum_value_30",
+     "PASS",
+     "sum==30 observed"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 8,
+    "instruction_count": 19,
+    "gdb_commands": 202,
+    "wall_ms": 3785,
+    "limits": [],
+    "trace_bytes": 136895
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C4"
+  },
+  {
+   "id": "C5",
+   "fixture": "null_write.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/null_write.c --timeout 20",
+   "expected": "crashed",
+   "engine_exit": 0,
+   "wall_seconds": 3.63,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=5 first=[0] last=[4]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "4 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=41 events=5"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 5 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=crashed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E15_crash_prehistory",
+     "PASS",
+     "snapshots=4 crash_report=yes last_event=faulted crash_pc=0x0000000000400546 signal=SIGSEGV"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "1 gaps; startup=yes"
+    ],
+    [
+     "E:E17_no_post_crash_events",
+     "PASS",
+     "faulted at index 4 of 4"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "B1_pointer_is_null",
+     "PASS",
+     "p values=['0x0', '0x0', '0x0']"
+    ],
+    [
+     "B1_null_classification",
+     "PASS",
+     "4 null-classified"
+    ],
+    [
+     "B1_sigsegv",
+     "PASS",
+     "signal=SIGSEGV"
+    ],
+    [
+     "B1_faulted_last_event",
+     "PASS",
+     "outcome=faulted addr=0x0000000000400546 sig=SIGSEGV"
+    ],
+    [
+     "B1_pc_agreement",
+     "PASS",
+     "crash_pc=0x0000000000400546 event_addr=0x0000000000400546"
+    ],
+    [
+     "B1_source_assembly_agree",
+     "PASS",
+     "event line=3 snapshot lines=[1, 2, 3, 3]"
+    ],
+    [
+     "B1_valgrind_invalid_write",
+     "PASS",
+     "kinds=['InvalidWrite', 'InvalidWrite: Invalid write of size 4 (null_writ']"
+    ],
+    [
+     "B1_asan_reproduced",
+     "PASS",
+     "reproduction=reproduced category=SEGV"
+    ],
+    [
+     "B1_outcome_crashed",
+     "PASS",
+     "status=crashed"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "crashed",
+    "outcome": "crashed",
+    "snapshots": 4,
+    "instruction_count": 5,
+    "gdb_commands": 56,
+    "wall_ms": 3609,
+    "limits": [],
+    "trace_bytes": 81927
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C5"
+  },
+  {
+   "id": "C6",
+   "fixture": "audit_c6_oneline.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c6_oneline.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.68,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=21 first=[0] last=[20]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "2 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=47 events=21"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 21 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "C6_same_line_events",
+     "PASS",
+     "21 events on line 1"
+    ],
+    [
+     "C6_checkpoints_sparse",
+     "PASS",
+     "checkpoints=2 events=21"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 2,
+    "instruction_count": 21,
+    "gdb_commands": 98,
+    "wall_ms": 3654,
+    "limits": [],
+    "trace_bytes": 104911
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C6"
+  },
+  {
+   "id": "C7",
+   "fixture": "audit_c7_libcalls.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c7_libcalls.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.03,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=38 first=[0] last=[37]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "11 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=46 events=38"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "4 full checkpoints in 38 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=2"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "5 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "C7_checkpoints_user_only",
+     "PASS",
+     "origins={'user_code'}"
+    ],
+    [
+     "C7_gaps_present",
+     "PASS",
+     "gap reasons={'excluded_code', 'startup_before_main'}"
+    ],
+    [
+     "C7_alloc_visible",
+     "PASS",
+     "events=2"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 11,
+    "instruction_count": 38,
+    "gdb_commands": 218,
+    "wall_ms": 3989,
+    "limits": [],
+    "trace_bytes": 223016
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/C7"
+  },
+  {
+   "id": "D1",
+   "fixture": "spin_same_line.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/spin_same_line.c --timeout 10 --max-steps 1000000",
+   "expected": "timeout",
+   "engine_exit": 0,
+   "wall_seconds": 10.25,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=566 first=[0] last=[565]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "3 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=43 events=566"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "PASS",
+     "3 full checkpoints in 566 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=timeout limits=['session_or_debugger_deadline', 'overall_session_deadline']"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "WARN",
+     "allocation_tracker: completed but output incomplete without reason"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E16b_timeout_coverage_incomplete",
+     "PASS",
+     "complete_for_scope=False"
+    ],
+    [
+     "E:E17_termination_events",
+     "PASS",
+     "1 unknown-outcome events (bounded, honest)"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "D1_timed_out",
+     "PASS",
+     "status=timeout"
+    ],
+    [
+     "D1_coverage_incomplete",
+     "PASS",
+     "complete_for_scope=False"
+    ],
+    [
+     "D1_valgrind_skipped",
+     "PASS",
+     "valgrind=skipped reason=overall session deadline exhausted"
+    ],
+    [
+     "D1_no_false_exit",
+     "PASS",
+     "outcome=timed_out"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "timeout",
+    "outcome": "timed_out",
+    "snapshots": 3,
+    "instruction_count": 566,
+    "gdb_commands": 1168,
+    "wall_ms": 10110,
+    "limits": [
+     "session_or_debugger_deadline",
+     "overall_session_deadline"
+    ],
+    "trace_bytes": 654851
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D1"
+  },
+  {
+   "id": "D2",
+   "fixture": "audit_c2_loop.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c2_loop.c --max-instruction-events 25",
+   "expected": "step_limit_reached",
+   "engine_exit": 0,
+   "wall_seconds": 3.69,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=25 first=[0] last=[24]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "3 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=44 events=25"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 25 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=step_limit_reached limits=['max_instruction_events']"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "WARN",
+     "allocation_tracker: completed but output incomplete without reason"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E16b_timeout_coverage_incomplete",
+     "PASS",
+     "complete_for_scope=False"
+    ],
+    [
+     "E:E17_termination_events",
+     "PASS",
+     "1 unknown-outcome events (bounded, honest)"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "D2_limit_count",
+     "PASS",
+     "count=25"
+    ],
+    [
+     "D2_reason_reported",
+     "PASS",
+     "limits=['max_instruction_events']"
+    ],
+    [
+     "D2_ordered",
+     "PASS",
+     "ids ordered"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "step_limit_reached",
+    "outcome": "step_limit_reached",
+    "snapshots": 3,
+    "instruction_count": 25,
+    "gdb_commands": 89,
+    "wall_ms": 3663,
+    "limits": [
+     "max_instruction_events"
+    ],
+    "trace_bytes": 100293
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D2"
+  },
+  {
+   "id": "D3",
+   "fixture": "audit_a4_globals.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a4_globals.c --max-source-checkpoints 3 --trace-mode dual",
+   "expected": "step_limit_reached",
+   "engine_exit": 0,
+   "wall_seconds": 3.4,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=5 first=[0] last=[4]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "3 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=44 events=5"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "1 full checkpoints in 5 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=step_limit_reached limits=['max_source_checkpoints']"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "WARN",
+     "allocation_tracker: completed but output incomplete without reason"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E16b_timeout_coverage_incomplete",
+     "PASS",
+     "complete_for_scope=False"
+    ],
+    [
+     "E:E17_termination_events",
+     "PASS",
+     "2 unknown-outcome events (bounded, honest)"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "D3_cap_respected",
+     "PASS",
+     "snapshots=3"
+    ],
+    [
+     "D3_reason_reported",
+     "PASS",
+     "limits=['max_source_checkpoints']"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "step_limit_reached",
+    "outcome": "step_limit_reached",
+    "snapshots": 3,
+    "instruction_count": 5,
+    "gdb_commands": 76,
+    "wall_ms": 3380,
+    "limits": [
+     "max_source_checkpoints"
+    ],
+    "trace_bytes": 83329
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D3"
+  },
+  {
+   "id": "D4",
+   "fixture": "audit_d4_output.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_d4_output.c --trace-mode source --max-output-bytes 16384 --timeout 60",
+   "expected": "step_limit_reached",
+   "engine_exit": 0,
+   "wall_seconds": 14.26,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "no events"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "731 checkpoints validated"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=step_limit_reached limits=['max_output_bytes', 'max_output_bytes']"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "WARN",
+     "allocation_tracker: completed but output incomplete without reason"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "732 gaps; startup=yes"
+    ],
+    [
+     "E:E16b_timeout_coverage_incomplete",
+     "PASS",
+     "complete_for_scope=False"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "D4_truncated_flag",
+     "PASS",
+     "bytes=16425"
+    ],
+    [
+     "D4_no_status_confusion",
+     "PASS",
+     "status=step_limit_reached outcome=output_limit_reached"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ]
+   ],
+   "summary": {
+    "execution_status": "step_limit_reached",
+    "outcome": "output_limit_reached",
+    "snapshots": 731,
+    "instruction_count": 0,
+    "gdb_commands": 5127,
+    "wall_ms": 13084,
+    "limits": [
+     "max_output_bytes",
+     "max_output_bytes"
+    ],
+    "trace_bytes": 7889085
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D4"
+  },
+  {
+   "id": "J1",
+   "fixture": "audit_c2_loop.c",
+   "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c2_loop.c --journal-only --journal /home/xe/Documents/visual_c/test_reports/v2_validation/evidence/J1/session.jsonl",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 3.8,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "no events"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "5 checkpoints validated"
+    ],
+    [
+     "E:E7_disassembly_refs",
+     "PASS",
+     "table=44 events=0"
+    ],
+    [
+     "E:E8a_initial_registers_present",
+     "PASS",
+     "111 registers, full=True"
+    ],
+    [
+     "E:E8b_rip_matches_post_attempt_pc",
+     "PASS",
+     "rip==next_address (faulted: rip==address)"
+    ],
+    [
+     "E:E8c_full_checkpoint_cadence",
+     "WARN",
+     "0 full checkpoints in 0 events (<256 events: cadence not exercised)"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "2 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "E:E20_journal",
+     "PASS",
+     "lines=91 kinds={'configuration': 1, 'gap': 2, 'initial_registers': 1, 'checkpoint': 5, 'disassembly': 44, 'instruction': 37, 'finalized': 1}"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "no gdb/inferior/valgrind processes remain"
+    ],
+    [
+     "E20_journal",
+     "PASS",
+     "/home/xe/Documents/visual_c/test_reports/v2_validation/evidence/J1/session.jsonl"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 5,
+    "instruction_count": 37,
+    "gdb_commands": 127,
+    "wall_ms": 3782,
+    "limits": [],
+    "trace_bytes": 53095
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/J1"
+  },
+  {
+   "id": "D6A",
+   "fixture": "audit_a1_vars.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 4.1,
+   "status": "BLOCKED",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=25 first=[0] last=[24]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "8 checkpoints validated"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "3 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "E:E19_valgrind_no_fake_zeros",
+     "PASS",
+     "summary_available=True"
+    ],
+    [
+     "D6A_path_shadow_ineffective",
+     "BLOCKED",
+     "engine ran REAL valgrind despite PATH shadow (stage=completed, summary_available=True, exit=0); engine resolves valgrind outside PATH \u2014 absence simulation requires engine change or root/container isolation"
+    ],
+    [
+     "D6A_outcome_unaffected",
+     "PASS",
+     "status=completed (traced execution unaffected either way)"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "[]"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 8,
+    "limits": [],
+    "wall_ms": 4065
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D6A"
+  },
+  {
+   "id": "D6B",
+   "fixture": "audit_a1_vars.c",
+   "expected": "completed",
+   "engine_exit": 0,
+   "wall_seconds": 2.9,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "n=25 first=[0] last=[24]"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "8 checkpoints validated"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=completed limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "3 gaps; startup=yes"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "D6B_stage_failed_with_reason",
+     "PASS",
+     "reason=Valgrind XML root is missing"
+    ],
+    [
+     "D6B_no_fake_success",
+     "PASS",
+     "report absent/null (no fabricated summary)"
+    ],
+    [
+     "D6B_outcome_unaffected",
+     "PASS",
+     "status=completed"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "[]"
+    ]
+   ],
+   "summary": {
+    "execution_status": "completed",
+    "outcome": "completed",
+    "snapshots": 8,
+    "limits": [],
+    "wall_ms": 2822
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D6B"
+  },
+  {
+   "id": "D6C",
+   "fixture": "audit_a1_vars.c",
+   "expected": "debugger_failed",
+   "engine_exit": 0,
+   "wall_seconds": 1.89,
+   "status": "PASS",
+   "checks": [
+    [
+     "trace_json_parsed",
+     "PASS",
+     ""
+    ],
+    [
+     "E:E1_json_valid",
+     "PASS",
+     "parsed as JSON"
+    ],
+    [
+     "E:E2_schema_version",
+     "PASS",
+     "schema_version=2"
+    ],
+    [
+     "E:E3_required_fields",
+     "PASS",
+     "all present"
+    ],
+    [
+     "E:E4_event_ids_unique",
+     "PASS",
+     "no events"
+    ],
+    [
+     "E:E5_events_ordered",
+     "PASS",
+     "stop_id_before nondecreasing"
+    ],
+    [
+     "E:E6_checkpoint_refs",
+     "PASS",
+     "0 checkpoints validated"
+    ],
+    [
+     "E:E9_alloc_ids_stable",
+     "PASS",
+     "heap_events=0"
+    ],
+    [
+     "E:E10_freed_not_reactivated",
+     "PASS",
+     "no freed (pid,id) reused as active"
+    ],
+    [
+     "E:E11_pointer_classification",
+     "PASS",
+     "heap/null targets agree with per-stop allocation state (heap_event_count timeline)"
+    ],
+    [
+     "E:E12_completeness_flags",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E13_limits_metadata",
+     "PASS",
+     "status=debugger_failure limits=none"
+    ],
+    [
+     "E:E14_stage_statuses",
+     "PASS",
+     "consistent"
+    ],
+    [
+     "E:E16_startup_gap",
+     "PASS",
+     "no user-code execution (debugger_failure); startup gap not applicable"
+    ],
+    [
+     "E:E18_snapshot_event_linkage",
+     "PASS",
+     "instruction positions monotonic and in range"
+    ],
+    [
+     "D6C_debugger_failure",
+     "PASS",
+     "status=debugger_failure outcome=debugger_failed"
+    ],
+    [
+     "D6C_stage_reports_failure",
+     "PASS",
+     "stage=failed reason=could not launch gdb: gdb session error: gdb exited"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "[]"
+    ],
+    [
+     "cleanup_no_survivors",
+     "PASS",
+     "[]"
+    ]
+   ],
+   "summary": {
+    "execution_status": "debugger_failure",
+    "outcome": "debugger_failed",
+    "snapshots": 0,
+    "limits": [],
+    "wall_ms": 1881
+   },
+   "evidence_dir": "test_reports/v2_validation/evidence/D6C"
+  }
+ ],
+ "totals": {
+  "passed": 29,
+  "failed": 0,
+  "warnings": 31,
+  "skipped": 0,
+  "blocked": 1
+ },
+ "warnings_breakdown": {
+  "informational": 24,
+  "substantive": 7,
+  "substantive_tests": [
+   "B5",
+   "B6",
+   "B7",
+   "D1",
+   "D2",
+   "D3",
+   "D4"
+  ]
+ }
+}

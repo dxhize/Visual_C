@@ -75,6 +75,7 @@ impl CompileOptions {
 /// Result of one compilation.
 #[derive(Clone, Debug)]
 pub struct CompilationOutput {
+    pub sanitizer_variant: Option<String>,
     pub success: bool,
     pub exit_code: i32,
     pub binary_path: PathBuf,
@@ -100,15 +101,23 @@ pub async fn probe_tool(tool: &str, version_arg: &str) -> Result<String> {
     let tool_owned = tool.to_string();
     let version_arg = version_arg.to_string();
     let version_display = version_arg.clone();
-    let output = Command::new(&tool_owned)
-        .arg(version_arg)
-        .output()
-        .await
-        .map_err(|e| EngineError::MissingTool {
+    let output = crate::supervisor::output(
+        Command::new(&tool_owned).arg(version_arg),
+        crate::supervisor::stage_deadline(3),
+        1024 * 1024,
+    )
+    .await
+    .map_err(|e| match e {
+        EngineError::Cancelled => EngineError::Cancelled,
+        _ => EngineError::MissingTool {
             tool: tool_owned.clone(),
             reason: format!("could not spawn `{}`: {}", tool_owned, e),
-        })?;
-    if !output.status.success() {
+        },
+    })?;
+    if output.cancelled {
+        return Err(EngineError::Cancelled);
+    }
+    if !output.status.is_some_and(|s| s.success()) {
         return Err(EngineError::MissingTool {
             tool: tool_owned.clone(),
             reason: format!("`{} {}` failed", tool_owned, version_display),
@@ -128,10 +137,12 @@ pub async fn detect_diagnostics_format(cc: &str) -> DiagnosticsFormat {
             "-fdiagnostics-format=sarif-stderr",
         ),
     ] {
-        let probe = Command::new(cc)
-            .args(["-x", "c", "-fsyntax-only", flag, "/dev/null"])
-            .output()
-            .await;
+        let probe = crate::supervisor::output(
+            Command::new(cc).args(["-x", "c", "-fsyntax-only", flag, "/dev/null"]),
+            crate::supervisor::stage_deadline(3),
+            1024 * 1024,
+        )
+        .await;
         match probe {
             Ok(out) => {
                 let stderr = String::from_utf8_lossy(&out.stderr);
@@ -149,6 +160,8 @@ pub async fn detect_diagnostics_format(cc: &str) -> DiagnosticsFormat {
 #[derive(Deserialize, Debug)]
 struct GccJsonLocation {
     #[serde(default)]
+    caret: Option<Box<GccJsonLocation>>,
+    #[serde(default)]
     file: Option<GccJsonFile>,
     #[serde(default)]
     line: Option<serde_json::Number>,
@@ -157,9 +170,18 @@ struct GccJsonLocation {
 }
 
 #[derive(Deserialize, Debug)]
-struct GccJsonFile {
-    #[serde(default)]
-    name: Option<String>,
+#[serde(untagged)]
+enum GccJsonFile {
+    Path(String),
+    Object { name: Option<String> },
+}
+impl GccJsonFile {
+    fn name(&self) -> Option<String> {
+        match self {
+            Self::Path(path) => Some(path.clone()),
+            Self::Object { name } => name.clone(),
+        }
+    }
 }
 
 #[derive(Deserialize, Debug)]
@@ -178,11 +200,23 @@ fn diag_from_gcc_json(d: &GccJsonDiagnostic) -> CompilerDiagnostic {
     let (file, line, column) = d
         .locations
         .first()
+        .map(|l| l.caret.as_deref().unwrap_or(l))
         .map(|l| {
             (
-                l.file.as_ref().and_then(|f| f.name.clone()).unwrap_or_else(|| "<unknown>".into()),
-                l.line.as_ref().and_then(|n| n.as_u64()).unwrap_or(0).min(u32::MAX as u64) as u32,
-                l.column.as_ref().and_then(|n| n.as_u64()).unwrap_or(0).min(u32::MAX as u64) as u32,
+                l.file
+                    .as_ref()
+                    .and_then(|f| f.name())
+                    .unwrap_or_else(|| "<unknown>".into()),
+                l.line
+                    .as_ref()
+                    .and_then(|n| n.as_u64())
+                    .unwrap_or(0)
+                    .min(u32::MAX as u64) as u32,
+                l.column
+                    .as_ref()
+                    .and_then(|n| n.as_u64())
+                    .unwrap_or(0)
+                    .min(u32::MAX as u64) as u32,
             )
         })
         .unwrap_or(("<unknown>".into(), 0, 0));
@@ -356,11 +390,7 @@ fn text_diagnostics(stderr: &str) -> Vec<CompilerDiagnostic> {
 }
 
 /// Build the full gcc argument vector for one binary.
-fn build_argv(
-    build: &BuildConfig,
-    opts: &CompileOptions,
-    diag_flag: Option<&str>,
-) -> Vec<String> {
+fn build_argv(build: &BuildConfig, opts: &CompileOptions, diag_flag: Option<&str>) -> Vec<String> {
     let mut argv: Vec<String> = Vec::new();
 
     // --- engine-required flags (kept separate from user flags) ---
@@ -445,19 +475,20 @@ pub async fn compile(
     }
     // Compilation gets its own generous ceiling; the execution limits apply
     // to the inferior, not to the compiler.
-    let output = tokio::time::timeout(
-        std::time::Duration::from_secs(300),
-        cmd.output(),
-    )
-    .await
-    .map_err(|_| EngineError::Other("compilation timed out after 300s".into()))?
-    .map_err(EngineError::Io)?;
+    let output =
+        crate::supervisor::output(&mut cmd, crate::supervisor::deadline(), 8 * 1024 * 1024).await?;
+    if output.timed_out {
+        return Err(crate::supervisor::timeout_error("compilation"));
+    }
+    if output.cancelled {
+        return Err(EngineError::Cancelled);
+    }
 
     let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
     let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
     let _ = stdout; // gcc diagnostics go to stderr
 
-    let success = output.status.success();
+    let success = output.status.is_some_and(|s| s.success());
 
     let diagnostics = match format {
         DiagnosticsFormat::LegacyJson => {
@@ -479,12 +510,15 @@ pub async fn compile(
     };
     // In JSON modes gcc prints only the diagnostic JSON; if the toolchain
     // succeeded but no diagnostics came back, that is normal (no warnings).
-    let has_errors = diagnostics.iter().any(|d| d.kind == "error" || d.kind == "linker-error" || d.kind == "fatal error");
+    let has_errors = diagnostics
+        .iter()
+        .any(|d| d.kind == "error" || d.kind == "linker-error" || d.kind == "fatal error");
     let success = success && !has_errors;
 
     Ok(CompilationOutput {
+        sanitizer_variant: opts.sanitized.then(|| opts.sanitizer_variant.to_string()),
         success,
-        exit_code: output.status.code().unwrap_or(-1),
+        exit_code: output.status.and_then(|s| s.code()).unwrap_or(-1),
         binary_path: opts.output_path.clone(),
         diagnostics,
         raw_stderr: stderr,
@@ -529,7 +563,14 @@ pub async fn compile_project(
     let mut asan_result = not_built();
     for (flag, _label) in variants {
         let opts = CompileOptions::sanitized_with_variant(asan_out.clone(), flag);
-        let r = compile(build, cc, &opts, format).await?;
+        let r = match compile(build, cc, &opts, format).await {
+            Ok(result) => result,
+            Err(e) => {
+                // The already completed debug build must survive a failed optional build.
+                asan_result.raw_stderr = e.to_string();
+                break;
+            }
+        };
         if r.success {
             asan_result = r;
             break;
@@ -541,11 +582,30 @@ pub async fn compile_project(
 
 fn not_built() -> CompilationOutput {
     CompilationOutput {
+        sanitizer_variant: None,
         success: false,
         exit_code: -1,
         binary_path: PathBuf::new(),
         diagnostics: Vec::new(),
         raw_stderr: String::new(),
         diagnostics_format: DiagnosticsFormat::Text,
+    }
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::*;
+    #[test]
+    fn gcc_legacy_caret_locations_and_streams_are_preserved() {
+        let diagnostics = parse_legacy_gcc_json(r#"[{"kind":"error","message":"native error","locations":[{"caret":{"file":"input.c","line":7,"column":3}}]}] []"#).unwrap();
+        assert_eq!(diagnostics[0].file, "input.c");
+        assert_eq!(diagnostics[0].line, 7);
+        assert_eq!(diagnostics[0].column, 3);
+    }
+    #[test]
+    fn gcc_sarif_stream_and_camel_case_region() {
+        let diagnostics = parse_sarif(r#"{"runs":[{"results":[{"level":"error","message":{"text":"native error"},"locations":[{"physicalLocation":{"artifactLocation":{"uri":"x.c"},"region":{"startLine":5,"startColumn":9}}}]}]}]} {"runs":[]}"#).unwrap();
+        assert_eq!(diagnostics[0].line, 5);
+        assert_eq!(diagnostics[0].column, 9);
     }
 }

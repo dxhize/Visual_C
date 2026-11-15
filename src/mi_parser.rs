@@ -19,7 +19,7 @@ use std::collections::HashMap;
 
 use nom::{
     branch::alt,
-    bytes::complete::{take_while},
+    bytes::complete::take_while,
     character::complete::{digit1, satisfy},
     combinator::map_res,
     IResult,
@@ -128,7 +128,10 @@ pub enum MiRecord {
         results: Vec<MiResult>,
     },
     /// `=thread-created`, `=library-loaded`, ... (never tokenized by GDB)
-    Notify { class: String, results: Vec<MiResult> },
+    Notify {
+        class: String,
+        results: Vec<MiResult>,
+    },
     /// `~"..."`, `@"..."`, `&"..."`
     Stream { kind: StreamKind, text: String },
 }
@@ -242,7 +245,8 @@ fn lex_symbol(token: Token) -> impl Fn(&[u8]) -> IResult<&[u8], Token> {
 fn lex_ident(input: &[u8]) -> IResult<&[u8], Token> {
     // First character may not be a digit (numbers are lexed first); the rest
     // of the identifier may contain digits ("frame2", "b0").
-    let (rest, first) = satisfy(|c: char| is_ident_char(c as u64 as u8) && !c.is_ascii_digit())(input)?;
+    let (rest, first) =
+        satisfy(|c: char| is_ident_char(c as u64 as u8) && !c.is_ascii_digit())(input)?;
     let (rest, tail) = take_while(is_ident_char)(rest)?;
     let mut bytes = vec![first as u8];
     bytes.extend_from_slice(tail);
@@ -561,7 +565,10 @@ pub fn parse_line(line: &str) -> Result<Option<MiRecord>, MiParseError> {
     if tokens.is_empty() {
         return Ok(None);
     }
-    let mut p = Parser { tokens: &tokens, pos: 0 };
+    let mut p = Parser {
+        tokens: &tokens,
+        pos: 0,
+    };
 
     // Optional numeric token prefix.
     let token = match p.peek() {
@@ -577,12 +584,20 @@ pub fn parse_line(line: &str) -> Result<Option<MiRecord>, MiParseError> {
         Some(Token::Caret) => {
             let class = expect_class(&mut p)?;
             let results = parse_to_end(&mut p)?;
-            MiRecord::Result { token, class, results }
+            MiRecord::Result {
+                token,
+                class,
+                results,
+            }
         }
         Some(Token::Star) => {
             let class = expect_class(&mut p)?;
             let results = parse_to_end(&mut p)?;
-            MiRecord::Exec { token, class, results }
+            MiRecord::Exec {
+                token,
+                class,
+                results,
+            }
         }
         Some(Token::Equal) => {
             let class = expect_class(&mut p)?;
@@ -591,15 +606,24 @@ pub fn parse_line(line: &str) -> Result<Option<MiRecord>, MiParseError> {
         }
         Some(Token::Tilde) => {
             let text = expect_stream_text(&mut p)?;
-            MiRecord::Stream { kind: StreamKind::Console, text }
+            MiRecord::Stream {
+                kind: StreamKind::Console,
+                text,
+            }
         }
         Some(Token::At) => {
             let text = expect_stream_text(&mut p)?;
-            MiRecord::Stream { kind: StreamKind::Target, text }
+            MiRecord::Stream {
+                kind: StreamKind::Target,
+                text,
+            }
         }
         Some(Token::Ampersand) => {
             let text = expect_stream_text(&mut p)?;
-            MiRecord::Stream { kind: StreamKind::Log, text }
+            MiRecord::Stream {
+                kind: StreamKind::Log,
+                text,
+            }
         }
         other => {
             let found = format!("{:?}", other);
@@ -673,14 +697,20 @@ mod tests {
     use super::*;
 
     fn parse(s: &str) -> MiRecord {
-        parse_line(s).expect("parse should succeed").expect("record")
+        parse_line(s)
+            .expect("parse should succeed")
+            .expect("record")
     }
 
     #[test]
     fn simple_result_record() {
         let r = parse("6^done");
         match r {
-            MiRecord::Result { token, class, results } => {
+            MiRecord::Result {
+                token,
+                class,
+                results,
+            } => {
                 assert_eq!(token, Some(6));
                 assert_eq!(class, "done");
                 assert!(results.is_empty());
@@ -693,7 +723,11 @@ mod tests {
     fn result_with_flat_results() {
         let r = parse("9^done,value=\"0x7fffffffdaa8\"");
         match &r {
-            MiRecord::Result { token, class, results } => {
+            MiRecord::Result {
+                token,
+                class,
+                results,
+            } => {
                 assert_eq!(*token, Some(9));
                 assert_eq!(class, "done");
                 assert_eq!(results.len(), 1);
@@ -701,7 +735,10 @@ mod tests {
             }
             other => panic!("wrong record: {other:?}"),
         }
-        assert_eq!(as_const(r.result("value").unwrap()).unwrap(), "0x7fffffffdaa8");
+        assert_eq!(
+            as_const(r.result("value").unwrap()).unwrap(),
+            "0x7fffffffdaa8"
+        );
     }
 
     #[test]
@@ -713,9 +750,7 @@ mod tests {
 
     #[test]
     fn error_result_with_escaped_quotes() {
-        let r = parse(
-            "8^error,msg=\"No symbol table is loaded.  Use the \\\"file\\\" command.\"",
-        );
+        let r = parse("8^error,msg=\"No symbol table is loaded.  Use the \\\"file\\\" command.\"");
         match &r {
             MiRecord::Result { class, results, .. } => {
                 assert_eq!(class, "error");
@@ -789,7 +824,9 @@ mod tests {
     #[test]
     fn stream_records() {
         assert_eq!(
-            parse_line("~\"Reading symbols from bin...\\n\"").unwrap().unwrap(),
+            parse_line("~\"Reading symbols from bin...\\n\"")
+                .unwrap()
+                .unwrap(),
             MiRecord::Stream {
                 kind: StreamKind::Console,
                 text: "Reading symbols from bin...\n".into()
@@ -797,11 +834,17 @@ mod tests {
         );
         assert_eq!(
             parse_line("&\"warning: something\\n\"").unwrap().unwrap(),
-            MiRecord::Stream { kind: StreamKind::Log, text: "warning: something\n".into() }
+            MiRecord::Stream {
+                kind: StreamKind::Log,
+                text: "warning: something\n".into()
+            }
         );
         assert_eq!(
             parse_line("@\"target text\"").unwrap().unwrap(),
-            MiRecord::Stream { kind: StreamKind::Target, text: "target text".into() }
+            MiRecord::Stream {
+                kind: StreamKind::Target,
+                text: "target text".into()
+            }
         );
     }
 
@@ -835,7 +878,8 @@ mod tests {
                         let d = as_tuple(&inner[0].value).unwrap();
                         let f = &d.iter().find(|x| x.variable == "f").unwrap().value;
                         match as_list(f).unwrap() {
-                            [MiListItem::Value(MiValue::Const(x)), MiListItem::Value(MiValue::Const(y))] => {
+                            [MiListItem::Value(MiValue::Const(x)), MiListItem::Value(MiValue::Const(y))] =>
+                            {
                                 assert_eq!((x.as_str(), y.as_str()), ("x", "y"));
                             }
                             _ => panic!("f wrong"),
@@ -846,10 +890,14 @@ mod tests {
             }
             other => panic!("a[0] wrong: {other:?}"),
         }
-        assert_eq!(as_const(match &a[1] {
-            MiListItem::Value(v) => v,
-            _ => panic!(),
-        }).unwrap(), "tail");
+        assert_eq!(
+            as_const(match &a[1] {
+                MiListItem::Value(v) => v,
+                _ => panic!(),
+            })
+            .unwrap(),
+            "tail"
+        );
     }
 
     #[test]
@@ -934,7 +982,9 @@ mod tests {
             "*stopped,reason=\"exited-normally\"",
         ];
         for line in lines {
-            parse_line(line).unwrap_or_else(|e| panic!("failed on: {line}\n{e}")).unwrap();
+            parse_line(line)
+                .unwrap_or_else(|e| panic!("failed on: {line}\n{e}"))
+                .unwrap();
         }
         let r = parse("12^done,memory=[{begin=\"0x00007fffffffdaa8\",offset=\"0x0000000000000000\",end=\"0x00007fffffffdab4\",contents=\"000000000000000060dbffff\"}]");
         let mem = as_list(r.result("memory").unwrap()).unwrap();

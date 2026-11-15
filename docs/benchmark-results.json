@@ -1,0 +1,543 @@
+{
+  "method": "debug build; three serial samples; all pipeline stages included",
+  "platform": "Linux-7.2.15-200.fc44.x86_64-x86_64-with-glibc2.43",
+  "binary_sha256": "fda37f372c3a828607389a96880ff1aafeae65689adb411aa21239af20c8589d",
+  "tools": {
+    "gcc_version": "gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+    "gdb_version": "GNU gdb (Fedora Linux) 18.1-1.fc44",
+    "valgrind_version": "valgrind-3.27.1",
+    "addr2line_version": "GNU addr2line version 2.46.1-1.fc44"
+  },
+  "results": [
+    {
+      "case": "hello_source",
+      "fixture": "fixtures/c/hello.c",
+      "flags": [
+        "--trace-mode",
+        "source"
+      ],
+      "samples": [
+        {
+          "wall_seconds": 3.91,
+          "peak_waited_process_rss_kib": 152596,
+          "engine_peak_rss_kib": 10900,
+          "json_bytes": 11642,
+          "journal_bytes": null,
+          "instruction_attempts": 0,
+          "events_per_debugger_second": 0.0,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 10900,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1141395,
+            "mi_parse_time_us": 14590,
+            "memory_read_time_us": 0,
+            "enabled": true,
+            "step_time_us": 124326,
+            "disassembly_time_us": 0,
+            "register_time_us": 0,
+            "capture_time_us": 9646,
+            "debugger_time_us": 959670,
+            "disassembly_queries": 0,
+            "disassembly_cache_hits": 0,
+            "journal_time_us": 0
+          }
+        },
+        {
+          "wall_seconds": 3.91,
+          "peak_waited_process_rss_kib": 152768,
+          "engine_peak_rss_kib": 10852,
+          "json_bytes": 11643,
+          "journal_bytes": null,
+          "instruction_attempts": 0,
+          "events_per_debugger_second": 0.0,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 10852,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1046590,
+            "mi_parse_time_us": 11985,
+            "memory_read_time_us": 0,
+            "enabled": true,
+            "step_time_us": 156049,
+            "disassembly_time_us": 0,
+            "register_time_us": 0,
+            "capture_time_us": 7118,
+            "debugger_time_us": 1015427,
+            "disassembly_queries": 0,
+            "disassembly_cache_hits": 0,
+            "journal_time_us": 0
+          }
+        },
+        {
+          "wall_seconds": 5.85,
+          "peak_waited_process_rss_kib": 152692,
+          "engine_peak_rss_kib": 11112,
+          "json_bytes": 11643,
+          "journal_bytes": null,
+          "instruction_attempts": 0,
+          "events_per_debugger_second": 0.0,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11112,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1822595,
+            "mi_parse_time_us": 13067,
+            "memory_read_time_us": 0,
+            "enabled": true,
+            "step_time_us": 149537,
+            "disassembly_time_us": 0,
+            "register_time_us": 0,
+            "capture_time_us": 9072,
+            "debugger_time_us": 1492878,
+            "disassembly_queries": 0,
+            "disassembly_cache_hits": 0,
+            "journal_time_us": 0
+          }
+        }
+      ],
+      "median_wall_seconds": 3.91
+    },
+    {
+      "case": "hello_dual",
+      "fixture": "fixtures/c/hello.c",
+      "flags": [],
+      "samples": [
+        {
+          "wall_seconds": 6.08,
+          "peak_waited_process_rss_kib": 152664,
+          "engine_peak_rss_kib": 11020,
+          "json_bytes": 100106,
+          "journal_bytes": null,
+          "instruction_attempts": 7,
+          "events_per_debugger_second": 4.49,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11020,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1931370,
+            "mi_parse_time_us": 148130,
+            "memory_read_time_us": 0,
+            "enabled": true,
+            "step_time_us": 59604,
+            "disassembly_time_us": 11249,
+            "register_time_us": 272978,
+            "capture_time_us": 26575,
+            "debugger_time_us": 1557557,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 6,
+            "journal_time_us": 38498
+          }
+        },
+        {
+          "wall_seconds": 5.17,
+          "peak_waited_process_rss_kib": 152768,
+          "engine_peak_rss_kib": 11148,
+          "json_bytes": 100106,
+          "journal_bytes": null,
+          "instruction_attempts": 7,
+          "events_per_debugger_second": 5.11,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11148,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1999816,
+            "mi_parse_time_us": 43897,
+            "memory_read_time_us": 0,
+            "enabled": true,
+            "step_time_us": 29083,
+            "disassembly_time_us": 4190,
+            "register_time_us": 105023,
+            "capture_time_us": 7497,
+            "debugger_time_us": 1368901,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 6,
+            "journal_time_us": 10986
+          }
+        },
+        {
+          "wall_seconds": 4.54,
+          "peak_waited_process_rss_kib": 152772,
+          "engine_peak_rss_kib": 11204,
+          "json_bytes": 100103,
+          "journal_bytes": null,
+          "instruction_attempts": 7,
+          "events_per_debugger_second": 5.07,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11204,
+            "source_resolution_time_us": 5,
+            "command_time_us": 1583496,
+            "mi_parse_time_us": 55586,
+            "memory_read_time_us": 0,
+            "enabled": true,
+            "step_time_us": 24256,
+            "disassembly_time_us": 3536,
+            "register_time_us": 148194,
+            "capture_time_us": 6860,
+            "debugger_time_us": 1381112,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 6,
+            "journal_time_us": 14948
+          }
+        }
+      ],
+      "median_wall_seconds": 5.17
+    },
+    {
+      "case": "loop_dual",
+      "fixture": "fixtures/c/finite_loop.c",
+      "flags": [],
+      "samples": [
+        {
+          "wall_seconds": 7.0,
+          "peak_waited_process_rss_kib": 152624,
+          "engine_peak_rss_kib": 11612,
+          "json_bytes": 255660,
+          "journal_bytes": null,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 24.73,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11612,
+            "source_resolution_time_us": 7,
+            "command_time_us": 3739223,
+            "mi_parse_time_us": 632742,
+            "memory_read_time_us": 70762,
+            "enabled": true,
+            "step_time_us": 375765,
+            "disassembly_time_us": 3954,
+            "register_time_us": 2059855,
+            "capture_time_us": 522189,
+            "debugger_time_us": 3922606,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 47161
+          }
+        },
+        {
+          "wall_seconds": 5.97,
+          "peak_waited_process_rss_kib": 152560,
+          "engine_peak_rss_kib": 11444,
+          "json_bytes": 255660,
+          "journal_bytes": null,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 32.37,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11444,
+            "source_resolution_time_us": 6,
+            "command_time_us": 2841840,
+            "mi_parse_time_us": 454455,
+            "memory_read_time_us": 36426,
+            "enabled": true,
+            "step_time_us": 244704,
+            "disassembly_time_us": 7376,
+            "register_time_us": 1379143,
+            "capture_time_us": 374573,
+            "debugger_time_us": 2997052,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 33533
+          }
+        },
+        {
+          "wall_seconds": 5.93,
+          "peak_waited_process_rss_kib": 152768,
+          "engine_peak_rss_kib": 11404,
+          "json_bytes": 255660,
+          "journal_bytes": null,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 29.73,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11404,
+            "source_resolution_time_us": 6,
+            "command_time_us": 3108294,
+            "mi_parse_time_us": 511088,
+            "memory_read_time_us": 45565,
+            "enabled": true,
+            "step_time_us": 279950,
+            "disassembly_time_us": 3910,
+            "register_time_us": 1597353,
+            "capture_time_us": 386373,
+            "debugger_time_us": 3263147,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 35142
+          }
+        }
+      ],
+      "median_wall_seconds": 5.97
+    },
+    {
+      "case": "loop_no_registers",
+      "fixture": "fixtures/c/finite_loop.c",
+      "flags": [
+        "--no-registers"
+      ],
+      "samples": [
+        {
+          "wall_seconds": 4.51,
+          "peak_waited_process_rss_kib": 152740,
+          "engine_peak_rss_kib": 11220,
+          "json_bytes": 149027,
+          "journal_bytes": null,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 58.88,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11220,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1698848,
+            "mi_parse_time_us": 63914,
+            "memory_read_time_us": 40008,
+            "enabled": true,
+            "step_time_us": 245948,
+            "disassembly_time_us": 5865,
+            "register_time_us": 0,
+            "capture_time_us": 369729,
+            "debugger_time_us": 1647440,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 14457
+          }
+        },
+        {
+          "wall_seconds": 4.5,
+          "peak_waited_process_rss_kib": 152700,
+          "engine_peak_rss_kib": 11136,
+          "json_bytes": 149027,
+          "journal_bytes": null,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 62.31,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11136,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1504583,
+            "mi_parse_time_us": 65507,
+            "memory_read_time_us": 42168,
+            "enabled": true,
+            "step_time_us": 244007,
+            "disassembly_time_us": 3819,
+            "register_time_us": 0,
+            "capture_time_us": 381789,
+            "debugger_time_us": 1556665,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 16722
+          }
+        },
+        {
+          "wall_seconds": 4.35,
+          "peak_waited_process_rss_kib": 152664,
+          "engine_peak_rss_kib": 11116,
+          "json_bytes": 149027,
+          "journal_bytes": null,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 66.98,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11116,
+            "source_resolution_time_us": 6,
+            "command_time_us": 1454094,
+            "mi_parse_time_us": 60880,
+            "memory_read_time_us": 36948,
+            "enabled": true,
+            "step_time_us": 209419,
+            "disassembly_time_us": 5587,
+            "register_time_us": 0,
+            "capture_time_us": 336860,
+            "debugger_time_us": 1448138,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 16512
+          }
+        }
+      ],
+      "median_wall_seconds": 4.5
+    },
+    {
+      "case": "loop_journal_only",
+      "fixture": "fixtures/c/finite_loop.c",
+      "flags": [
+        "--journal-only"
+      ],
+      "samples": [
+        {
+          "wall_seconds": 6.0,
+          "peak_waited_process_rss_kib": 152692,
+          "engine_peak_rss_kib": 11040,
+          "json_bytes": 118065,
+          "journal_bytes": 158705,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 31.62,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11040,
+            "source_resolution_time_us": 6,
+            "command_time_us": 2997987,
+            "mi_parse_time_us": 500395,
+            "memory_read_time_us": 40339,
+            "enabled": true,
+            "step_time_us": 240538,
+            "disassembly_time_us": 4645,
+            "register_time_us": 1480857,
+            "capture_time_us": 368689,
+            "debugger_time_us": 3067880,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 43024
+          }
+        },
+        {
+          "wall_seconds": 6.32,
+          "peak_waited_process_rss_kib": 152536,
+          "engine_peak_rss_kib": 11092,
+          "json_bytes": 118065,
+          "journal_bytes": 158705,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 33.28,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11092,
+            "source_resolution_time_us": 5,
+            "command_time_us": 2963749,
+            "mi_parse_time_us": 436646,
+            "memory_read_time_us": 34467,
+            "enabled": true,
+            "step_time_us": 223221,
+            "disassembly_time_us": 4287,
+            "register_time_us": 1363777,
+            "capture_time_us": 332283,
+            "debugger_time_us": 2915016,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 42849
+          }
+        },
+        {
+          "wall_seconds": 5.98,
+          "peak_waited_process_rss_kib": 152620,
+          "engine_peak_rss_kib": 11288,
+          "json_bytes": 118065,
+          "journal_bytes": 158705,
+          "instruction_attempts": 97,
+          "events_per_debugger_second": 33.11,
+          "outcome": "completed",
+          "profiling": {
+            "engine_peak_rss_kib": 11288,
+            "source_resolution_time_us": 6,
+            "command_time_us": 2818401,
+            "mi_parse_time_us": 467990,
+            "memory_read_time_us": 37036,
+            "enabled": true,
+            "step_time_us": 236839,
+            "disassembly_time_us": 4890,
+            "register_time_us": 1446064,
+            "capture_time_us": 327567,
+            "debugger_time_us": 2929884,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 96,
+            "journal_time_us": 38168
+          }
+        }
+      ],
+      "median_wall_seconds": 6.0
+    },
+    {
+      "case": "tight_loop_journal_only",
+      "fixture": "fixtures/c/spin_same_line.c",
+      "flags": [
+        "--no-registers",
+        "--journal-only",
+        "--max-instruction-events",
+        "2000",
+        "--analysis-timeout",
+        "1"
+      ],
+      "samples": [
+        {
+          "wall_seconds": 8.61,
+          "peak_waited_process_rss_kib": 152564,
+          "engine_peak_rss_kib": 11564,
+          "json_bytes": 26401,
+          "journal_bytes": 817432,
+          "instruction_attempts": 2000,
+          "events_per_debugger_second": 309.9,
+          "outcome": "step_limit_reached",
+          "profiling": {
+            "engine_peak_rss_kib": 11564,
+            "source_resolution_time_us": 8,
+            "command_time_us": 3214553,
+            "mi_parse_time_us": 599717,
+            "memory_read_time_us": 2356,
+            "enabled": true,
+            "step_time_us": 4854883,
+            "disassembly_time_us": 4507,
+            "register_time_us": 0,
+            "capture_time_us": 38328,
+            "debugger_time_us": 6453609,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 1999,
+            "journal_time_us": 401520
+          }
+        },
+        {
+          "wall_seconds": 8.74,
+          "peak_waited_process_rss_kib": 152756,
+          "engine_peak_rss_kib": 11460,
+          "json_bytes": 26402,
+          "journal_bytes": 817432,
+          "instruction_attempts": 2000,
+          "events_per_debugger_second": 313.82,
+          "outcome": "step_limit_reached",
+          "profiling": {
+            "engine_peak_rss_kib": 11460,
+            "source_resolution_time_us": 11,
+            "command_time_us": 3236826,
+            "mi_parse_time_us": 582320,
+            "memory_read_time_us": 1288,
+            "enabled": true,
+            "step_time_us": 4705769,
+            "disassembly_time_us": 4382,
+            "register_time_us": 0,
+            "capture_time_us": 30516,
+            "debugger_time_us": 6372980,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 1999,
+            "journal_time_us": 377573
+          }
+        },
+        {
+          "wall_seconds": 7.97,
+          "peak_waited_process_rss_kib": 152772,
+          "engine_peak_rss_kib": 11364,
+          "json_bytes": 26401,
+          "journal_bytes": 817432,
+          "instruction_attempts": 2000,
+          "events_per_debugger_second": 354.14,
+          "outcome": "step_limit_reached",
+          "profiling": {
+            "engine_peak_rss_kib": 11364,
+            "source_resolution_time_us": 9,
+            "command_time_us": 2958152,
+            "mi_parse_time_us": 575349,
+            "memory_read_time_us": 1723,
+            "enabled": true,
+            "step_time_us": 4009334,
+            "disassembly_time_us": 4253,
+            "register_time_us": 0,
+            "capture_time_us": 35588,
+            "debugger_time_us": 5647453,
+            "disassembly_queries": 1,
+            "disassembly_cache_hits": 1999,
+            "journal_time_us": 348673
+          }
+        }
+      ],
+      "median_wall_seconds": 8.61
+    }
+  ]
+}

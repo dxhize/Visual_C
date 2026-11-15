@@ -50,6 +50,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
+#include <limits.h>
+#if ULONG_MAX != UINT64_MAX
+#error "c-trace allocation runtime requires a 64-bit unsigned long target"
+#endif
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
@@ -223,8 +227,9 @@ static void cte_fini(void)
 void *__wrap_malloc(size_t size)
 {
     void *ret = __real_malloc(size);
-    if (g_busy)
+    if (g_busy || g_fd < 0)
         return ret;
+    int saved_errno = errno;
     g_busy = 1;
     unsigned long caller = (unsigned long)__builtin_return_address(0);
     cte_lock();
@@ -235,49 +240,56 @@ void *__wrap_malloc(size_t size)
         cte_insert((unsigned long)ret, id, size);
     cte_unlock();
     g_busy = 0;
+    errno = saved_errno;
     return ret;
 }
 
 void *__wrap_calloc(size_t nmemb, size_t size)
 {
     void *ret = __real_calloc(nmemb, size);
-    if (g_busy)
+    if (g_busy || g_fd < 0)
         return ret;
+    int saved_errno = errno;
     g_busy = 1;
     unsigned long caller = (unsigned long)__builtin_return_address(0);
     /* The wrapped product mirrors the ABI; the real calloc validates
      * overflow itself (returns NULL), which we record as "failed". */
-    unsigned long total = nmemb * size;
+    int overflow = size != 0 && nmemb > SIZE_MAX / size;
+    unsigned long total = overflow ? 0 : nmemb * size;
     cte_lock();
     unsigned long id = ++g_ids;
     cte_emit_locked("calloc", id, (unsigned long)ret, total, 0, 0, caller,
-                    ret ? "ok" : "failed");
+                    overflow ? "overflow" : (ret ? "ok" : "failed"));
     if (ret)
         cte_insert((unsigned long)ret, id, total);
     cte_unlock();
     g_busy = 0;
+    errno = saved_errno;
     return ret;
 }
 
 void *__wrap_realloc(void *ptr, size_t size)
 {
-    void *ret = __real_realloc(ptr, size);
-    if (g_busy)
-        return ret;
+    if (g_busy || g_fd < 0)
+        return __real_realloc(ptr, size);
     g_busy = 1;
     unsigned long caller = (unsigned long)__builtin_return_address(0);
 
     cte_lock();
-    cte_slot *slot = ptr ? cte_find((unsigned long)ptr) : NULL;
+    unsigned long old_addr = (unsigned long)ptr;
+    cte_slot *slot = old_addr ? cte_find(old_addr) : NULL;
     unsigned long old_id = slot ? slot->id : 0;
+    /* Hold the bookkeeping lock while an old address may become reusable. */
+    void *ret = __real_realloc(ptr, size);
+    int saved_errno = errno;
     unsigned long id;
     const char *status;
-    if (ptr == NULL) {
+    if (old_addr == 0) {
         id = ++g_ids;
-        status = "new"; /* realloc(NULL, n) == malloc(n) */
-    } else if (ret == ptr) {
-        id = old_id;
-        status = "ok_same"; /* in-place growth/shrink: id stays stable */
+        status = ret ? "new" : "failed"; /* realloc(NULL, n) may fail */
+    } else if ((unsigned long)ret == old_addr) {
+        id = slot ? old_id : ++g_ids;
+        status = slot ? "ok_same" : "new"; /* untracked predecessor starts observation here */
     } else if (ret != NULL) {
         id = ++g_ids;
         status = "ok_moved"; /* old block retired, new id for new address */
@@ -289,41 +301,49 @@ void *__wrap_realloc(void *ptr, size_t size)
         status = "failed"; /* original allocation preserved */
     }
     cte_emit_locked("realloc", id, (unsigned long)ret, size, old_id,
-                    (unsigned long)ptr, caller, status);
+                    old_addr, caller, status);
 
     /* Table maintenance (never before emission, and state changes must
      * match what the real allocator actually did). */
-    if (ptr != NULL) {
-        if (ret == ptr)
-            slot->size = size; /* id stable, size updated */
+    if (old_addr != 0) {
+        if ((unsigned long)ret == old_addr) {
+            if (slot)
+                slot->size = size; /* id stable, size updated */
+            else if (ret)
+                cte_insert((unsigned long)ret, id, size);
+        }
         else if (ret != NULL || size == 0)
-            cte_remove((unsigned long)ptr);
+            cte_remove(old_addr);
         /* status == "failed": keep the original entry */
     }
-    if (ret != NULL && (ptr == NULL || ret != ptr))
+    if (ret != NULL && (old_addr == 0 || (unsigned long)ret != old_addr))
         cte_insert((unsigned long)ret, id, size);
     cte_unlock();
     g_busy = 0;
+    errno = saved_errno;
     return ret;
 }
 
 void __wrap_free(void *ptr)
 {
-    if (g_busy) {
+    if (g_busy || g_fd < 0) {
         __real_free(ptr);
         return;
     }
     g_busy = 1;
     unsigned long caller = (unsigned long)__builtin_return_address(0);
-    __real_free(ptr);
     cte_lock();
-    cte_slot *slot = ptr ? cte_find((unsigned long)ptr) : NULL;
+    unsigned long old_addr = (unsigned long)ptr;
+    cte_slot *slot = old_addr ? cte_find(old_addr) : NULL;
     unsigned long id = slot ? slot->id : 0;
-    const char *status = ptr ? (slot ? "ok" : "unknown") : "null";
+    const char *status = old_addr ? (slot ? "ok" : "unknown") : "null";
     unsigned long size = slot ? slot->size : 0;
-    cte_emit_locked("free", id, (unsigned long)ptr, size, 0, 0, caller, status);
+    __real_free(ptr);
+    int saved_errno = errno;
+    cte_emit_locked("free", id, old_addr, size, 0, 0, caller, status);
     if (slot)
-        cte_remove((unsigned long)ptr);
+        cte_remove(old_addr);
     cte_unlock();
     g_busy = 0;
+    errno = saved_errno;
 }

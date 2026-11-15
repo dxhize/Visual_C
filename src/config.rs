@@ -75,6 +75,7 @@ pub struct TraceConfig {
     pub pretty: bool,
     /// Keep the session temporary directory after the run (default false).
     pub keep_temp: bool,
+    pub tracing: TracingConfig,
 }
 
 impl Default for TraceConfig {
@@ -87,6 +88,7 @@ impl Default for TraceConfig {
             output_file: None,
             pretty: true,
             keep_temp: false,
+            tracing: TracingConfig::default(),
         }
     }
 }
@@ -115,4 +117,53 @@ pub struct ConfigFile {
     pub output_file: Option<PathBuf>,
     pub pretty: Option<bool>,
     pub keep_temp: Option<bool>,
+    pub tracing: TracingConfig,
+}
+
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+#[serde(rename_all = "snake_case")]
+pub enum TraceMode {
+    Source,
+    #[default]
+    Dual,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(default, deny_unknown_fields)]
+pub struct TracingConfig {
+    pub mode: TraceMode,
+    pub registers: bool,
+    pub static_disassembly: bool,
+    pub register_checkpoint_interval: usize,
+    /// User-specified expressions read at instruction stops. Never evaluated as writes.
+    pub memory_regions: Vec<MemoryRegion>,
+    pub globals: Vec<String>,
+    pub discover_globals: bool,
+    /// Durable JSONL journal; dynamic events need not remain resident.
+    pub journal: Option<PathBuf>,
+    pub retain_instruction_events: bool,
+    pub profiling: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MemoryRegion {
+    pub address: String,
+    pub size: usize,
+}
+
+impl Default for TracingConfig {
+    fn default() -> Self {
+        Self {
+            mode: TraceMode::Dual,
+            registers: true,
+            static_disassembly: true,
+            register_checkpoint_interval: 256,
+            memory_regions: Vec::new(),
+            globals: Vec::new(),
+            discover_globals: true,
+            journal: None,
+            retain_instruction_events: true,
+            profiling: false,
+        }
+    }
 }

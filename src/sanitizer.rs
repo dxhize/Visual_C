@@ -13,12 +13,9 @@
 //! signal killed the run before it could report).
 
 use std::path::Path;
-use std::time::Duration;
-
-use tokio::io::AsyncReadExt;
 
 use crate::models::SanitizerReport;
-use crate::resource_limits::{apply_diagnostic_limits, kill_process_group};
+use crate::resource_limits::apply_diagnostic_limits;
 
 /// Run the sanitized binary with the same args/working directory.
 pub async fn run_sanitized(
@@ -39,68 +36,26 @@ pub async fn run_sanitized(
     apply_diagnostic_limits(&mut cmd, limits);
 
     let mut report = SanitizerReport::default();
-    let mut child = match cmd.spawn() {
-        Ok(c) => c,
+    let output = match crate::supervisor::output(
+        &mut cmd,
+        crate::supervisor::stage_deadline(limits.analysis_timeout_seconds),
+        limits.max_output_bytes,
+    )
+    .await
+    {
+        Ok(output) => output,
         Err(e) => {
+            report.cancelled = matches!(e, crate::error::EngineError::Cancelled);
             report.reproduction = "skipped".into();
             report.stderr_excerpt = format!("could not spawn sanitized binary: {e}");
             return report;
         }
     };
 
-    let mut stdout_pipe = child.stdout.take().expect("stdout");
-    let mut stderr_pipe = child.stderr.take().expect("stderr");
-    let out_cap = limits.max_output_bytes;
-    let out_task = tokio::spawn(async move {
-        let mut buf = Vec::new();
-        let mut chunk = [0u8; 8192];
-        loop {
-            match stdout_pipe.read(&mut chunk).await {
-                Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    if buf.len() < out_cap {
-                        buf.extend_from_slice(&chunk[..n.min(out_cap - buf.len())]);
-                    }
-                }
-            }
-        }
-        buf
-    });
-    let err_task = tokio::spawn(async move {
-        let mut buf = Vec::new();
-        let mut chunk = [0u8; 8192];
-        loop {
-            match stderr_pipe.read(&mut chunk).await {
-                Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    if buf.len() < out_cap * 2 {
-                        buf.extend_from_slice(&chunk[..n.min(out_cap * 2 - buf.len())]);
-                    }
-                }
-            }
-        }
-        buf
-    });
-
-    let mut timed_out = false;
-    let status = match tokio::time::timeout(
-        Duration::from_secs(limits.timeout_seconds.max(1) * 2 + 5),
-        child.wait(),
-    )
-    .await
-    {
-        Ok(s) => s.ok(),
-        Err(_) => {
-            timed_out = true;
-            if let Some(pid) = child.id() {
-                kill_process_group(pid);
-            }
-            let _ = child.wait().await;
-            None
-        }
-    };
-    let stdout_bytes = out_task.await.unwrap_or_default();
-    let stderr_bytes = err_task.await.unwrap_or_default();
+    let stdout_bytes = output.stdout;
+    let stderr_bytes = output.stderr;
+    let timed_out = output.timed_out;
+    let status = output.status;
 
     let stdout = String::from_utf8_lossy(&stdout_bytes).into_owned();
     let stderr = String::from_utf8_lossy(&stderr_bytes).into_owned();
@@ -108,14 +63,18 @@ pub async fn run_sanitized(
     report.stderr_excerpt = truncate(&stderr, 8192);
     report.exit_code = status.as_ref().and_then(|s| s.code());
     report.timed_out = timed_out;
+    report.cancelled = output.cancelled;
+    report.output_complete = !timed_out && !output.output_truncated && !output.cancelled;
 
     parse_sanitizer_output(&stderr, &stdout, &mut report);
     if report.sanitizer.is_some() {
         report.reproduction = "reproduced".into();
-    } else if timed_out {
+    } else if timed_out || output.cancelled {
         report.reproduction = "inconclusive".into();
-    } else {
+    } else if status.is_some_and(|s| s.success()) {
         report.reproduction = "completed_normally".into();
+    } else {
+        report.reproduction = "inconclusive".into();
     }
     report
 }
@@ -151,7 +110,9 @@ pub fn parse_sanitizer_output(stderr: &str, stdout: &str, report: &mut Sanitizer
         }
     } else if combined.contains("AddressSanitizer:") {
         report.sanitizer = Some("AddressSanitizer".into());
-        if let Some(err_line) = combined.lines().find(|l| l.contains("ERROR: AddressSanitizer:"))
+        if let Some(err_line) = combined
+            .lines()
+            .find(|l| l.contains("ERROR: AddressSanitizer:"))
         {
             report.error_category = Some(extract_asan_category(err_line));
             report.message = Some(err_line.trim().to_string());
@@ -198,6 +159,32 @@ pub fn parse_sanitizer_output(stderr: &str, stdout: &str, report: &mut Sanitizer
     report.stack.truncate(32);
 }
 
+/// Correlate by real native source sites, never by unrelated process addresses.
+pub fn matches_crash(report: &SanitizerReport, crash: &crate::models::CrashReport) -> bool {
+    let mut locations: Vec<(String, u32)> = report
+        .stack
+        .iter()
+        .filter_map(|line| extract_location(line))
+        .map(|(file, line, _)| (file, line))
+        .collect();
+    if let (Some(file), Some(line)) = (&report.file, report.line) {
+        locations.push((file.clone(), line));
+    }
+    crash.backtrace.iter().any(|frame| {
+        let file = frame.full_file.as_ref().or(frame.file.as_ref());
+        file.zip(frame.line).is_some_and(|(file, line)| {
+            locations.iter().any(|(other, other_line)| {
+                line == *other_line
+                    && (file == other
+                        || std::fs::canonicalize(file)
+                            .ok()
+                            .zip(std::fs::canonicalize(other).ok())
+                            .is_some_and(|(a, b)| a == b))
+            })
+        })
+    })
+}
+
 fn extract_asan_category(line: &str) -> String {
     // "SUMMARY: AddressSanitizer: heap-buffer-overflow /path/file.c:10 in main"
     let rest = match line.find("AddressSanitizer:") {
@@ -205,7 +192,7 @@ fn extract_asan_category(line: &str) -> String {
         None => return "unknown".into(),
     };
     rest.split_whitespace()
-        .find(|w| w.contains('-') || w.contains('_'))
+        .next()
         .unwrap_or("unknown")
         .to_string()
 }
@@ -281,10 +268,7 @@ Shadow bytes around the buggy address: ...
         let stderr = "prog: /home/user/proj/shift.c:5:10: runtime error: left shift of negative value -1 by 1 place cannot be represented in type 'int'\n";
         let mut r = SanitizerReport::default();
         parse_sanitizer_output("", stderr, &mut r);
-        assert_eq!(
-            r.sanitizer.as_deref(),
-            Some("UndefinedBehaviorSanitizer")
-        );
+        assert_eq!(r.sanitizer.as_deref(), Some("UndefinedBehaviorSanitizer"));
         assert_eq!(r.file.as_deref(), Some("/home/user/proj/shift.c"));
         assert_eq!(r.line, Some(5));
         assert_eq!(r.column, Some(10));

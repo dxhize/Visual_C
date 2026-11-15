@@ -1,0 +1,42 @@
+[
+  {
+    "file": "v2_success.json",
+    "outcome": "completed",
+    "mode": "source",
+    "instruction_attempts": 0,
+    "source_checkpoints": 4,
+    "json_bytes": 11645,
+    "wall_time_ms": 5717,
+    "reference_validation": "passed"
+  },
+  {
+    "file": "v2_null_pointer.json",
+    "outcome": "crashed",
+    "mode": "dual",
+    "instruction_attempts": 5,
+    "source_checkpoints": 4,
+    "json_bytes": 81231,
+    "wall_time_ms": 4901,
+    "reference_validation": "passed"
+  },
+  {
+    "file": "v2_bounded_infinite.json",
+    "outcome": "timeout",
+    "mode": "dual",
+    "instruction_attempts": 49,
+    "source_checkpoints": 3,
+    "json_bytes": 115735,
+    "wall_time_ms": 5130,
+    "reference_validation": "passed"
+  },
+  {
+    "file": "v2_dual.json",
+    "outcome": "completed",
+    "mode": "dual",
+    "instruction_attempts": 80,
+    "source_checkpoints": 25,
+    "json_bytes": 366672,
+    "wall_time_ms": 8813,
+    "reference_validation": "passed"
+  }
+]

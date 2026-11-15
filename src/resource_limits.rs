@@ -3,14 +3,13 @@
 //! Two enforcement layers are provided, both applied to the *inferior* side of
 //! the process tree rather than to the engine itself:
 //!
-//! 1. **rlimits** (`setrlimit` in a `pre_exec` hook) are inherited by GDB and
-//!    by the inferior it spawns: address space (`RLIMIT_AS`), CPU time
-//!    (`RLIMIT_CPU`), file size (`RLIMIT_FSIZE`), open files (`RLIMIT_NOFILE`)
-//!    and process count (`RLIMIT_NPROC`).
+//! 1. Diagnostic children receive CPU/file/open-file rlimits. GDB is not
+//!    restricted by the inferior's address-space budget; Linux prlimit applies
+//!    that budget to the stopped inferior after the initial main breakpoint.
 //! 2. **cgroup v2** (best effort): when the kernel exposes a writable cgroup
 //!    subtree (root, or a delegated user slice), a dedicated group is created
-//!    with `memory.max`, `pids.max` and `cpu.max`; the GDB process is attached
-//!    to it so the inferior and all of its children are accounted and can be
+//!    with `memory.max` and `pids.max`; the stopped inferior is attached
+//!    to it so its future children are accounted and can be
 //!    killed atomically via `cgroup.kill`.
 //!
 //! # Security note
@@ -69,6 +68,16 @@ pub struct ExecutionLimits {
     pub max_process_count: usize,
     /// Maximum variables introspected per snapshot (address/size/bytes).
     pub max_variables_per_snapshot: usize,
+    pub max_instruction_events: usize,
+    pub max_source_checkpoints: usize,
+    pub max_trace_bytes: usize,
+    pub max_trace_memory_bytes: usize,
+    pub max_register_snapshot_bytes: usize,
+    pub max_gdb_commands: u64,
+    pub max_globals: usize,
+    pub compiler_timeout_seconds: u64,
+    pub debugger_timeout_seconds: u64,
+    pub analysis_timeout_seconds: u64,
 }
 
 impl Default for ExecutionLimits {
@@ -84,6 +93,16 @@ impl Default for ExecutionLimits {
             max_memory_read_bytes: 4 * 1024,
             max_process_count: 16,
             max_variables_per_snapshot: 24,
+            max_instruction_events: 100_000,
+            max_source_checkpoints: 1_000,
+            max_trace_bytes: 128 * 1024 * 1024,
+            max_trace_memory_bytes: 32 * 1024 * 1024,
+            max_register_snapshot_bytes: 64 * 1024,
+            max_gdb_commands: 1_000_000,
+            max_globals: 32,
+            compiler_timeout_seconds: 30,
+            debugger_timeout_seconds: 30,
+            analysis_timeout_seconds: 10,
         }
     }
 }
@@ -91,13 +110,29 @@ impl Default for ExecutionLimits {
 impl ExecutionLimits {
     /// Sanity-check configured limits; rejects values that cannot work.
     pub fn validate(&self) -> Result<()> {
+        if self.timeout_seconds > 31_536_000 {
+            return Err(EngineError::Config(
+                "timeout_seconds must not exceed one year".into(),
+            ));
+        }
+        if self.max_memory_mb as u64 > u64::MAX / (1024 * 1024) {
+            return Err(EngineError::Config(
+                "max_memory_mb overflows byte accounting".into(),
+            ));
+        }
+        if self.max_gdb_commands == 0
+            || self.max_trace_bytes == 0
+            || self.max_trace_memory_bytes == 0
+        {
+            return Err(EngineError::Config(
+                "debugger command and trace storage budgets must be positive".into(),
+            ));
+        }
         if self.max_steps == 0 {
             return Err(EngineError::Config("max_steps must be > 0".into()));
         }
         if self.timeout_seconds == 0 {
-            return Err(EngineError::Config(
-                "timeout_seconds must be > 0".into(),
-            ));
+            return Err(EngineError::Config("timeout_seconds must be > 0".into()));
         }
         if self.max_memory_mb < 16 {
             // Below this the traced program cannot even link its runtime
@@ -108,9 +143,7 @@ impl ExecutionLimits {
             ));
         }
         if self.max_snapshot_count == 0 {
-            return Err(EngineError::Config(
-                "max_snapshot_count must be > 0".into(),
-            ));
+            return Err(EngineError::Config("max_snapshot_count must be > 0".into()));
         }
         if self.max_memory_read_bytes == 0 {
             return Err(EngineError::Config(
@@ -127,10 +160,7 @@ impl ExecutionLimits {
 /// address-space needs (GDB, Valgrind, ASan-instrumented binaries) must use
 /// [`apply_diagnostic_limits`] instead: `RLIMIT_AS` breaks ASan's shadow
 /// memory reservation and starves GDB's symbol loading.
-pub fn apply_pre_exec_limits(
-    cmd: &mut tokio::process::Command,
-    limits: &ExecutionLimits,
-) {
+pub fn apply_pre_exec_limits(cmd: &mut tokio::process::Command, limits: &ExecutionLimits) {
     let address_space = limits.max_memory_mb as u64 * 1024 * 1024;
     // CPU seconds: at least 1, derived from the wall timeout. The kernel sends
     // SIGXCPU (then SIGKILL) which the engine maps to a resource-limit result.
@@ -143,6 +173,7 @@ pub fn apply_pre_exec_limits(
             set_rlimit(libc::RLIMIT_CPU, cpu_seconds);
             set_rlimit(libc::RLIMIT_FSIZE, fsize);
             set_rlimit(libc::RLIMIT_NOFILE, nofile);
+            set_rlimit(libc::RLIMIT_CORE, 0);
             // RLIMIT_NPROC is deliberately NOT set: on Linux it applies to
             // the whole real user, not the inferior tree (see module docs).
             Ok(())
@@ -159,10 +190,7 @@ pub fn apply_pre_exec_limits(
 /// Runaway child processes are still bounded: by the CPU limit
 /// (`SIGXCPU` → resource-limit result) and by the engine's own wall
 /// deadlines, which kill the whole process group.
-pub fn apply_diagnostic_limits(
-    cmd: &mut tokio::process::Command,
-    limits: &ExecutionLimits,
-) {
+pub fn apply_diagnostic_limits(cmd: &mut tokio::process::Command, limits: &ExecutionLimits) {
     let cpu_seconds = limits.timeout_seconds.max(1);
     let fsize = MAX_INFERIOR_FILE_SIZE_BYTES;
     let nofile = MAX_INFERIOR_OPEN_FILES;
@@ -171,15 +199,47 @@ pub fn apply_diagnostic_limits(
             set_rlimit(libc::RLIMIT_CPU, cpu_seconds);
             set_rlimit(libc::RLIMIT_FSIZE, fsize);
             set_rlimit(libc::RLIMIT_NOFILE, nofile);
+            set_rlimit(libc::RLIMIT_CORE, 0);
             Ok(())
         });
     }
 }
 
+/// Apply only to the stopped inferior, never to GDB or ASan. Startup before
+/// main is outside this limit unless an external cgroup already contains it.
+pub fn limit_stopped_inferior(pid: u32, limits: &ExecutionLimits) -> std::io::Result<()> {
+    for (resource, value) in [
+        (
+            libc::RLIMIT_AS,
+            (limits.max_memory_mb as u64).saturating_mul(1024 * 1024),
+        ),
+        (libc::RLIMIT_CPU, limits.timeout_seconds.max(1)),
+        (libc::RLIMIT_FSIZE, MAX_INFERIOR_FILE_SIZE_BYTES),
+        (libc::RLIMIT_CORE, 0),
+    ] {
+        let limit = libc::rlimit {
+            rlim_cur: value,
+            rlim_max: if resource == libc::RLIMIT_CPU {
+                value.saturating_add(1)
+            } else {
+                value
+            },
+        };
+        if unsafe { libc::prlimit(pid as i32, resource, &limit, std::ptr::null_mut()) } != 0 {
+            return Err(std::io::Error::last_os_error());
+        }
+    }
+    Ok(())
+}
+
 unsafe fn set_rlimit(resource: u32, value: u64) {
     let lim = libc::rlimit {
         rlim_cur: value as libc::rlim_t,
-        rlim_max: value as libc::rlim_t,
+        rlim_max: if resource == libc::RLIMIT_CPU {
+            value.saturating_add(1)
+        } else {
+            value
+        } as libc::rlim_t,
     };
     // Failures are ignored deliberately: a restricted environment may refuse
     // individual limits; the remaining layers (wall timeout, counters) still
@@ -212,21 +272,48 @@ pub struct CgroupGuard {
 impl CgroupGuard {
     /// Try to create a dedicated cgroup for this session.
     pub fn create(limits: &ExecutionLimits) -> Option<CgroupGuard> {
-        let base = Path::new("/sys/fs/cgroup");
+        let root = Path::new("/sys/fs/cgroup");
+        let current = fs::read_to_string("/proc/self/cgroup")
+            .ok()
+            .and_then(|text| {
+                text.lines().find_map(|line| {
+                    line.strip_prefix("0::")
+                        .map(|p| root.join(p.trim_start_matches('/')))
+                })
+            });
+        let base = current
+            .as_deref()
+            .filter(|p| p.join("cgroup.controllers").exists())
+            .unwrap_or(root);
         if !base.join("cgroup.controllers").exists() {
             return None; // not cgroup v2 unified hierarchy
         }
-        let path = base.join(format!("c-trace-{}", std::process::id()));
+        let stamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .ok()?
+            .as_nanos();
+        let path = base.join(format!("c-trace-{}-{stamp}", std::process::id()));
         if fs::create_dir(&path).is_err() {
             return None; // no delegation / not permitted
         }
-        let _ = fs::write(path.join("memory.max"), format!("{}M", limits.max_memory_mb));
-        let _ = fs::write(
+        if fs::write(
+            path.join("memory.max"),
+            (limits.max_memory_mb as u64 * 1024 * 1024).to_string(),
+        )
+        .is_err()
+        {
+            let _ = fs::remove_dir(&path);
+            return None;
+        }
+        if fs::write(
             path.join("pids.max"),
             limits.max_process_count.max(1).to_string(),
-        );
-        let cpu_us = limits.timeout_seconds.max(1) * 1_000_000;
-        let _ = fs::write(path.join("cpu.max"), format!("max {}", cpu_us));
+        )
+        .is_err()
+        {
+            let _ = fs::remove_dir(&path);
+            return None;
+        }
         Some(CgroupGuard { path })
     }
 

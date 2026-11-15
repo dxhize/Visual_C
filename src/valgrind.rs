@@ -15,21 +15,19 @@
 //! locations. It does not report a time-indexed heap history — that is the
 //! job of the allocation instrumentation + GDB memory reads.
 
+use std::io::Read;
 use std::path::{Path, PathBuf};
-use std::time::Duration;
-
-use tokio::io::AsyncReadExt;
 
 use crate::error::{EngineError, Result};
 use crate::models::{ValgrindError, ValgrindFrame, ValgrindReport};
 
 /// Run Valgrind memcheck against the debug binary.
 ///
-/// Returns the parsed report plus raw captured output. The event-trace file
-/// environment variable is set so the instrumented binary records its own
-/// allocation history during the Valgrind run (used for allocation totals
-/// cross-checking; the authoritative totals come from the XML itself).
+/// Returns native observations and completeness. Tracking is passive so
+/// instrumentation table roots cannot alter leak classification.
 pub struct ValgrindRun {
+    pub cancelled: bool,
+    pub failure_reason: Option<String>,
     pub report: Option<ValgrindReport>,
     pub exit_code: Option<i32>,
     pub timed_out: bool,
@@ -44,7 +42,7 @@ pub async fn run_valgrind(
     working_directory: Option<&Path>,
     limits: &crate::resource_limits::ExecutionLimits,
     xml_path: &Path,
-    event_file: &Path,
+    _event_file: &Path,
 ) -> Result<ValgrindRun> {
     let mut cmd = tokio::process::Command::new("valgrind");
     cmd.args([
@@ -57,7 +55,8 @@ pub async fn run_valgrind(
     .arg(format!("--xml-file={}", xml_path.display()))
     .arg(binary)
     .args(program_args)
-    .env("C_TRACE_EVENT_FILE", event_file)
+    // Do not retain allocator-table roots during independent leak analysis.
+    .env_remove("C_TRACE_EVENT_FILE")
     .stdin(std::process::Stdio::null())
     .stdout(std::process::Stdio::piped())
     .stderr(std::process::Stdio::piped());
@@ -67,73 +66,37 @@ pub async fn run_valgrind(
     cmd.process_group(0);
     crate::resource_limits::apply_diagnostic_limits(&mut cmd, limits);
 
-    let mut child = cmd.spawn().map_err(|e| EngineError::MissingTool {
-        tool: "valgrind".into(),
-        reason: format!("could not spawn valgrind: {e}"),
-    })?;
-
-    let mut stdout_pipe = child.stdout.take().expect("valgrind stdout");
-    let mut stderr_pipe = child.stderr.take().expect("valgrind stderr");
-    let out_cap = limits.max_output_bytes;
-
-    let out_task = tokio::spawn(async move {
-        let mut buf = Vec::new();
-        let mut chunk = [0u8; 8192];
-        loop {
-            match stdout_pipe.read(&mut chunk).await {
-                Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    buf.extend_from_slice(&chunk[..n]);
-                    if buf.len() > out_cap * 2 {
-                        buf.truncate(out_cap * 2);
-                    }
-                }
-            }
-        }
-        buf
-    });
-    let err_task = tokio::spawn(async move {
-        let mut buf = Vec::new();
-        let mut chunk = [0u8; 8192];
-        loop {
-            match stderr_pipe.read(&mut chunk).await {
-                Ok(0) | Err(_) => break,
-                Ok(n) => {
-                    buf.extend_from_slice(&chunk[..n]);
-                    if buf.len() > out_cap * 2 {
-                        buf.truncate(out_cap * 2);
-                    }
-                }
-            }
-        }
-        buf
-    });
-
-    let mut timed_out = false;
-    let status: Option<std::process::ExitStatus> = match tokio::time::timeout(
-        Duration::from_secs(limits.timeout_seconds.max(1) * 2 + 5),
-        child.wait(),
+    let output = crate::supervisor::output(
+        &mut cmd,
+        crate::supervisor::stage_deadline(limits.analysis_timeout_seconds),
+        limits.max_output_bytes,
     )
-    .await
-    {
-        Ok(status) => status.ok(),
-        Err(_) => {
-            timed_out = true;
-            if let Some(pid) = child.id() {
-                crate::resource_limits::kill_process_group(pid);
-            }
-            let _ = child.wait().await;
-            None
-        }
-    };
+    .await?;
+    let stdout_bytes = output.stdout;
+    let stderr_bytes = output.stderr;
+    let status = output.status;
+    let timed_out = output.timed_out;
 
-    let stdout_bytes = out_task.await.unwrap_or_default();
-    let stderr_bytes = err_task.await.unwrap_or_default();
-
-    let xml = std::fs::read_to_string(xml_path).unwrap_or_default();
+    let mut xml = String::new();
+    let cap = limits.max_trace_memory_bytes.min(16 * 1024 * 1024) as u64;
+    let read =
+        std::fs::File::open(xml_path).and_then(|file| file.take(cap).read_to_string(&mut xml));
+    let mut failure_reason = read.err().map(|e| format!("cannot read Valgrind XML: {e}"));
     let report = if xml.contains("<valgrindoutput>") {
-        parse_valgrind_xml(&xml).ok()
+        match parse_valgrind_xml(&xml) {
+            Ok(report) => Some(report),
+            Err(e) => {
+                failure_reason = Some(e.to_string());
+                recover_errors(&xml).map(|mut r| {
+                    r.parse_error = Some(e.to_string());
+                    r
+                })
+            }
+        }
     } else {
+        if failure_reason.is_none() {
+            failure_reason = Some("Valgrind XML root is missing".into());
+        }
         None
     };
     if let Some(r) = report.as_ref() {
@@ -141,6 +104,8 @@ pub async fn run_valgrind(
         r.exit_code = status.as_ref().and_then(|s| s.code());
         r.timed_out = timed_out;
         return Ok(ValgrindRun {
+            cancelled: output.cancelled,
+            failure_reason,
             report: Some(r),
             exit_code: status.as_ref().and_then(|s| s.code()),
             timed_out,
@@ -151,6 +116,8 @@ pub async fn run_valgrind(
     }
 
     Ok(ValgrindRun {
+        cancelled: output.cancelled,
+        failure_reason,
         report: None,
         exit_code: status.as_ref().and_then(|s| s.code()),
         timed_out,
@@ -164,6 +131,35 @@ fn clone_report(r: &ValgrindReport) -> ValgrindReport {
     r.clone()
 }
 
+/// Recover only complete native error elements; never invent summary elements.
+pub fn recover_errors(xml: &str) -> Option<ValgrindReport> {
+    let mut report = ValgrindReport {
+        parse_error: Some("truncated XML: only complete native error records recovered".into()),
+        ..Default::default()
+    };
+    let mut rest = xml;
+    while let Some(start) = rest.find("<error>") {
+        rest = &rest[start..];
+        let Some(end) = rest.find("</error>") else {
+            break;
+        };
+        let fragment = &rest[..end + "</error>".len()];
+        if let Ok(doc) = roxmltree::Document::parse(fragment) {
+            let error = parse_error(doc.root_element());
+            report
+                .errors
+                .push(format!("{}: {}", error.kind, error.what));
+            report.detailed_errors.push(error);
+        }
+        rest = &rest[end + "</error>".len()..];
+    }
+    if report.detailed_errors.is_empty() {
+        None
+    } else {
+        Some(report)
+    }
+}
+
 /// Parse a Valgrind memcheck XML document.
 pub fn parse_valgrind_xml(xml: &str) -> Result<ValgrindReport> {
     let doc = roxmltree::Document::parse(xml)
@@ -175,7 +171,21 @@ pub fn parse_valgrind_xml(xml: &str) -> Result<ValgrindReport> {
         ));
     }
 
-    let mut report = ValgrindReport::default();
+    let mut report = ValgrindReport {
+        output_complete: root
+            .children()
+            .filter(|n| n.is_element() && n.tag_name().name() == "status")
+            .flat_map(|n| n.children())
+            .any(|n| {
+                n.is_element()
+                    && n.tag_name().name() == "state"
+                    && n.text().is_some_and(|t| t.trim() == "FINISHED")
+            }),
+        ..Default::default()
+    };
+    if !report.output_complete {
+        report.parse_error = Some("Valgrind XML lacks a FINISHED status".into());
+    }
 
     for child in root.children() {
         if !child.is_element() {
@@ -183,14 +193,28 @@ pub fn parse_valgrind_xml(xml: &str) -> Result<ValgrindReport> {
         }
         match child.tag_name().name() {
             "heap_summary" => {
-                if let Some(in_use) = child.children().find(|c| c.tag_name().name() == "memory_in_use_at_exit") {
-                    report.bytes_in_use_at_exit = child_text_u64(in_use, "bytes");
-                    report.blocks_in_use_at_exit = child_text_u64(in_use, "blocks");
+                report.summary_available = true;
+                if let Some(in_use) = child
+                    .children()
+                    .find(|c| c.tag_name().name() == "memory_in_use_at_exit")
+                {
+                    let summary = report.observed_summary.get_or_insert_with(Default::default);
+                    summary.bytes_in_use_at_exit = child_u64(in_use, "bytes");
+                    summary.blocks_in_use_at_exit = child_u64(in_use, "blocks");
+                    report.bytes_in_use_at_exit = summary.bytes_in_use_at_exit.unwrap_or(0);
+                    report.blocks_in_use_at_exit = summary.blocks_in_use_at_exit.unwrap_or(0);
                 }
-                if let Some(total) = child.children().find(|c| c.tag_name().name() == "total_heap_usage") {
-                    report.total_allocs = child_text_u64(total, "allocs");
-                    report.total_frees = child_text_u64(total, "frees");
-                    report.bytes_allocated = child_text_u64(total, "bytes_allocated");
+                if let Some(total) = child
+                    .children()
+                    .find(|c| c.tag_name().name() == "total_heap_usage")
+                {
+                    let summary = report.observed_summary.get_or_insert_with(Default::default);
+                    summary.total_allocs = child_u64(total, "allocs");
+                    summary.total_frees = child_u64(total, "frees");
+                    summary.bytes_allocated = child_u64(total, "bytes_allocated");
+                    report.total_allocs = summary.total_allocs.unwrap_or(0);
+                    report.total_frees = summary.total_frees.unwrap_or(0);
+                    report.bytes_allocated = summary.bytes_allocated.unwrap_or(0);
                 }
             }
             "all_heap_blocks_freed" => {
@@ -211,7 +235,13 @@ pub fn parse_valgrind_xml(xml: &str) -> Result<ValgrindReport> {
                     .stack
                     .iter()
                     .find(|f| f.file.is_some())
-                    .map(|f| format!("{}:{}", f.file.clone().unwrap_or_default(), f.line.unwrap_or(0)))
+                    .map(|f| {
+                        format!(
+                            "{}:{}",
+                            f.file.clone().unwrap_or_default(),
+                            f.line.unwrap_or(0)
+                        )
+                    })
                     .unwrap_or_default();
                 report.errors.push(if site.is_empty() {
                     format!("{}: {}", err.kind, err.what)
@@ -226,16 +256,34 @@ pub fn parse_valgrind_xml(xml: &str) -> Result<ValgrindReport> {
     Ok(report)
 }
 
-fn child_text_u64(node: roxmltree::Node, tag: &str) -> u64 {
+fn child_u64(node: roxmltree::Node, tag: &str) -> Option<u64> {
     node.children()
         .find(|c| c.tag_name().name() == tag)
         .and_then(|c| c.text())
-        .and_then(|t| t.trim().parse().ok())
-        .unwrap_or(0)
+        .and_then(parse_native_u64)
+}
+
+fn parse_native_u64(text: &str) -> Option<u64> {
+    let text = text.trim();
+    if !text.contains(',') {
+        return text.parse().ok();
+    }
+    // Valgrind 3.27 emits grouped counters even in XML (e.g. 4,152).
+    let mut groups = text.split(',');
+    let first = groups.next()?;
+    if first.is_empty() || first.len() > 3 || !first.bytes().all(|b| b.is_ascii_digit()) {
+        return None;
+    }
+    if !groups.all(|g| g.len() == 3 && g.bytes().all(|b| b.is_ascii_digit())) {
+        return None;
+    }
+    text.replace(',', "").parse().ok()
 }
 
 fn parse_error(node: roxmltree::Node) -> ValgrindError {
     let mut err = ValgrindError {
+        observed_leaked_bytes: None,
+        observed_leaked_blocks: None,
         unique: node
             .children()
             .find(|c| c.tag_name().name() == "unique")
@@ -273,12 +321,11 @@ fn parse_error(node: roxmltree::Node) -> ValgrindError {
     };
 
     // Leak sizes live under <xwhat><leakedbytes>/<leakedblocks>.
-    if let Some(xwhat) = node
-        .children()
-        .find(|c| c.tag_name().name() == "xwhat")
-    {
-        err.leaked_bytes = child_text_u64(xwhat, "leakedbytes");
-        err.leaked_blocks = child_text_u64(xwhat, "leakedblocks");
+    if let Some(xwhat) = node.children().find(|c| c.tag_name().name() == "xwhat") {
+        err.observed_leaked_bytes = child_u64(xwhat, "leakedbytes");
+        err.observed_leaked_blocks = child_u64(xwhat, "leakedblocks");
+        err.leaked_bytes = err.observed_leaked_bytes.unwrap_or(0);
+        err.leaked_blocks = err.observed_leaked_blocks.unwrap_or(0);
     }
 
     let mut first_stack_done = false;
@@ -314,7 +361,9 @@ fn parse_frame(node: roxmltree::Node) -> ValgrindFrame {
         func: text("fn"),
         dir: text("dir"),
         file: text("file"),
-        line: text("line").and_then(|s| s.parse().ok()),
+        line: text("line")
+            .and_then(|s| parse_native_u64(&s))
+            .and_then(|n| n.try_into().ok()),
     }
 }
 
@@ -334,7 +383,9 @@ pub fn correlate_with_allocations(
             stacks.extend(aux.iter());
         }
         for frame in stacks {
-            let Some(file) = frame.file.clone() else { continue };
+            let Some(file) = frame.file.clone() else {
+                continue;
+            };
             let Some(line) = frame.line else { continue };
             for (a_file, a_line, id) in allocation_sites {
                 if *a_line == line && file_matches(&file, a_file) {
@@ -368,6 +419,34 @@ fn file_matches(xml_file: &str, alloc_file: &str) -> bool {
 mod tests {
     use super::*;
 
+    #[test]
+    fn grouped_native_counters_are_not_zero_and_missing_fields_remain_unknown() {
+        assert_eq!(parse_native_u64("4,152"), Some(4152));
+        assert_eq!(parse_native_u64("1,000,000"), Some(1_000_000));
+        assert_eq!(parse_native_u64("1,23"), None);
+        assert_eq!(parse_native_u64("unknown42"), None);
+        let xml = r#"<valgrindoutput><status><state>FINISHED</state></status>
+            <heap_summary><total_heap_usage><allocs>4</allocs><bytes_allocated>4,152</bytes_allocated></total_heap_usage></heap_summary>
+            </valgrindoutput>"#;
+        let report = parse_valgrind_xml(xml).unwrap();
+        assert_eq!(report.bytes_allocated, 4152);
+        let observed = report.observed_summary.unwrap();
+        assert_eq!(observed.bytes_allocated, Some(4152));
+        assert_eq!(observed.total_frees, None);
+    }
+
+    #[test]
+    fn truncated_xml_preserves_only_complete_native_errors() {
+        let xml = "<valgrindoutput><error><kind>InvalidWrite</kind><what>Invalid write of size 4</what></error><error><kind>Leak_";
+        assert!(parse_valgrind_xml(xml).is_err());
+        let report = recover_errors(xml).unwrap();
+        assert_eq!(report.detailed_errors.len(), 1);
+        assert_eq!(report.detailed_errors[0].kind, "InvalidWrite");
+        assert!(!report.output_complete);
+        assert!(!report.summary_available);
+        assert!(recover_errors("<valgrindoutput><error>").is_none());
+    }
+
     const UAF_XML: &str = include_str!("../fixtures/valgrind/use_after_free.xml");
     const LEAK_XML: &str = include_str!("../fixtures/valgrind/leak.xml");
 
@@ -388,7 +467,10 @@ mod tests {
         assert!(write_err.what.contains("Invalid write of size 4"));
         assert!(write_err.auxwhat.as_deref().unwrap().contains("free'd"));
         // primary stack points at crash.c:5 (the UAF write)
-        assert!(write_err.stack.iter().any(|f| f.file.as_deref() == Some("crash.c") && f.line == Some(5)));
+        assert!(write_err
+            .stack
+            .iter()
+            .any(|f| f.file.as_deref() == Some("crash.c") && f.line == Some(5)));
         // aux stack records the free at crash.c:4
         assert!(write_err
             .aux_stacks
@@ -416,7 +498,10 @@ mod tests {
         assert_eq!(leak.leaked_blocks, 1);
         assert!(leak.what.contains("definitely lost"));
         // leak stacks cite leaky.c:3
-        assert!(leak.stack.iter().any(|f| f.file.as_deref() == Some("leaky.c") && f.line == Some(3)));
+        assert!(leak
+            .stack
+            .iter()
+            .any(|f| f.file.as_deref() == Some("leaky.c") && f.line == Some(3)));
     }
 
     #[test]

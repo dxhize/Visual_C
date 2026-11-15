@@ -1,0 +1,24 @@
+== OS ==
+x86_64
+PRETTY_NAME="Fedora Linux 44 (Workstation Edition)"
+== TOOLCHAIN ==
+rustc 1.99.1 (58cf8f9c3 2026-10-13)
+cargo 1.99.1 (5f94df478 2026-08-27)
+gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)
+GNU gdb (Fedora Linux) 18.1-1.fc44
+valgrind-3.27.1
+GNU addr2line version 2.46.1-1.fc44
+Python 3.14.10
+== SANITIZERS ==
+ASAN_RUN_OK rc=0
+/usr/bin/ld.bfd: cannot find /usr/lib64/libubsan.so.1.0.0: No such file or directory
+collect2: error: ld returned 1 exit status
+/bin/bash: line 11: /tmp/opencode/audit_ubsan: No such file or directory
+== RESOURCES ==
+2
+MemTotal:        8020188 kB
+== CGROUP ==
+cpuset cpu io memory hugetlb pids rdma misc dmem
+cgroup root not writable
+== SUBTOOLS ==
+/usr/bin/objdump /usr/bin/nm /usr/bin/readelf 

@@ -108,7 +108,7 @@ pub struct Cli {
     #[arg(long)]
     pub max_steps: Option<usize>,
     /// Execution wall timeout in seconds (default 10).
-    #[arg(long)]
+    #[arg(long, alias = "max-execution-wall-time")]
     pub timeout: Option<u64>,
     /// Inferior address-space limit in MiB (default 256).
     #[arg(long)]
@@ -134,6 +134,47 @@ pub struct Cli {
     /// Variables introspected per snapshot (default 24).
     #[arg(long)]
     pub max_variables: Option<usize>,
+    #[arg(long, value_enum)]
+    pub trace_mode: Option<crate::config::TraceMode>,
+    #[arg(long)]
+    pub no_registers: bool,
+    #[arg(long)]
+    pub max_instruction_events: Option<usize>,
+    #[arg(long)]
+    pub max_gdb_commands: Option<u64>,
+    #[arg(long)]
+    pub max_trace_bytes: Option<usize>,
+    #[arg(long)]
+    pub max_trace_memory_bytes: Option<usize>,
+    #[arg(long)]
+    pub max_source_checkpoints: Option<usize>,
+    #[arg(long)]
+    pub journal: Option<PathBuf>,
+    /// Keep dynamic instruction events only in the journal.
+    #[arg(long, requires = "journal")]
+    pub journal_only: bool,
+    #[arg(long)]
+    pub profile: bool,
+    /// Extra global/static GDB expression (repeatable).
+    #[arg(long = "global")]
+    pub globals: Vec<String>,
+    #[arg(long)]
+    pub max_register_snapshot_bytes: Option<usize>,
+    #[arg(long)]
+    pub max_globals: Option<usize>,
+    #[arg(long)]
+    pub compiler_timeout: Option<u64>,
+    #[arg(long)]
+    pub debugger_timeout: Option<u64>,
+    #[arg(long)]
+    pub analysis_timeout: Option<u64>,
+    #[arg(long)]
+    pub no_disassembly: bool,
+    #[arg(long)]
+    pub no_global_discovery: bool,
+    /// Observe ADDRESS_EXPRESSION:BYTE_COUNT at each instruction stop.
+    #[arg(long = "memory-region")]
+    pub memory_regions: Vec<String>,
 }
 
 impl Cli {
@@ -143,10 +184,9 @@ impl Cli {
         // 1. JSON config file (optional).
         let file: ConfigFile = match &self.config {
             Some(path) => {
-                let text = std::fs::read_to_string(path).map_err(|e| EngineError::Config(format!(
-                    "cannot read config file {}: {e}",
-                    path.display()
-                )))?;
+                let text = std::fs::read_to_string(path).map_err(|e| {
+                    EngineError::Config(format!("cannot read config file {}: {e}", path.display()))
+                })?;
                 serde_json::from_str(&text).map_err(|e| {
                     EngineError::Config(format!("invalid config file {}: {e}", path.display()))
                 })?
@@ -165,19 +205,16 @@ impl Cli {
                     "no source file given (pass a .c file or --source <file>)".into(),
                 )
             })?;
-        if !source.is_file() {
-            return Err(EngineError::Config(format!(
-                "source file not found: {}",
-                source.display()
-            )));
-        }
-
         let mut build = file_build(&file, &source);
         // CLI list flags APPEND to the config file's lists.
-        build.additional_sources.extend(self.add_source.iter().cloned());
+        build
+            .additional_sources
+            .extend(self.add_source.iter().cloned());
         build.include_dirs.extend(self.include_dir.iter().cloned());
         build.defines.extend(self.define.iter().cloned());
-        build.compiler_flags.extend(self.compiler_flag.iter().cloned());
+        build
+            .compiler_flags
+            .extend(self.compiler_flag.iter().cloned());
         build.linker_flags.extend(self.linker_flag.iter().cloned());
         build.library_dirs.extend(self.library_dir.iter().cloned());
         build.libraries.extend(self.library.iter().cloned());
@@ -187,6 +224,21 @@ impl Cli {
         }
         if self.working_directory.is_some() {
             build.working_directory = self.working_directory.clone();
+        }
+        let resolved_source = if source.is_relative() {
+            build
+                .working_directory
+                .as_ref()
+                .map(|d| d.join(&source))
+                .unwrap_or(source.clone())
+        } else {
+            source.clone()
+        };
+        if !resolved_source.is_file() {
+            return Err(EngineError::Config(format!(
+                "source file not found: {}",
+                resolved_source.display()
+            )));
         }
 
         // 3. Program arguments: config file + --arg flags + trailing args.
@@ -233,6 +285,68 @@ impl Cli {
         };
         let keep_temp = self.keep_temp || file.keep_temp.unwrap_or(false);
         let output_file = self.output.clone().or(file.output_file.clone());
+        let mut tracing = file.tracing.clone();
+        if let Some(mode) = self.trace_mode {
+            tracing.mode = mode;
+        }
+        if self.no_registers {
+            tracing.registers = false;
+        }
+        tracing.globals.extend(self.globals.clone());
+        tracing.profiling |= self.profile;
+        if self.journal.is_some() {
+            tracing.journal = self.journal.clone();
+        }
+        if self.journal_only {
+            tracing.retain_instruction_events = false;
+        }
+        if self.no_disassembly {
+            tracing.static_disassembly = false;
+        }
+        if self.no_global_discovery {
+            tracing.discover_globals = false;
+        }
+        for region in &self.memory_regions {
+            let (address, size) = region.rsplit_once(':').ok_or_else(|| {
+                EngineError::Config("memory-region requires expression:bytes".into())
+            })?;
+            tracing.memory_regions.push(crate::config::MemoryRegion {
+                address: address.into(),
+                size: size
+                    .parse()
+                    .map_err(|_| EngineError::Config("invalid memory-region byte count".into()))?,
+            });
+        }
+        if let Some(v) = self.max_instruction_events {
+            limits.max_instruction_events = v;
+        }
+        if let Some(v) = self.max_gdb_commands {
+            limits.max_gdb_commands = v;
+        }
+        if let Some(v) = self.max_trace_bytes {
+            limits.max_trace_bytes = v;
+        }
+        if let Some(v) = self.max_trace_memory_bytes {
+            limits.max_trace_memory_bytes = v;
+        }
+        if let Some(v) = self.max_source_checkpoints {
+            limits.max_source_checkpoints = v;
+        }
+        if let Some(v) = self.max_register_snapshot_bytes {
+            limits.max_register_snapshot_bytes = v;
+        }
+        if let Some(v) = self.max_globals {
+            limits.max_globals = v;
+        }
+        if let Some(v) = self.compiler_timeout {
+            limits.compiler_timeout_seconds = v;
+        }
+        if let Some(v) = self.debugger_timeout {
+            limits.debugger_timeout_seconds = v;
+        }
+        if let Some(v) = self.analysis_timeout {
+            limits.analysis_timeout_seconds = v;
+        }
 
         Ok(TraceConfig {
             build,
@@ -245,6 +359,7 @@ impl Cli {
             output_file,
             pretty,
             keep_temp,
+            tracing,
         })
     }
 }
@@ -274,11 +389,9 @@ mod tests {
     use super::*;
 
     fn cli(args: &[&str]) -> Result<TraceConfig> {
-        Cli::try_parse_from(
-            std::iter::once("c-trace-engine").chain(args.iter().copied()),
-        )
-        .map_err(|e| EngineError::Config(e.to_string()))?
-        .to_config()
+        Cli::try_parse_from(std::iter::once("c-trace-engine").chain(args.iter().copied()))
+            .map_err(|e| EngineError::Config(e.to_string()))?
+            .to_config()
     }
 
     #[test]
@@ -336,7 +449,10 @@ mod tests {
         assert_eq!(cfg.build.defines, vec!["FOO=1".to_string()]);
         assert_eq!(cfg.build.libraries, vec!["m".to_string()]);
         assert_eq!(cfg.build.linker_flags, vec!["-pthread".to_string()]);
-        assert_eq!(cfg.program_args, vec!["--verbose".to_string(), "42".to_string()]);
+        assert_eq!(
+            cfg.program_args,
+            vec!["--verbose".to_string(), "42".to_string()]
+        );
         let _ = std::fs::remove_dir_all(&dir);
     }
 

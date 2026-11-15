@@ -1,5 +1,10 @@
 # Engine internals
 
+**V2 supersedes the source-stepping-only execution description below.**
+See [V2 architecture, schema and exact recording semantics](v2.md) for
+instruction capture, central deadlines, stage completeness and streaming.
+The allocation runtime and native tool parsers below remain in use.
+
 How `c-trace-engine` observes a program. The guiding rules are:
 
 * **Never fabricate.** Everything in the trace came from a real observation
@@ -61,7 +66,7 @@ MI2 with:
   `whatis`).
 * **A dedicated pty for the inferior** via `-inferior-tty-set`: program
   output never enters the MI stream. The master end is read by a tokio task
-  into a capped ring buffer (`max_output_bytes`).
+  into a capped head buffer (`max_output_bytes`).
 * **One channel** between reader task and session for async records
   (`*running`, `*stopped`, `=notify`); the reader fails all pending
   commands on EOF so a dead GDB never strands a wait.
@@ -80,10 +85,12 @@ Observed GDB 18 behaviors the engine adapts to:
 * GDB puts the inferior in its own process group, so killing GDB's group
   does not kill the inferior — the engine kills both groups.
 
-Termination: every wait is timeout-bounded (per-command 20s, per-step 10s,
-session wall = `4 × timeout_seconds + 30s`). On limit endings the engine
-kills the process groups (GDB's and the inferior's) and the cgroup subtree
-when available.
+Termination: execution uses a monotonic GDB-phase deadline of
+`timeout_seconds`; each execution wait is bounded by the remaining time and
+the per-step cap. On limit endings the engine kills the process groups
+(GDB's and the inferior's) and the cgroup subtree when available. Compiler
+and analysis stages still have their own limits; the deadline is not yet a
+single end-to-end session deadline.
 
 ## 3. Execution loop & snapshots (`trace.rs`)
 
@@ -134,9 +141,9 @@ blocks keep that historical capture.
 
 ## 5. Independent analyses
 
-**Valgrind** (`valgrind.rs`) runs the debug binary (without instrumentation
-wrappers — Valgrind replaces the allocator itself) under memcheck with
-`--xml=file --xml-user-prog-args`-style options, parses the XML with
+**Valgrind** (`valgrind.rs`) runs the wrapped debug binary independently
+(never the sanitizer binary) under memcheck with
+`--xml=yes --xml-file=<path>`, parses the XML with
 `roxmltree` (heap summary, error records with stacks, leak records) and
 correlates findings with allocation ids by `(file, line)` pairs resolved by
 addr2line. A Valgrind timeout leaves the partial XML; the engine notes it.
@@ -160,11 +167,11 @@ Layered enforcement:
 2. **rlimits** — `RLIMIT_CPU` (from `timeout_seconds`), `RLIMIT_FSIZE`,
    `RLIMIT_NOFILE` on sanitizer/valgrind children. `RLIMIT_NPROC` is
    deliberately never used: on Linux it is enforced per *real user id*, so
-   a low value breaks every `fork` on the whole desktop session
-   (empirically: `vfork: Resource temporarily unavailable` with 173 user
-   processes).
+    a low threshold makes GDB's forks fail when the same UID already has
+    more processes than that threshold. It does not lower unrelated desktop
+    processes' own rlimits.
 3. **cgroup v2** — when a delegated subtree is writable, the inferior pid
-   is moved into it with `pids.max`, `memory.max` and `cpu.max`; on teardown
+    is moved into it with `pids.max` and `memory.max`; on teardown
    the subtree is killed (`cgroup.kill`). Best effort; its availability is
    reported in `session_meta.cgroup_enforced`.
 

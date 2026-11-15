@@ -10,6 +10,12 @@ use thiserror::Error;
 /// Top-level error type for the tracing engine.
 #[derive(Debug, Error)]
 pub enum EngineError {
+    #[error("session interrupted")]
+    Cancelled,
+    #[error("{0}")]
+    LimitReached(&'static str),
+    #[error("deadline exhausted during {operation}")]
+    Deadline { operation: String },
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
 
@@ -26,16 +32,10 @@ pub enum EngineError {
     Gdb(String),
 
     #[error("gdb command `{command}` timed out after {timeout_secs}s")]
-    GdbCommandTimeout {
-        command: String,
-        timeout_secs: u64,
-    },
+    GdbCommandTimeout { command: String, timeout_secs: u64 },
 
     #[error("gdb command `{command}` failed: {message}")]
-    GdbCommandError {
-        command: String,
-        message: String,
-    },
+    GdbCommandError { command: String, message: String },
 
     #[error("MI parse error: {0}")]
     MiParse(#[from] crate::mi_parser::MiParseError),

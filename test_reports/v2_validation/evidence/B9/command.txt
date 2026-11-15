@@ -1,0 +1,1 @@
+/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b9_bytes.c --trace-mode dual

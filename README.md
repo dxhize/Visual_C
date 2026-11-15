@@ -1,5 +1,37 @@
 # c-trace-engine
 
+## V2: synchronized source and instruction recording
+
+Dual capture is now the default. Source checkpoints and executed-instruction
+attempts come from **one GDB run**, not two executions. Legacy JSON fields are
+retained with `schema_version: 2`; see [V2 schema and semantics](docs/v2.md).
+For a conceptual architectural overview (channels, budgets, the stop loop,
+the trust model), see [Engine architecture](docs/architecture.md).
+
+```sh
+cargo run -- sample.c --timeout 20 --output trace.json
+cargo run -- sample.c --trace-mode dual --profile
+cargo run -- sample.c --trace-mode source             # lower-cost capture
+cargo run -- sample.c --max-instruction-events 5000 --max-gdb-commands 50000
+cargo run -- sample.c --journal run.jsonl --journal-only --output index.json
+cargo run -- fixtures/c/globals.c --memory-region '&global_value:4'
+```
+
+`--timeout` is a **whole-pipeline monotonic deadline**, including builds and
+analyses. Expired sessions do not start new diagnostic passes. Process cleanup
+has a two-second grace allowance. Filesystem/export latency is not a real-time
+guarantee. Run `cargo run -- --help` for the full option list.
+
+New modules: `supervisor.rs` (deadlines/child ownership), `recorder.rs`
+(disassembly/register/event recording), `processor.rs` (validation/replay),
+`memory.rs` (evidence-based pointer/symbol enrichment), and `storage.rs`
+(incremental, recoverable JSONL). Instruction gaps and missing values are
+explicit, including skipped allocator wrappers and libraries.
+
+Dependencies: Rust/Cargo, Linux, GCC, GDB; Valgrind and addr2line are optional.
+GCC sanitizer runtime availability is detected at link time. Everything runs
+locally; no cloud service is required.
+
 A standalone Rust CLI that takes a configurable C project, compiles it with
 GCC, executes it under GDB/MI2 while recording execution snapshots and heap
 allocation events, runs an independent Valgrind analysis plus a separate
@@ -107,9 +139,9 @@ real document produced by `cargo run -- sample.c`.
    and records a note.
 2. **Execute** (`gdb_mi.rs`, `trace.rs`): the debug binary runs under GDB in
    MI2 mode with a token-matched command/response layer and a dedicated pty
-   for program output. The engine breaks at `main`, single-steps in user
-   code, and `finish`es out of non-user frames. At every stop it captures
-   one snapshot: call stack, variables (own address, pointed-to address,
+   for program output. The engine breaks at `main`, instruction-steps in user
+   code (source-steps in reduced mode), and `finish`es out of non-user frames.
+   At source checkpoints it captures call stack, variables (own address, pointed-to address,
    raw bytes), live heap block contents read through GDB within the
    per-snapshot memory budget, and the program output so far.
 3. **Heap reconstruction** (`allocation_tracker.rs`): the event file is
@@ -119,19 +151,24 @@ real document produced by `cargo run -- sample.c`.
 4. **Independent analyses**: Valgrind runs the program separately (its XML
    parsed with `roxmltree`, findings correlated with allocation ids by
    file/line). On a crash, the sanitized binary runs once as a diagnostic
-   pass and its report is attached to the crash report.
+   pass. Native sanitizer findings are retained; a crash summary is attached
+   only when source-site evidence supports correlation.
 
 Partial results are always preserved: a timeout, step limit or crash yields
 a trace with everything captured up to that point.
+
+Traces emit `schema_version: 2` and `stage_results` to distinguish completed,
+failed, timed-out, and skipped analyses. Older trace JSON without these fields
+remains deserializable; absent stage metadata is unknown, not a clean result.
 
 ## Resource limits
 
 | Flag | Default | Enforced by |
 |------|---------|-------------|
 | `--max-steps` | 1000 | engine step loop |
-| `--timeout` (s) | 10 | wall deadline (4× + 30s safety), per-step 10s |
-| `--max-memory-mb` | 256 | traced program's address space (engine budget model) |
-| `--max-output-bytes` | 1048576 | program output ring |
+| `--timeout` (s) | 10 | monotonic whole-session deadline, including compilation and analysis |
+| `--max-memory-mb` | 256 | inferior `prlimit` after the initial stop; delegated cgroup when available |
+| `--max-output-bytes` | 1048576 | program output head capture; terminate on exhaustion |
 | `--max-heap-allocations` | 10000 | timeline |
 | `--max-snapshots` | 1000 | snapshot list |
 | `--max-snapshot-memory-bytes` | 1048576 | variables + heap reads per snapshot |
@@ -168,14 +205,28 @@ Scalar flags override the JSON config file; list flags (`--define`,
 * Program output and GDB console chatter are kept separate (pty); the
   MI-facing `@` target stream is treated as program output for GDB versions
   without tty support.
-* Snapshots are line-level: multiple stops on the same line are collapsed
-  by the step budget, not deduplicated.
+* Dual mode captures rich checkpoints at source transitions; all recorded
+  instruction attempts remain ordered, including repeated source lines.
+* Multi-thread/fork instruction interleavings, JIT/self-modifying code and hard
+  engine-RSS limits are not implemented. See [explicit limitations](docs/v2.md).
+
+## Generated V2 examples
+
+[`examples/v2_manifest.json`](examples/v2_manifest.json) records actual outcomes,
+counts, sizes and reference validation for:
+
+- [`v2_success.json`](examples/v2_success.json): normal source-only capture.
+- [`v2_null_pointer.json`](examples/v2_null_pointer.json): null write and faulting instruction.
+- [`v2_bounded_infinite.json`](examples/v2_bounded_infinite.json): deadline and partial results.
+- [`v2_dual.json`](examples/v2_dual.json): synchronized C/assembly, registers and heap.
 
 ## Development
 
 ```sh
-cargo test            # unit tests (fast, no external tools)
+cargo test --lib      # unit tests; one live GDB lifecycle regression skips if absent
 cargo test --test integration   # full pipeline against real gcc/gdb/valgrind
+cargo test --test v2 -- --test-threads=1  # dual-level and reliability regressions
+python3 scripts/benchmark.py            # build first; three serial samples per case
 ```
 
 The integration suite skips gracefully (with a printed reason) when a tool

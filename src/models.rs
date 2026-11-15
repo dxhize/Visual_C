@@ -8,6 +8,40 @@ use serde::{Deserialize, Serialize};
 
 use crate::config::BuildConfig;
 
+/// Lifecycle and completeness of one independently executed pipeline stage.
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum StageStatus {
+    NotStarted,
+    Running,
+    Completed,
+    Failed,
+    TimedOut,
+    Skipped,
+    Cancelled,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct StageResult {
+    pub status: Option<StageStatus>,
+    pub start_offset_ms: Option<u64>,
+    pub end_offset_ms: Option<u64>,
+    pub duration_ms: Option<u64>,
+    pub exit_code: Option<i32>,
+    pub reason: Option<String>,
+    pub output_complete: Option<bool>,
+    pub partial_results_available: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct StageResults {
+    pub compiler: StageResult,
+    pub debugger: StageResult,
+    pub valgrind: StageResult,
+    pub sanitizer: StageResult,
+    pub allocation_tracker: StageResult,
+}
+
 // ---------------------------------------------------------------------------
 // Compiler diagnostics
 // ---------------------------------------------------------------------------
@@ -31,6 +65,8 @@ pub struct CompilerDiagnostic {
 /// as reconstructed at that instant.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ExecutionSnapshot {
+    #[serde(default)]
+    pub observation: SnapshotObservation,
     /// 0-based index of this captured stop.
     pub step_index: usize,
     pub file: String,
@@ -73,6 +109,24 @@ pub struct StackFrameInfo {
 /// distinct and are never conflated.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct VariableInfo {
+    #[serde(default)]
+    pub activation_id: Option<u64>,
+    #[serde(default)]
+    pub lexical_scope_id: Option<String>,
+    #[serde(default)]
+    pub declaration_file: Option<String>,
+    #[serde(default)]
+    pub declaration_line: Option<u32>,
+    #[serde(default)]
+    pub identity: Option<String>,
+    #[serde(default)]
+    pub scope: Option<String>,
+    #[serde(default)]
+    pub target: Option<PointerTarget>,
+    #[serde(default)]
+    pub read_status: DataValidity,
+    #[serde(default)]
+    pub bytes_status: DataValidity,
     pub name: String,
     /// C type as reported by the debugger ("" when unavailable).
     pub c_type: String,
@@ -95,6 +149,9 @@ pub struct VariableInfo {
 /// reused addresses always get a fresh id.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HeapBlockInfo {
+    /// Stop at which raw bytes were observed alive; final-state bytes may be historical.
+    #[serde(default)]
+    pub observed_at_stop: Option<u64>,
     pub allocation_id: u64,
     /// Actual address in the traced process (`0x...`).
     pub address: String,
@@ -132,6 +189,8 @@ pub enum HeapEventType {
 /// memory allocated inside shared libraries through unwrapped mechanisms).
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct HeapEvent {
+    #[serde(default)]
+    pub raw_caller_address: Option<String>,
     /// Runtime sequence number (per process).
     pub sequence: u64,
     /// OS pid of the process that produced the event.
@@ -158,6 +217,8 @@ pub struct HeapEvent {
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct CrashReport {
+    #[serde(default)]
+    pub instruction_address: Option<String>,
     pub signal_name: String,
     pub file: Option<String>,
     pub line: Option<u32>,
@@ -172,6 +233,10 @@ pub struct CrashReport {
 /// Result of the separate AddressSanitizer / UBSan pass.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct SanitizerReport {
+    #[serde(default)]
+    pub cancelled: bool,
+    #[serde(default)]
+    pub output_complete: bool,
     /// `AddressSanitizer` or `UndefinedBehaviorSanitizer`.
     pub sanitizer: Option<String>,
     pub error_category: Option<String>,
@@ -196,6 +261,10 @@ pub struct SanitizerReport {
 /// One Valgrind memcheck error with its stacks.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ValgrindError {
+    #[serde(default)]
+    pub observed_leaked_bytes: Option<u64>,
+    #[serde(default)]
+    pub observed_leaked_blocks: Option<u64>,
     pub unique: Option<String>,
     pub kind: String,
     pub what: String,
@@ -223,6 +292,14 @@ pub struct ValgrindFrame {
 /// Independent Valgrind memcheck analysis.
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct ValgrindReport {
+    #[serde(default)]
+    pub observed_summary: Option<ObservedHeapSummary>,
+    #[serde(default)]
+    pub output_complete: bool,
+    #[serde(default)]
+    pub summary_available: bool,
+    #[serde(default)]
+    pub parse_error: Option<String>,
     pub total_allocs: u64,
     pub total_frees: u64,
     pub bytes_allocated: u64,
@@ -242,6 +319,15 @@ pub struct ValgrindReport {
     pub timed_out: bool,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ObservedHeapSummary {
+    pub total_allocs: Option<u64>,
+    pub total_frees: Option<u64>,
+    pub bytes_allocated: Option<u64>,
+    pub bytes_in_use_at_exit: Option<u64>,
+    pub blocks_in_use_at_exit: Option<u64>,
+}
+
 // ---------------------------------------------------------------------------
 // Top-level trace
 // ---------------------------------------------------------------------------
@@ -249,6 +335,7 @@ pub struct ValgrindReport {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum ExecutionStatus {
+    Interrupted,
     /// Program ran to completion.
     Completed,
     /// Program died from a fatal signal.
@@ -284,6 +371,8 @@ pub struct ResourceUsage {
 /// Metadata that makes a trace reproducible from the future IDE.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct SessionMeta {
+    #[serde(default)]
+    pub sanitizer_variant: Option<String>,
     pub session_dir: String,
     pub debug_binary: String,
     pub sanitized_binary: Option<String>,
@@ -301,6 +390,16 @@ pub struct SessionMeta {
 /// The complete structured result of one tracing session.
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct DebugSessionTrace {
+    #[serde(default)]
+    pub execution_limits: crate::resource_limits::ExecutionLimits,
+    #[serde(default)]
+    pub execution: ExecutionOutcome,
+    #[serde(default, flatten)]
+    pub recording: RecordingData,
+    #[serde(default)]
+    pub tracing_configuration: crate::config::TracingConfig,
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u32,
     pub compiled_successfully: bool,
     pub compile_errors: Vec<CompilerDiagnostic>,
     pub snapshots: Vec<ExecutionSnapshot>,
@@ -317,11 +416,221 @@ pub struct DebugSessionTrace {
     pub session_meta: Option<SessionMeta>,
     /// Operational notes: missing tools, parse failures, truncations.
     pub analysis_notes: Vec<String>,
+    #[serde(default)]
+    pub stage_results: StageResults,
+}
+
+fn default_schema_version() -> u32 {
+    2
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum DataValidity {
+    Valid,
+    Unavailable,
+    Unreadable,
+    OptimizedOut,
+    Truncated,
+    #[default]
+    NotCaptured,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct PointerTarget {
+    pub kind: String,
+    pub allocation_id: Option<u64>,
+    pub base_address: Option<String>,
+    pub offset_bytes: Option<u64>,
+    pub active: Option<bool>,
+    pub within_extent: Option<bool>,
+    pub variable_identity: Option<String>,
+}
+impl Default for PointerTarget {
+    fn default() -> Self {
+        Self {
+            kind: "unknown".into(),
+            allocation_id: None,
+            base_address: None,
+            offset_bytes: None,
+            active: None,
+            within_extent: None,
+            variable_identity: None,
+        }
+    }
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
+pub struct SnapshotObservation {
+    pub stop_id: u64,
+    /// Number of attempted instruction events preceding this stop (0 initially).
+    pub instruction_position: u64,
+    pub instruction_address: Option<String>,
+    pub thread_id: Option<String>,
+    pub pid: Option<u32>,
+    pub origin: String,
+    pub globals: Vec<VariableInfo>,
+    pub complete: bool,
+    pub errors: Vec<String>,
+    pub heap_event_count: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct SourceContext {
+    pub file: Option<String>,
+    pub line: Option<u32>,
+    pub function: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct DisassembledInstruction {
+    pub instruction_id: u64,
+    pub module_identity: String,
+    pub address: String,
+    pub bytes: Option<String>,
+    pub text: String,
+    pub function: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RegisterValue {
+    pub number: u32,
+    pub name: String,
+    pub value: Option<String>,
+    pub availability: DataValidity,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct RegisterObservation {
+    pub full_checkpoint: bool,
+    pub architecture: String,
+    pub thread_id: Option<String>,
+    pub values: Vec<RegisterValue>,
+    pub complete: bool,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct MemoryObservation {
+    pub expression: String,
+    pub address: Option<String>,
+    pub requested_bytes: usize,
+    pub raw_bytes_hex: Option<String>,
+    pub status: DataValidity,
+    pub error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct InstructionEvent {
+    #[serde(default)]
+    pub stop_id_before: u64,
+    #[serde(default)]
+    pub stop_id_after: Option<u64>,
+    /// Address BEFORE attempting the instruction. Never the next PC mislabeled as executed.
+    pub event_id: u64,
+    pub instruction_id: Option<u64>,
+    pub address: String,
+    pub next_address: Option<String>,
+    pub thread_id: Option<String>,
+    pub pid: Option<u32>,
+    pub source: SourceContext,
+    pub checkpoint_id: Option<usize>,
+    /// completed, faulted, interrupted, or unknown (no proof of completion).
+    pub outcome: String,
+    pub stopped_reason: Option<String>,
+    pub signal: Option<String>,
+    /// Observed AFTER the attempt, not inferred from assembly.
+    pub registers: Option<RegisterObservation>,
+    pub memory: Vec<MemoryObservation>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug)]
+pub struct TraceGap {
+    pub instruction_position: u64,
+    pub start_address: Option<String>,
+    pub end_address: Option<String>,
+    pub origin: String,
+    pub reason: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+#[serde(default)]
+pub struct RecordingData {
+    pub internal_diagnostics: Vec<String>,
+    pub disassembly_table: Vec<DisassembledInstruction>,
+    pub instruction_events: Vec<InstructionEvent>,
+    /// References into legacy snapshots; no duplicate large memory objects.
+    pub source_checkpoints: Vec<usize>,
+    pub initial_registers: Option<RegisterObservation>,
+    pub trace_gaps: Vec<TraceGap>,
+    pub instruction_count: u64,
+    pub coverage: Coverage,
+    pub storage: StorageInfo,
+    pub profiling: Profiling,
+    pub allocation_lifetimes: Vec<AllocationLifetime>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct AllocationLifetime {
+    pub allocation_id: u64,
+    pub pid: u32,
+    pub allocation_sequence: u64,
+    pub free_sequence: Option<u64>,
+    pub raw_caller_address: String,
+    pub module: Option<String>,
+    pub resolution: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Coverage {
+    pub scope: String,
+    pub instruction_capture_enabled: bool,
+    pub complete_for_scope: bool,
+    pub truncation_reasons: Vec<String>,
+    pub stop_model: String,
+    pub limitations: Vec<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct StorageInfo {
+    pub journal: Option<String>,
+    pub finalized: bool,
+    pub bytes_written: u64,
+    pub resident_event_bytes: usize,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct Profiling {
+    #[serde(default)]
+    pub engine_peak_rss_kib: Option<u64>,
+    #[serde(default)]
+    pub source_resolution_time_us: u64,
+    #[serde(default)]
+    pub command_time_us: u64,
+    #[serde(default)]
+    pub mi_parse_time_us: u64,
+    #[serde(default)]
+    pub memory_read_time_us: u64,
+    pub enabled: bool,
+    pub step_time_us: u64,
+    pub disassembly_time_us: u64,
+    pub register_time_us: u64,
+    pub capture_time_us: u64,
+    pub debugger_time_us: u64,
+    pub disassembly_queries: u64,
+    pub disassembly_cache_hits: u64,
+    pub journal_time_us: u64,
 }
 
 impl Default for DebugSessionTrace {
     fn default() -> Self {
         Self {
+            execution_limits: Default::default(),
+            recording: RecordingData::default(),
+            execution: ExecutionOutcome::default(),
+            tracing_configuration: crate::config::TracingConfig::default(),
+            schema_version: 2,
             compiled_successfully: false,
             compile_errors: Vec::new(),
             snapshots: Vec::new(),
@@ -334,6 +643,69 @@ impl Default for DebugSessionTrace {
             sanitizer_report: None,
             session_meta: None,
             analysis_notes: Vec::new(),
+            stage_results: StageResults::default(),
         }
+    }
+}
+
+/// Canonical V2 outcome. The legacy execution_status field remains an export alias.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ExecutionOutcome {
+    pub outcome: ProgramOutcome,
+    pub exit_code: Option<i32>,
+    pub signal: Option<String>,
+    pub instruction_address: Option<String>,
+    pub reason: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ProgramOutcome {
+    #[default]
+    NotStarted,
+    CompileFailed,
+    Completed,
+    Crashed,
+    TimedOut,
+    StepLimitReached,
+    MemoryLimitReached,
+    OutputLimitReached,
+    Interrupted,
+    DebuggerFailed,
+    InternalFailure,
+}
+
+#[cfg(test)]
+mod schema_tests {
+    use super::*;
+
+    #[test]
+    fn legacy_trace_deserializes_as_schema_v2_with_unstarted_stages() {
+        let legacy = r#"{
+            "compiled_successfully": true,
+            "compile_errors": [],
+            "snapshots": [],
+            "heap_events": [],
+            "heap_state": [],
+            "crash_report": null,
+            "valgrind_report": null,
+            "execution_status": "completed",
+            "resource_usage": {
+                "wall_time_ms": 0,
+                "gdb_commands_issued": 0,
+                "snapshots_captured": 0,
+                "allocation_events_ingested": 0,
+                "program_output_bytes": 0,
+                "program_output_truncated": false,
+                "limits_triggered": [],
+                "inferior_exit_code": null
+            },
+            "sanitizer_report": null,
+            "session_meta": null,
+            "analysis_notes": []
+        }"#;
+        let trace: DebugSessionTrace = serde_json::from_str(legacy).unwrap();
+        assert_eq!(trace.schema_version, 2);
+        assert_eq!(trace.stage_results.debugger.status, None);
     }
 }

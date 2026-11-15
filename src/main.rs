@@ -30,32 +30,35 @@ async fn main() -> ExitCode {
 
     match trace::trace_program(config.clone()).await {
         Ok(trace) => {
-            let json = if config.pretty {
-                serde_json::to_string_pretty(&trace)
-            } else {
-                serde_json::to_string(&trace)
+            let write_json = |writer: &mut dyn Write| -> std::io::Result<()> {
+                if config.pretty {
+                    serde_json::to_writer_pretty(&mut *writer, &trace)?;
+                } else {
+                    serde_json::to_writer(&mut *writer, &trace)?;
+                }
+                writeln!(writer)?;
+                writer.flush()
             };
-            match json {
-                Ok(json) => {
-                    if let Some(out) = &config.output_file {
-                        if let Err(e) = std::fs::write(out, format!("{json}\n")) {
-                            eprintln!("error: cannot write output file {}: {e}", out.display());
-                            return ExitCode::from(1);
-                        }
+            let output = (|| -> std::io::Result<()> {
+                if let Some(out) = &config.output_file {
+                    let file = std::fs::File::create(out)?;
+                    write_json(&mut std::io::BufWriter::new(file))?;
+                }
+                let mut stdout = std::io::stdout().lock();
+                write_json(&mut stdout)
+            })();
+            match output {
+                Ok(()) => {
+                    if trace.execution_status
+                        == c_trace_engine::models::ExecutionStatus::CompileFailed
+                    {
+                        ExitCode::from(2)
+                    } else {
+                        ExitCode::SUCCESS
                     }
-                    // Trace to stdout. When a file was requested too, the
-                    // stdout stream is the same JSON document.
-                    let mut stdout = std::io::stdout().lock();
-                    let _ = writeln!(stdout, "{json}");
-                    let _ = stdout.flush();
-
-                    if !trace.compiled_successfully {
-                        return ExitCode::from(2);
-                    }
-                    ExitCode::SUCCESS
                 }
                 Err(e) => {
-                    eprintln!("error: cannot serialize trace: {e}");
+                    eprintln!("error: cannot write trace: {e}");
                     ExitCode::from(1)
                 }
             }

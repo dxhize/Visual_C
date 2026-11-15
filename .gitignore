@@ -1,3 +1,4 @@
 /target
 vgcore.*
 examples/example_trace.json.tmp
+trace.json
