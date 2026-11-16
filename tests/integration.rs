@@ -74,6 +74,9 @@ fn config_for(source: &std::path::Path, extra: impl FnOnce(&mut TraceConfig)) ->
         output_file: None,
         pretty: true,
         keep_temp: false,
+        sanitizer_trigger: Default::default(),
+        valgrind_path: None,
+        gdb_path: None,
         tracing: c_trace_engine::config::TracingConfig {
             mode: c_trace_engine::config::TraceMode::Source,
             ..Default::default()

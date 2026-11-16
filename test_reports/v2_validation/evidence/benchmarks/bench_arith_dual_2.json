@@ -14,7 +14,6 @@
     "max_source_checkpoints": 1000,
     "max_trace_bytes": 134217728,
     "max_trace_memory_bytes": 33554432,
-    "max_register_snapshot_bytes": 65536,
     "max_gdb_commands": 1000000,
     "max_globals": 32,
     "compiler_timeout_seconds": 30,
@@ -29,13 +28,12 @@
     "reason": null
   },
   "internal_diagnostics": [
-    "Reading symbols from /tmp/c-trace-469966-1794737584652328040/program_debug...",
+    "Reading symbols from /tmp/c-trace-562076-1794752326639494893/program_debug...",
     "[Thread debugging using libthread_db enabled]",
     "Using host libthread_db library \"/lib64/libthread_db.so.1\".",
     "",
     "Breakpoint 2, main () at /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c:1",
     "1\tint main(void) {",
-    "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
     "C_TRACE_SCOPE:{\"x\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:2\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 2, \"storage\": \"automatic\"}], \"y\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:3\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 3, \"storage\": \"automatic\"}], \"sum\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:4\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 4, \"storage\": \"automatic\"}], \"prod\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:5\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 5, \"storage\": \"automatic\"}]}",
     "",
     "Breakpoint 1, main () at /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c:2",
@@ -46,12 +44,12 @@
     "C_TRACE_SCOPE:{\"x\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:2\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 2, \"storage\": \"automatic\"}], \"y\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:3\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 3, \"storage\": \"automatic\"}], \"sum\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:4\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 4, \"storage\": \"automatic\"}], \"prod\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:5\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 5, \"storage\": \"automatic\"}]}",
     "C_TRACE_SCOPE:{\"x\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:2\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 2, \"storage\": \"automatic\"}], \"y\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:3\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 3, \"storage\": \"automatic\"}], \"sum\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:4\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 4, \"storage\": \"automatic\"}], \"prod\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:5\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 5, \"storage\": \"automatic\"}]}",
     "C_TRACE_SCOPE:{\"x\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:2\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 2, \"storage\": \"automatic\"}], \"y\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:3\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 3, \"storage\": \"automatic\"}], \"sum\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:4\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 4, \"storage\": \"automatic\"}], \"prod\": [{\"c_type\": \"int\", \"scope_id\": \"block:400536-40056b:5\", \"file\": \"/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c\", \"line\": 5, \"storage\": \"automatic\"}]}",
-    "[Inferior 1 (process 470004) exited normally]"
+    "[Inferior 1 (process 562112) exited normally]"
   ],
   "disassembly_table": [
     {
       "instruction_id": 0,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400536",
       "bytes": "55",
       "text": "push   %rbp",
@@ -59,7 +57,7 @@
     },
     {
       "instruction_id": 1,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400537",
       "bytes": "48 89 e5",
       "text": "mov    %rsp,%rbp",
@@ -67,7 +65,7 @@
     },
     {
       "instruction_id": 2,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040053a",
       "bytes": "c7 45 fc 0a 00 00 00",
       "text": "movl   $0xa,-0x4(%rbp)",
@@ -75,7 +73,7 @@
     },
     {
       "instruction_id": 3,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400541",
       "bytes": "c7 45 f8 14 00 00 00",
       "text": "movl   $0x14,-0x8(%rbp)",
@@ -83,7 +81,7 @@
     },
     {
       "instruction_id": 4,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400548",
       "bytes": "8b 55 fc",
       "text": "mov    -0x4(%rbp),%edx",
@@ -91,7 +89,7 @@
     },
     {
       "instruction_id": 5,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040054b",
       "bytes": "8b 45 f8",
       "text": "mov    -0x8(%rbp),%eax",
@@ -99,7 +97,7 @@
     },
     {
       "instruction_id": 6,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040054e",
       "bytes": "01 d0",
       "text": "add    %edx,%eax",
@@ -107,7 +105,7 @@
     },
     {
       "instruction_id": 7,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400550",
       "bytes": "89 45 f4",
       "text": "mov    %eax,-0xc(%rbp)",
@@ -115,7 +113,7 @@
     },
     {
       "instruction_id": 8,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400553",
       "bytes": "8b 55 f4",
       "text": "mov    -0xc(%rbp),%edx",
@@ -123,7 +121,7 @@
     },
     {
       "instruction_id": 9,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400556",
       "bytes": "89 d0",
       "text": "mov    %edx,%eax",
@@ -131,7 +129,7 @@
     },
     {
       "instruction_id": 10,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400558",
       "bytes": "01 c0",
       "text": "add    %eax,%eax",
@@ -139,7 +137,7 @@
     },
     {
       "instruction_id": 11,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040055a",
       "bytes": "01 d0",
       "text": "add    %edx,%eax",
@@ -147,7 +145,7 @@
     },
     {
       "instruction_id": 12,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040055c",
       "bytes": "89 45 f0",
       "text": "mov    %eax,-0x10(%rbp)",
@@ -155,7 +153,7 @@
     },
     {
       "instruction_id": 13,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040055f",
       "bytes": "83 7d f0 5a",
       "text": "cmpl   $0x5a,-0x10(%rbp)",
@@ -163,7 +161,7 @@
     },
     {
       "instruction_id": 14,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400563",
       "bytes": "0f 95 c0",
       "text": "setne  %al",
@@ -171,7 +169,7 @@
     },
     {
       "instruction_id": 15,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400566",
       "bytes": "0f b6 c0",
       "text": "movzbl %al,%eax",
@@ -179,7 +177,7 @@
     },
     {
       "instruction_id": 16,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400569",
       "bytes": "5d",
       "text": "pop    %rbp",
@@ -187,7 +185,7 @@
     },
     {
       "instruction_id": 17,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040056a",
       "bytes": "c3",
       "text": "ret",
@@ -195,7 +193,7 @@
     },
     {
       "instruction_id": 18,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040056b",
       "bytes": "55",
       "text": "push   %rbp",
@@ -203,7 +201,7 @@
     },
     {
       "instruction_id": 19,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040056c",
       "bytes": "48 89 e5",
       "text": "mov    %rsp,%rbp",
@@ -211,7 +209,7 @@
     },
     {
       "instruction_id": 20,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040056f",
       "bytes": "b8 00 00 00 00",
       "text": "mov    $0x0,%eax",
@@ -219,7 +217,7 @@
     },
     {
       "instruction_id": 21,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400574",
       "bytes": "ba 01 00 00 00",
       "text": "mov    $0x1,%edx",
@@ -227,7 +225,7 @@
     },
     {
       "instruction_id": 22,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400579",
       "bytes": "f0 0f b1 15 ff 3a 30 00",
       "text": "lock cmpxchg %edx,0x303aff(%rip)        # 0x704080 <g_spin>",
@@ -235,7 +233,7 @@
     },
     {
       "instruction_id": 23,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400581",
       "bytes": "0f 94 c0",
       "text": "sete   %al",
@@ -243,7 +241,7 @@
     },
     {
       "instruction_id": 24,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400584",
       "bytes": "84 c0",
       "text": "test   %al,%al",
@@ -251,7 +249,7 @@
     },
     {
       "instruction_id": 25,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400586",
       "bytes": "75 0d",
       "text": "jne    0x400595 <cte_lock+42>",
@@ -259,7 +257,7 @@
     },
     {
       "instruction_id": 26,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400588",
       "bytes": "90",
       "text": "nop",
@@ -267,7 +265,7 @@
     },
     {
       "instruction_id": 27,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400589",
       "bytes": "8b 05 f1 3a 30 00",
       "text": "mov    0x303af1(%rip),%eax        # 0x704080 <g_spin>",
@@ -275,7 +273,7 @@
     },
     {
       "instruction_id": 28,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040058f",
       "bytes": "85 c0",
       "text": "test   %eax,%eax",
@@ -283,7 +281,7 @@
     },
     {
       "instruction_id": 29,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400591",
       "bytes": "75 f6",
       "text": "jne    0x400589 <cte_lock+30>",
@@ -291,7 +289,7 @@
     },
     {
       "instruction_id": 30,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400593",
       "bytes": "eb da",
       "text": "jmp    0x40056f <cte_lock+4>",
@@ -299,7 +297,7 @@
     },
     {
       "instruction_id": 31,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400595",
       "bytes": "90",
       "text": "nop",
@@ -307,7 +305,7 @@
     },
     {
       "instruction_id": 32,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400596",
       "bytes": "90",
       "text": "nop",
@@ -315,7 +313,7 @@
     },
     {
       "instruction_id": 33,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400597",
       "bytes": "5d",
       "text": "pop    %rbp",
@@ -323,7 +321,7 @@
     },
     {
       "instruction_id": 34,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400598",
       "bytes": "c3",
       "text": "ret",
@@ -331,7 +329,7 @@
     },
     {
       "instruction_id": 35,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x0000000000400599",
       "bytes": "55",
       "text": "push   %rbp",
@@ -339,7 +337,7 @@
     },
     {
       "instruction_id": 36,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040059a",
       "bytes": "48 89 e5",
       "text": "mov    %rsp,%rbp",
@@ -347,7 +345,7 @@
     },
     {
       "instruction_id": 37,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x000000000040059d",
       "bytes": "b8 00 00 00 00",
       "text": "mov    $0x0,%eax",
@@ -355,7 +353,7 @@
     },
     {
       "instruction_id": 38,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005a2",
       "bytes": "89 05 d8 3a 30 00",
       "text": "mov    %eax,0x303ad8(%rip)        # 0x704080 <g_spin>",
@@ -363,7 +361,7 @@
     },
     {
       "instruction_id": 39,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005a8",
       "bytes": "90",
       "text": "nop",
@@ -371,7 +369,7 @@
     },
     {
       "instruction_id": 40,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005a9",
       "bytes": "5d",
       "text": "pop    %rbp",
@@ -379,7 +377,7 @@
     },
     {
       "instruction_id": 41,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005aa",
       "bytes": "c3",
       "text": "ret",
@@ -387,7 +385,7 @@
     },
     {
       "instruction_id": 42,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005ab",
       "bytes": "55",
       "text": "push   %rbp",
@@ -395,7 +393,7 @@
     },
     {
       "instruction_id": 43,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005ac",
       "bytes": "48 89 e5",
       "text": "mov    %rsp,%rbp",
@@ -403,7 +401,7 @@
     },
     {
       "instruction_id": 44,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005af",
       "bytes": "48 89 7d f8",
       "text": "mov    %rdi,-0x8(%rbp)",
@@ -411,7 +409,7 @@
     },
     {
       "instruction_id": 45,
-      "module_identity": "pid=470004:module_epoch=2:/tmp/c-trace-469966-1794737584652328040/program_debug:range=00400000-00402000:file_offset=00000000",
+      "module_identity": "pid=562112:module_epoch=2:/tmp/c-trace-562076-1794752326639494893/program_debug:range=00400000-00402000:file_offset=00000000",
       "address": "0x00000000004005b3",
       "bytes": "48 8b 45 f8",
       "text": "mov    -0x8(%rbp),%rax",
@@ -427,7 +425,7 @@
       "address": "0x0000000000400536",
       "next_address": "0x0000000000400537",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 1,
@@ -437,681 +435,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": true,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 0,
-            "name": "rax",
-            "value": "0x7ffff7f95de8",
-            "availability": "valid"
-          },
-          {
-            "number": 1,
-            "name": "rbx",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 2,
-            "name": "rcx",
-            "value": "0x403df8",
-            "availability": "valid"
-          },
-          {
-            "number": 3,
-            "name": "rdx",
-            "value": "0x7fffffffdba8",
-            "availability": "valid"
-          },
-          {
-            "number": 4,
-            "name": "rsi",
-            "value": "0x7fffffffdb98",
-            "availability": "valid"
-          },
-          {
-            "number": 5,
-            "name": "rdi",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 6,
-            "name": "rbp",
-            "value": "0x7fffffffdb10",
-            "availability": "valid"
-          },
-          {
-            "number": 7,
-            "name": "rsp",
-            "value": "0x7fffffffda60",
-            "availability": "valid"
-          },
-          {
-            "number": 8,
-            "name": "r8",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 9,
-            "name": "r9",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 10,
-            "name": "r10",
-            "value": "0x180",
-            "availability": "valid"
-          },
-          {
-            "number": 11,
-            "name": "r11",
-            "value": "0x202",
-            "availability": "valid"
-          },
-          {
-            "number": 12,
-            "name": "r12",
-            "value": "0x7fffffffdb98",
-            "availability": "valid"
-          },
-          {
-            "number": 13,
-            "name": "r13",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 14,
-            "name": "r14",
-            "value": "0x7ffff7ffd000",
-            "availability": "valid"
-          },
-          {
-            "number": 15,
-            "name": "r15",
-            "value": "0x403df8",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400537",
-            "availability": "valid"
-          },
-          {
-            "number": 17,
-            "name": "eflags",
-            "value": "0x246",
-            "availability": "valid"
-          },
-          {
-            "number": 18,
-            "name": "cs",
-            "value": "0x33",
-            "availability": "valid"
-          },
-          {
-            "number": 19,
-            "name": "ss",
-            "value": "0x2b",
-            "availability": "valid"
-          },
-          {
-            "number": 20,
-            "name": "ds",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 21,
-            "name": "es",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 22,
-            "name": "fs",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 23,
-            "name": "gs",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 24,
-            "name": "st0",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 25,
-            "name": "st1",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 26,
-            "name": "st2",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 27,
-            "name": "st3",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 28,
-            "name": "st4",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 29,
-            "name": "st5",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 30,
-            "name": "st6",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 31,
-            "name": "st7",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 32,
-            "name": "fctrl",
-            "value": "0x37f",
-            "availability": "valid"
-          },
-          {
-            "number": 33,
-            "name": "fstat",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 34,
-            "name": "ftag",
-            "value": "0xffff",
-            "availability": "valid"
-          },
-          {
-            "number": 35,
-            "name": "fiseg",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 36,
-            "name": "fioff",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 37,
-            "name": "foseg",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 38,
-            "name": "fooff",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 39,
-            "name": "fop",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 40,
-            "name": "xmm0",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 41,
-            "name": "xmm1",
-            "value": "{v8_bfloat16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v8_half = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_float = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_double = {0x544e4556455f4543, 0x742f3d454c49465f}, v16_int8 = {0x43, 0x45, 0x5f, 0x45, 0x56, 0x45, 0x4e, 0x54, 0x5f, 0x46, 0x49, 0x4c, 0x45, 0x3d, 0x2f, 0x74}, v8_int16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_int32 = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_int64 = {0x544e4556455f4543, 0x742f3d454c49465f}, uint128 = 0x742f3d454c49465f544e4556455f4543}",
-            "availability": "valid"
-          },
-          {
-            "number": 42,
-            "name": "xmm2",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v8_half = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_float = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_double = {0xffffffff00000000, 0xffffffffff}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_int32 = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_int64 = {0xffffffff00000000, 0xffffffffff}, uint128 = 0xffffffffffffffffff00000000}",
-            "availability": "valid"
-          },
-          {
-            "number": 43,
-            "name": "xmm3",
-            "value": "{v8_bfloat16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v8_half = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_float = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_double = {0xff000000, 0xff000000ff0000}, v16_int8 = {0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0xff, 0x0}, v8_int16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_int32 = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_int64 = {0xff000000, 0xff000000ff0000}, uint128 = 0xff000000ff000000000000ff000000}",
-            "availability": "valid"
-          },
-          {
-            "number": 44,
-            "name": "xmm4",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 45,
-            "name": "xmm5",
-            "value": "{v8_bfloat16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v8_half = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_float = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_double = {0x677361622f5f69, 0x522f3d4c4c454843}, v16_int8 = {0x69, 0x5f, 0x2f, 0x62, 0x61, 0x73, 0x67, 0x0, 0x43, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x52}, v8_int16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_int32 = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_int64 = {0x677361622f5f69, 0x522f3d4c4c454843}, uint128 = 0x522f3d4c4c45484300677361622f5f69}",
-            "availability": "valid"
-          },
-          {
-            "number": 46,
-            "name": "xmm6",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
-            "availability": "valid"
-          },
-          {
-            "number": 47,
-            "name": "xmm7",
-            "value": "{v8_bfloat16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0xff0000, 0x0, 0x0, 0x0}, v2_double = {0xff0000, 0x0}, v16_int8 = {0x0, 0x0, 0xff, 0x0 <repeats 13 times>}, v8_int16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0xff0000, 0x0, 0x0, 0x0}, v2_int64 = {0xff0000, 0x0}, uint128 = 0xff0000}",
-            "availability": "valid"
-          },
-          {
-            "number": 48,
-            "name": "xmm8",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
-            "availability": "valid"
-          },
-          {
-            "number": 49,
-            "name": "xmm9",
-            "value": "{v8_bfloat16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v8_half = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_float = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_double = {0x67756265645f6d, 0x622f3d4c4c454853}, v16_int8 = {0x6d, 0x5f, 0x64, 0x65, 0x62, 0x75, 0x67, 0x0, 0x53, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x62}, v8_int16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_int32 = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_int64 = {0x67756265645f6d, 0x622f3d4c4c454853}, uint128 = 0x622f3d4c4c4548530067756265645f6d}",
-            "availability": "valid"
-          },
-          {
-            "number": 50,
-            "name": "xmm10",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 51,
-            "name": "xmm11",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 52,
-            "name": "xmm12",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 53,
-            "name": "xmm13",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 54,
-            "name": "xmm14",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 55,
-            "name": "xmm15",
-            "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-            "availability": "valid"
-          },
-          {
-            "number": 56,
-            "name": "mxcsr",
-            "value": "0x1f80",
-            "availability": "valid"
-          },
-          {
-            "number": 153,
-            "name": "fs_base",
-            "value": "0x7ffff7d9c780",
-            "availability": "valid"
-          },
-          {
-            "number": 154,
-            "name": "gs_base",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 155,
-            "name": "orig_rax",
-            "value": "0xffffffffffffffff",
-            "availability": "valid"
-          },
-          {
-            "number": 156,
-            "name": "al",
-            "value": "0xe8",
-            "availability": "valid"
-          },
-          {
-            "number": 157,
-            "name": "bl",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 158,
-            "name": "cl",
-            "value": "0xf8",
-            "availability": "valid"
-          },
-          {
-            "number": 159,
-            "name": "dl",
-            "value": "0xa8",
-            "availability": "valid"
-          },
-          {
-            "number": 160,
-            "name": "sil",
-            "value": "0x98",
-            "availability": "valid"
-          },
-          {
-            "number": 161,
-            "name": "dil",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 162,
-            "name": "bpl",
-            "value": "0x10",
-            "availability": "valid"
-          },
-          {
-            "number": 163,
-            "name": "spl",
-            "value": "0x60",
-            "availability": "valid"
-          },
-          {
-            "number": 164,
-            "name": "r8l",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 165,
-            "name": "r9l",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 166,
-            "name": "r10l",
-            "value": "0x80",
-            "availability": "valid"
-          },
-          {
-            "number": 167,
-            "name": "r11l",
-            "value": "0x2",
-            "availability": "valid"
-          },
-          {
-            "number": 168,
-            "name": "r12l",
-            "value": "0x98",
-            "availability": "valid"
-          },
-          {
-            "number": 169,
-            "name": "r13l",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 170,
-            "name": "r14l",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 171,
-            "name": "r15l",
-            "value": "0xf8",
-            "availability": "valid"
-          },
-          {
-            "number": 172,
-            "name": "ah",
-            "value": "0x5d",
-            "availability": "valid"
-          },
-          {
-            "number": 173,
-            "name": "bh",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 174,
-            "name": "ch",
-            "value": "0x3d",
-            "availability": "valid"
-          },
-          {
-            "number": 175,
-            "name": "dh",
-            "value": "0xdb",
-            "availability": "valid"
-          },
-          {
-            "number": 176,
-            "name": "ax",
-            "value": "0x5de8",
-            "availability": "valid"
-          },
-          {
-            "number": 177,
-            "name": "bx",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 178,
-            "name": "cx",
-            "value": "0x3df8",
-            "availability": "valid"
-          },
-          {
-            "number": 179,
-            "name": "dx",
-            "value": "0xdba8",
-            "availability": "valid"
-          },
-          {
-            "number": 180,
-            "name": "si",
-            "value": "0xdb98",
-            "availability": "valid"
-          },
-          {
-            "number": 181,
-            "name": "di",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 182,
-            "name": "bp",
-            "value": "0xdb10",
-            "availability": "valid"
-          },
-          {
-            "number": 184,
-            "name": "r8w",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 185,
-            "name": "r9w",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 186,
-            "name": "r10w",
-            "value": "0x180",
-            "availability": "valid"
-          },
-          {
-            "number": 187,
-            "name": "r11w",
-            "value": "0x202",
-            "availability": "valid"
-          },
-          {
-            "number": 188,
-            "name": "r12w",
-            "value": "0xdb98",
-            "availability": "valid"
-          },
-          {
-            "number": 189,
-            "name": "r13w",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 190,
-            "name": "r14w",
-            "value": "0xd000",
-            "availability": "valid"
-          },
-          {
-            "number": 191,
-            "name": "r15w",
-            "value": "0x3df8",
-            "availability": "valid"
-          },
-          {
-            "number": 192,
-            "name": "eax",
-            "value": "0xf7f95de8",
-            "availability": "valid"
-          },
-          {
-            "number": 193,
-            "name": "ebx",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 194,
-            "name": "ecx",
-            "value": "0x403df8",
-            "availability": "valid"
-          },
-          {
-            "number": 195,
-            "name": "edx",
-            "value": "0xffffdba8",
-            "availability": "valid"
-          },
-          {
-            "number": 196,
-            "name": "esi",
-            "value": "0xffffdb98",
-            "availability": "valid"
-          },
-          {
-            "number": 197,
-            "name": "edi",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 198,
-            "name": "ebp",
-            "value": "0xffffdb10",
-            "availability": "valid"
-          },
-          {
-            "number": 199,
-            "name": "esp",
-            "value": "0xffffda60",
-            "availability": "valid"
-          },
-          {
-            "number": 200,
-            "name": "r8d",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 201,
-            "name": "r9d",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 202,
-            "name": "r10d",
-            "value": "0x180",
-            "availability": "valid"
-          },
-          {
-            "number": 203,
-            "name": "r11d",
-            "value": "0x202",
-            "availability": "valid"
-          },
-          {
-            "number": 204,
-            "name": "r12d",
-            "value": "0xffffdb98",
-            "availability": "valid"
-          },
-          {
-            "number": 205,
-            "name": "r13d",
-            "value": "0x1",
-            "availability": "valid"
-          },
-          {
-            "number": 206,
-            "name": "r14d",
-            "value": "0xf7ffd000",
-            "availability": "valid"
-          },
-          {
-            "number": 207,
-            "name": "r15d",
-            "value": "0x403df8",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1122,7 +445,7 @@
       "address": "0x0000000000400537",
       "next_address": "0x000000000040053a",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 1,
@@ -1132,45 +455,6 @@
       "outcome": "unknown",
       "stopped_reason": "breakpoint-hit",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 6,
-            "name": "rbp",
-            "value": "0x7fffffffda60",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40053a",
-            "availability": "valid"
-          },
-          {
-            "number": 162,
-            "name": "bpl",
-            "value": "0x60",
-            "availability": "valid"
-          },
-          {
-            "number": 182,
-            "name": "bp",
-            "value": "0xda60",
-            "availability": "valid"
-          },
-          {
-            "number": 198,
-            "name": "ebp",
-            "value": "0xffffda60",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1181,7 +465,7 @@
       "address": "0x000000000040053a",
       "next_address": "0x0000000000400541",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 2,
@@ -1191,21 +475,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400541",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1216,7 +485,7 @@
       "address": "0x0000000000400541",
       "next_address": "0x0000000000400548",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 3,
@@ -1226,21 +495,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400548",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1251,7 +505,7 @@
       "address": "0x0000000000400548",
       "next_address": "0x000000000040054b",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 4,
@@ -1261,51 +515,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 3,
-            "name": "rdx",
-            "value": "0xa",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40054b",
-            "availability": "valid"
-          },
-          {
-            "number": 159,
-            "name": "dl",
-            "value": "0xa",
-            "availability": "valid"
-          },
-          {
-            "number": 175,
-            "name": "dh",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 179,
-            "name": "dx",
-            "value": "0xa",
-            "availability": "valid"
-          },
-          {
-            "number": 195,
-            "name": "edx",
-            "value": "0xa",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1316,7 +525,7 @@
       "address": "0x000000000040054b",
       "next_address": "0x000000000040054e",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 4,
@@ -1326,51 +535,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 0,
-            "name": "rax",
-            "value": "0x14",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40054e",
-            "availability": "valid"
-          },
-          {
-            "number": 156,
-            "name": "al",
-            "value": "0x14",
-            "availability": "valid"
-          },
-          {
-            "number": 172,
-            "name": "ah",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 176,
-            "name": "ax",
-            "value": "0x14",
-            "availability": "valid"
-          },
-          {
-            "number": 192,
-            "name": "eax",
-            "value": "0x14",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1381,7 +545,7 @@
       "address": "0x000000000040054e",
       "next_address": "0x0000000000400550",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 4,
@@ -1391,51 +555,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 0,
-            "name": "rax",
-            "value": "0x1e",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400550",
-            "availability": "valid"
-          },
-          {
-            "number": 17,
-            "name": "eflags",
-            "value": "0x206",
-            "availability": "valid"
-          },
-          {
-            "number": 156,
-            "name": "al",
-            "value": "0x1e",
-            "availability": "valid"
-          },
-          {
-            "number": 176,
-            "name": "ax",
-            "value": "0x1e",
-            "availability": "valid"
-          },
-          {
-            "number": 192,
-            "name": "eax",
-            "value": "0x1e",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1446,7 +565,7 @@
       "address": "0x0000000000400550",
       "next_address": "0x0000000000400553",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 4,
@@ -1456,21 +575,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400553",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1481,7 +585,7 @@
       "address": "0x0000000000400553",
       "next_address": "0x0000000000400556",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 5,
@@ -1491,45 +595,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 3,
-            "name": "rdx",
-            "value": "0x1e",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400556",
-            "availability": "valid"
-          },
-          {
-            "number": 159,
-            "name": "dl",
-            "value": "0x1e",
-            "availability": "valid"
-          },
-          {
-            "number": 179,
-            "name": "dx",
-            "value": "0x1e",
-            "availability": "valid"
-          },
-          {
-            "number": 195,
-            "name": "edx",
-            "value": "0x1e",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1540,7 +605,7 @@
       "address": "0x0000000000400556",
       "next_address": "0x0000000000400558",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 5,
@@ -1550,21 +615,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400558",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1575,7 +625,7 @@
       "address": "0x0000000000400558",
       "next_address": "0x000000000040055a",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 5,
@@ -1585,51 +635,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 0,
-            "name": "rax",
-            "value": "0x3c",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40055a",
-            "availability": "valid"
-          },
-          {
-            "number": 17,
-            "name": "eflags",
-            "value": "0x216",
-            "availability": "valid"
-          },
-          {
-            "number": 156,
-            "name": "al",
-            "value": "0x3c",
-            "availability": "valid"
-          },
-          {
-            "number": 176,
-            "name": "ax",
-            "value": "0x3c",
-            "availability": "valid"
-          },
-          {
-            "number": 192,
-            "name": "eax",
-            "value": "0x3c",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1640,7 +645,7 @@
       "address": "0x000000000040055a",
       "next_address": "0x000000000040055c",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 5,
@@ -1650,45 +655,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 0,
-            "name": "rax",
-            "value": "0x5a",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40055c",
-            "availability": "valid"
-          },
-          {
-            "number": 156,
-            "name": "al",
-            "value": "0x5a",
-            "availability": "valid"
-          },
-          {
-            "number": 176,
-            "name": "ax",
-            "value": "0x5a",
-            "availability": "valid"
-          },
-          {
-            "number": 192,
-            "name": "eax",
-            "value": "0x5a",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1699,7 +665,7 @@
       "address": "0x000000000040055c",
       "next_address": "0x000000000040055f",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 5,
@@ -1709,21 +675,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40055f",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1734,7 +685,7 @@
       "address": "0x000000000040055f",
       "next_address": "0x0000000000400563",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 6,
@@ -1744,27 +695,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400563",
-            "availability": "valid"
-          },
-          {
-            "number": 17,
-            "name": "eflags",
-            "value": "0x246",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1775,7 +705,7 @@
       "address": "0x0000000000400563",
       "next_address": "0x0000000000400566",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 6,
@@ -1785,45 +715,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 0,
-            "name": "rax",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400566",
-            "availability": "valid"
-          },
-          {
-            "number": 156,
-            "name": "al",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 176,
-            "name": "ax",
-            "value": "0x0",
-            "availability": "valid"
-          },
-          {
-            "number": 192,
-            "name": "eax",
-            "value": "0x0",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1834,7 +725,7 @@
       "address": "0x0000000000400566",
       "next_address": "0x0000000000400569",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 6,
@@ -1844,21 +735,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x400569",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1869,7 +745,7 @@
       "address": "0x0000000000400569",
       "next_address": "0x000000000040056a",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 7,
@@ -1879,63 +755,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 6,
-            "name": "rbp",
-            "value": "0x7fffffffdb10",
-            "availability": "valid"
-          },
-          {
-            "number": 7,
-            "name": "rsp",
-            "value": "0x7fffffffda68",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x40056a",
-            "availability": "valid"
-          },
-          {
-            "number": 162,
-            "name": "bpl",
-            "value": "0x10",
-            "availability": "valid"
-          },
-          {
-            "number": 163,
-            "name": "spl",
-            "value": "0x68",
-            "availability": "valid"
-          },
-          {
-            "number": 182,
-            "name": "bp",
-            "value": "0xdb10",
-            "availability": "valid"
-          },
-          {
-            "number": 198,
-            "name": "ebp",
-            "value": "0xffffdb10",
-            "availability": "valid"
-          },
-          {
-            "number": 199,
-            "name": "esp",
-            "value": "0xffffda68",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     },
     {
@@ -1946,7 +765,7 @@
       "address": "0x000000000040056a",
       "next_address": "0x00007ffff7da2681",
       "thread_id": "1",
-      "pid": 470004,
+      "pid": 562112,
       "source": {
         "file": "/home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/bench_arith.c",
         "line": 7,
@@ -1956,39 +775,6 @@
       "outcome": "completed",
       "stopped_reason": "end-stepping-range",
       "signal": null,
-      "registers": {
-        "full_checkpoint": false,
-        "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-        "thread_id": "1",
-        "values": [
-          {
-            "number": 7,
-            "name": "rsp",
-            "value": "0x7fffffffda70",
-            "availability": "valid"
-          },
-          {
-            "number": 16,
-            "name": "rip",
-            "value": "0x7ffff7da2681",
-            "availability": "valid"
-          },
-          {
-            "number": 163,
-            "name": "spl",
-            "value": "0x70",
-            "availability": "valid"
-          },
-          {
-            "number": 199,
-            "name": "esp",
-            "value": "0xffffda70",
-            "availability": "valid"
-          }
-        ],
-        "complete": true,
-        "error": null
-      },
       "memory": []
     }
   ],
@@ -2001,681 +787,6 @@
     5,
     6
   ],
-  "initial_registers": {
-    "full_checkpoint": true,
-    "architecture": "The target architecture is set to \"auto\" (currently \"i386:x86-64\").",
-    "thread_id": "1",
-    "values": [
-      {
-        "number": 0,
-        "name": "rax",
-        "value": "0x7ffff7f95de8",
-        "availability": "valid"
-      },
-      {
-        "number": 1,
-        "name": "rbx",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 2,
-        "name": "rcx",
-        "value": "0x403df8",
-        "availability": "valid"
-      },
-      {
-        "number": 3,
-        "name": "rdx",
-        "value": "0x7fffffffdba8",
-        "availability": "valid"
-      },
-      {
-        "number": 4,
-        "name": "rsi",
-        "value": "0x7fffffffdb98",
-        "availability": "valid"
-      },
-      {
-        "number": 5,
-        "name": "rdi",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 6,
-        "name": "rbp",
-        "value": "0x7fffffffdb10",
-        "availability": "valid"
-      },
-      {
-        "number": 7,
-        "name": "rsp",
-        "value": "0x7fffffffda68",
-        "availability": "valid"
-      },
-      {
-        "number": 8,
-        "name": "r8",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 9,
-        "name": "r9",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 10,
-        "name": "r10",
-        "value": "0x180",
-        "availability": "valid"
-      },
-      {
-        "number": 11,
-        "name": "r11",
-        "value": "0x202",
-        "availability": "valid"
-      },
-      {
-        "number": 12,
-        "name": "r12",
-        "value": "0x7fffffffdb98",
-        "availability": "valid"
-      },
-      {
-        "number": 13,
-        "name": "r13",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 14,
-        "name": "r14",
-        "value": "0x7ffff7ffd000",
-        "availability": "valid"
-      },
-      {
-        "number": 15,
-        "name": "r15",
-        "value": "0x403df8",
-        "availability": "valid"
-      },
-      {
-        "number": 16,
-        "name": "rip",
-        "value": "0x400536",
-        "availability": "valid"
-      },
-      {
-        "number": 17,
-        "name": "eflags",
-        "value": "0x246",
-        "availability": "valid"
-      },
-      {
-        "number": 18,
-        "name": "cs",
-        "value": "0x33",
-        "availability": "valid"
-      },
-      {
-        "number": 19,
-        "name": "ss",
-        "value": "0x2b",
-        "availability": "valid"
-      },
-      {
-        "number": 20,
-        "name": "ds",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 21,
-        "name": "es",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 22,
-        "name": "fs",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 23,
-        "name": "gs",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 24,
-        "name": "st0",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 25,
-        "name": "st1",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 26,
-        "name": "st2",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 27,
-        "name": "st3",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 28,
-        "name": "st4",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 29,
-        "name": "st5",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 30,
-        "name": "st6",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 31,
-        "name": "st7",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 32,
-        "name": "fctrl",
-        "value": "0x37f",
-        "availability": "valid"
-      },
-      {
-        "number": 33,
-        "name": "fstat",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 34,
-        "name": "ftag",
-        "value": "0xffff",
-        "availability": "valid"
-      },
-      {
-        "number": 35,
-        "name": "fiseg",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 36,
-        "name": "fioff",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 37,
-        "name": "foseg",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 38,
-        "name": "fooff",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 39,
-        "name": "fop",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 40,
-        "name": "xmm0",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 41,
-        "name": "xmm1",
-        "value": "{v8_bfloat16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v8_half = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_float = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_double = {0x544e4556455f4543, 0x742f3d454c49465f}, v16_int8 = {0x43, 0x45, 0x5f, 0x45, 0x56, 0x45, 0x4e, 0x54, 0x5f, 0x46, 0x49, 0x4c, 0x45, 0x3d, 0x2f, 0x74}, v8_int16 = {0x4543, 0x455f, 0x4556, 0x544e, 0x465f, 0x4c49, 0x3d45, 0x742f}, v4_int32 = {0x455f4543, 0x544e4556, 0x4c49465f, 0x742f3d45}, v2_int64 = {0x544e4556455f4543, 0x742f3d454c49465f}, uint128 = 0x742f3d454c49465f544e4556455f4543}",
-        "availability": "valid"
-      },
-      {
-        "number": 42,
-        "name": "xmm2",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v8_half = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_float = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_double = {0xffffffff00000000, 0xffffffffff}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0xffff, 0xffff, 0xffff, 0xffff, 0xff, 0x0}, v4_int32 = {0x0, 0xffffffff, 0xffffffff, 0xff}, v2_int64 = {0xffffffff00000000, 0xffffffffff}, uint128 = 0xffffffffffffffffff00000000}",
-        "availability": "valid"
-      },
-      {
-        "number": 43,
-        "name": "xmm3",
-        "value": "{v8_bfloat16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v8_half = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_float = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_double = {0xff000000, 0xff000000ff0000}, v16_int8 = {0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0xff, 0x0}, v8_int16 = {0x0, 0xff00, 0x0, 0x0, 0x0, 0xff, 0x0, 0xff}, v4_int32 = {0xff000000, 0x0, 0xff0000, 0xff0000}, v2_int64 = {0xff000000, 0xff000000ff0000}, uint128 = 0xff000000ff000000000000ff000000}",
-        "availability": "valid"
-      },
-      {
-        "number": 44,
-        "name": "xmm4",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 45,
-        "name": "xmm5",
-        "value": "{v8_bfloat16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v8_half = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_float = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_double = {0x677361622f5f69, 0x522f3d4c4c454843}, v16_int8 = {0x69, 0x5f, 0x2f, 0x62, 0x61, 0x73, 0x67, 0x0, 0x43, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x52}, v8_int16 = {0x5f69, 0x622f, 0x7361, 0x67, 0x4843, 0x4c45, 0x3d4c, 0x522f}, v4_int32 = {0x622f5f69, 0x677361, 0x4c454843, 0x522f3d4c}, v2_int64 = {0x677361622f5f69, 0x522f3d4c4c454843}, uint128 = 0x522f3d4c4c45484300677361622f5f69}",
-        "availability": "valid"
-      },
-      {
-        "number": 46,
-        "name": "xmm6",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
-        "availability": "valid"
-      },
-      {
-        "number": 47,
-        "name": "xmm7",
-        "value": "{v8_bfloat16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0xff0000, 0x0, 0x0, 0x0}, v2_double = {0xff0000, 0x0}, v16_int8 = {0x0, 0x0, 0xff, 0x0 <repeats 13 times>}, v8_int16 = {0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0xff0000, 0x0, 0x0, 0x0}, v2_int64 = {0xff0000, 0x0}, uint128 = 0xff0000}",
-        "availability": "valid"
-      },
-      {
-        "number": 48,
-        "name": "xmm8",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0xff000000, 0x0, 0x0}, v2_double = {0xff00000000000000, 0x0}, v16_int8 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0xff, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_int16 = {0x0, 0x0, 0x0, 0xff00, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0xff000000, 0x0, 0x0}, v2_int64 = {0xff00000000000000, 0x0}, uint128 = 0xff00000000000000}",
-        "availability": "valid"
-      },
-      {
-        "number": 49,
-        "name": "xmm9",
-        "value": "{v8_bfloat16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v8_half = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_float = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_double = {0x67756265645f6d, 0x622f3d4c4c454853}, v16_int8 = {0x6d, 0x5f, 0x64, 0x65, 0x62, 0x75, 0x67, 0x0, 0x53, 0x48, 0x45, 0x4c, 0x4c, 0x3d, 0x2f, 0x62}, v8_int16 = {0x5f6d, 0x6564, 0x7562, 0x67, 0x4853, 0x4c45, 0x3d4c, 0x622f}, v4_int32 = {0x65645f6d, 0x677562, 0x4c454853, 0x622f3d4c}, v2_int64 = {0x67756265645f6d, 0x622f3d4c4c454853}, uint128 = 0x622f3d4c4c4548530067756265645f6d}",
-        "availability": "valid"
-      },
-      {
-        "number": 50,
-        "name": "xmm10",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 51,
-        "name": "xmm11",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 52,
-        "name": "xmm12",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 53,
-        "name": "xmm13",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 54,
-        "name": "xmm14",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 55,
-        "name": "xmm15",
-        "value": "{v8_bfloat16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v8_half = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_float = {0x0, 0x0, 0x0, 0x0}, v2_double = {0x0, 0x0}, v16_int8 = {0x0 <repeats 16 times>}, v8_int16 = {0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0, 0x0}, v4_int32 = {0x0, 0x0, 0x0, 0x0}, v2_int64 = {0x0, 0x0}, uint128 = 0x0}",
-        "availability": "valid"
-      },
-      {
-        "number": 56,
-        "name": "mxcsr",
-        "value": "0x1f80",
-        "availability": "valid"
-      },
-      {
-        "number": 153,
-        "name": "fs_base",
-        "value": "0x7ffff7d9c780",
-        "availability": "valid"
-      },
-      {
-        "number": 154,
-        "name": "gs_base",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 155,
-        "name": "orig_rax",
-        "value": "0xffffffffffffffff",
-        "availability": "valid"
-      },
-      {
-        "number": 156,
-        "name": "al",
-        "value": "0xe8",
-        "availability": "valid"
-      },
-      {
-        "number": 157,
-        "name": "bl",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 158,
-        "name": "cl",
-        "value": "0xf8",
-        "availability": "valid"
-      },
-      {
-        "number": 159,
-        "name": "dl",
-        "value": "0xa8",
-        "availability": "valid"
-      },
-      {
-        "number": 160,
-        "name": "sil",
-        "value": "0x98",
-        "availability": "valid"
-      },
-      {
-        "number": 161,
-        "name": "dil",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 162,
-        "name": "bpl",
-        "value": "0x10",
-        "availability": "valid"
-      },
-      {
-        "number": 163,
-        "name": "spl",
-        "value": "0x68",
-        "availability": "valid"
-      },
-      {
-        "number": 164,
-        "name": "r8l",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 165,
-        "name": "r9l",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 166,
-        "name": "r10l",
-        "value": "0x80",
-        "availability": "valid"
-      },
-      {
-        "number": 167,
-        "name": "r11l",
-        "value": "0x2",
-        "availability": "valid"
-      },
-      {
-        "number": 168,
-        "name": "r12l",
-        "value": "0x98",
-        "availability": "valid"
-      },
-      {
-        "number": 169,
-        "name": "r13l",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 170,
-        "name": "r14l",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 171,
-        "name": "r15l",
-        "value": "0xf8",
-        "availability": "valid"
-      },
-      {
-        "number": 172,
-        "name": "ah",
-        "value": "0x5d",
-        "availability": "valid"
-      },
-      {
-        "number": 173,
-        "name": "bh",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 174,
-        "name": "ch",
-        "value": "0x3d",
-        "availability": "valid"
-      },
-      {
-        "number": 175,
-        "name": "dh",
-        "value": "0xdb",
-        "availability": "valid"
-      },
-      {
-        "number": 176,
-        "name": "ax",
-        "value": "0x5de8",
-        "availability": "valid"
-      },
-      {
-        "number": 177,
-        "name": "bx",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 178,
-        "name": "cx",
-        "value": "0x3df8",
-        "availability": "valid"
-      },
-      {
-        "number": 179,
-        "name": "dx",
-        "value": "0xdba8",
-        "availability": "valid"
-      },
-      {
-        "number": 180,
-        "name": "si",
-        "value": "0xdb98",
-        "availability": "valid"
-      },
-      {
-        "number": 181,
-        "name": "di",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 182,
-        "name": "bp",
-        "value": "0xdb10",
-        "availability": "valid"
-      },
-      {
-        "number": 184,
-        "name": "r8w",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 185,
-        "name": "r9w",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 186,
-        "name": "r10w",
-        "value": "0x180",
-        "availability": "valid"
-      },
-      {
-        "number": 187,
-        "name": "r11w",
-        "value": "0x202",
-        "availability": "valid"
-      },
-      {
-        "number": 188,
-        "name": "r12w",
-        "value": "0xdb98",
-        "availability": "valid"
-      },
-      {
-        "number": 189,
-        "name": "r13w",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 190,
-        "name": "r14w",
-        "value": "0xd000",
-        "availability": "valid"
-      },
-      {
-        "number": 191,
-        "name": "r15w",
-        "value": "0x3df8",
-        "availability": "valid"
-      },
-      {
-        "number": 192,
-        "name": "eax",
-        "value": "0xf7f95de8",
-        "availability": "valid"
-      },
-      {
-        "number": 193,
-        "name": "ebx",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 194,
-        "name": "ecx",
-        "value": "0x403df8",
-        "availability": "valid"
-      },
-      {
-        "number": 195,
-        "name": "edx",
-        "value": "0xffffdba8",
-        "availability": "valid"
-      },
-      {
-        "number": 196,
-        "name": "esi",
-        "value": "0xffffdb98",
-        "availability": "valid"
-      },
-      {
-        "number": 197,
-        "name": "edi",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 198,
-        "name": "ebp",
-        "value": "0xffffdb10",
-        "availability": "valid"
-      },
-      {
-        "number": 199,
-        "name": "esp",
-        "value": "0xffffda68",
-        "availability": "valid"
-      },
-      {
-        "number": 200,
-        "name": "r8d",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 201,
-        "name": "r9d",
-        "value": "0x0",
-        "availability": "valid"
-      },
-      {
-        "number": 202,
-        "name": "r10d",
-        "value": "0x180",
-        "availability": "valid"
-      },
-      {
-        "number": 203,
-        "name": "r11d",
-        "value": "0x202",
-        "availability": "valid"
-      },
-      {
-        "number": 204,
-        "name": "r12d",
-        "value": "0xffffdb98",
-        "availability": "valid"
-      },
-      {
-        "number": 205,
-        "name": "r13d",
-        "value": "0x1",
-        "availability": "valid"
-      },
-      {
-        "number": 206,
-        "name": "r14d",
-        "value": "0xf7ffd000",
-        "availability": "valid"
-      },
-      {
-        "number": 207,
-        "name": "r15d",
-        "value": "0x403df8",
-        "availability": "valid"
-      }
-    ],
-    "complete": true,
-    "error": null
-  },
   "trace_gaps": [
     {
       "instruction_position": 0,
@@ -2710,31 +821,31 @@
   "storage": {
     "journal": null,
     "finalized": true,
-    "bytes_written": 76534,
-    "resident_event_bytes": 59717
+    "bytes_written": 40482,
+    "resident_event_bytes": 37994
   },
   "profiling": {
-    "engine_peak_rss_kib": 11104,
+    "engine_peak_rss_kib": 11032,
     "source_resolution_time_us": 5,
-    "command_time_us": 1288145,
-    "mi_parse_time_us": 87717,
-    "memory_read_time_us": 13206,
-    "enabled": false,
-    "step_time_us": 31252,
-    "disassembly_time_us": 3972,
-    "register_time_us": 219154,
-    "capture_time_us": 97200,
-    "debugger_time_us": 1206106,
+    "command_time_us": 1318932,
+    "mi_parse_time_us": 24985,
+    "memory_read_time_us": 17148,
+    "enabled": true,
+    "step_time_us": 42203,
+    "disassembly_time_us": 3984,
+    "register_time_us": 0,
+    "capture_time_us": 112618,
+    "debugger_time_us": 1191582,
     "disassembly_queries": 1,
     "disassembly_cache_hits": 17,
-    "journal_time_us": 9592
+    "journal_time_us": 2854
   },
   "allocation_lifetimes": [],
   "tracing_configuration": {
     "mode": "dual",
-    "registers": true,
+    "registers": false,
     "static_disassembly": true,
-    "register_checkpoint_interval": 256,
+    "register_checkpoint_interval": 0,
     "memory_regions": [],
     "globals": [],
     "discover_globals": true,
@@ -2752,7 +863,7 @@
         "instruction_position": 0,
         "instruction_address": "0x0000000000400536",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -2868,7 +979,7 @@
         "instruction_position": 2,
         "instruction_address": "0x000000000040053a",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -2984,7 +1095,7 @@
         "instruction_position": 3,
         "instruction_address": "0x0000000000400541",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -3100,7 +1211,7 @@
         "instruction_position": 4,
         "instruction_address": "0x0000000000400548",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -3216,7 +1327,7 @@
         "instruction_position": 8,
         "instruction_address": "0x0000000000400553",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -3332,7 +1443,7 @@
         "instruction_position": 13,
         "instruction_address": "0x000000000040055f",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -3448,7 +1559,7 @@
         "instruction_position": 16,
         "instruction_address": "0x0000000000400569",
         "thread_id": "1",
-        "pid": 470004,
+        "pid": 562112,
         "origin": "user_code",
         "globals": [],
         "complete": true,
@@ -3590,8 +1701,8 @@
   },
   "execution_status": "completed",
   "resource_usage": {
-    "wall_time_ms": 3524,
-    "gdb_commands_issued": 161,
+    "wall_time_ms": 3737,
+    "gdb_commands_issued": 140,
     "snapshots_captured": 7,
     "allocation_events_ingested": 0,
     "program_output_bytes": 0,
@@ -3602,9 +1713,9 @@
   "sanitizer_report": null,
   "session_meta": {
     "sanitizer_variant": "address",
-    "session_dir": "/tmp/c-trace-469966-1794737584652328040",
-    "debug_binary": "/tmp/c-trace-469966-1794737584652328040/program_debug",
-    "sanitized_binary": "/tmp/c-trace-469966-1794737584652328040/program_asan",
+    "session_dir": "/tmp/c-trace-562076-1794752326639494893",
+    "debug_binary": "/tmp/c-trace-562076-1794752326639494893/program_debug",
+    "sanitized_binary": "/tmp/c-trace-562076-1794752326639494893/program_asan",
     "gcc_version": "gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
     "gdb_version": "GNU gdb (Fedora Linux) 18.1-1.fc44",
     "valgrind_version": "valgrind-3.27.1",
@@ -3633,9 +1744,9 @@
   "stage_results": {
     "compiler": {
       "status": "completed",
-      "start_offset_ms": 193,
-      "end_offset_ms": 565,
-      "duration_ms": 372,
+      "start_offset_ms": 209,
+      "end_offset_ms": 645,
+      "duration_ms": 436,
       "exit_code": 0,
       "reason": null,
       "output_complete": true,
@@ -3643,9 +1754,9 @@
     },
     "debugger": {
       "status": "completed",
-      "start_offset_ms": 565,
-      "end_offset_ms": 2095,
-      "duration_ms": 1530,
+      "start_offset_ms": 646,
+      "end_offset_ms": 2194,
+      "duration_ms": 1548,
       "exit_code": 0,
       "reason": null,
       "output_complete": true,
@@ -3653,9 +1764,9 @@
     },
     "valgrind": {
       "status": "completed",
-      "start_offset_ms": 2095,
-      "end_offset_ms": 3524,
-      "duration_ms": 1428,
+      "start_offset_ms": 2194,
+      "end_offset_ms": 3737,
+      "duration_ms": 1542,
       "exit_code": 0,
       "reason": null,
       "output_complete": true,
@@ -3667,15 +1778,15 @@
       "end_offset_ms": null,
       "duration_ms": null,
       "exit_code": null,
-      "reason": "no crash or sanitized build unavailable",
+      "reason": "trigger mode 'on_crash_or_valgrind_error': no crash and Valgrind reported no memory errors",
       "output_complete": false,
       "partial_results_available": null
     },
     "allocation_tracker": {
       "status": "completed",
-      "start_offset_ms": 565,
-      "end_offset_ms": 2095,
-      "duration_ms": 1530,
+      "start_offset_ms": 646,
+      "end_offset_ms": 2194,
+      "duration_ms": 1548,
       "exit_code": null,
       "reason": null,
       "output_complete": true,

@@ -43,8 +43,13 @@ pub async fn run_valgrind(
     limits: &crate::resource_limits::ExecutionLimits,
     xml_path: &Path,
     _event_file: &Path,
+    valgrind_path: Option<&str>,
 ) -> Result<ValgrindRun> {
-    let mut cmd = tokio::process::Command::new("valgrind");
+    // V2.1 (F-05): explicit `valgrind_path` overrides PATH resolution; the
+    // default resolves via PATH with execvp semantics (non-executable PATH
+    // matches are skipped, so shadowing with a non-executable file fails the
+    // launch and is reported as a missing tool).
+    let mut cmd = tokio::process::Command::new(valgrind_path.unwrap_or("valgrind"));
     cmd.args([
         "--tool=memcheck",
         "--leak-check=full",

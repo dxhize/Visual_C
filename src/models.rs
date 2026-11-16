@@ -344,6 +344,10 @@ pub enum ExecutionStatus {
     Timeout,
     /// Step/snapshot limit hit; partial trace preserved.
     StepLimitReached,
+    /// Captured-output limit (`max_output_bytes`) hit; partial trace
+    /// preserved. Distinct from `StepLimitReached` (V2.1, fixes F-04: the
+    /// output-limit termination was previously mislabeled as a step limit).
+    OutputLimitReached,
     /// Kernel-enforced resource limit killed the run.
     ResourceLimitReached,
     /// GDB itself failed (missing, inoperable, protocol error).
@@ -540,7 +544,10 @@ pub struct InstructionEvent {
     pub outcome: String,
     pub stopped_reason: Option<String>,
     pub signal: Option<String>,
-    /// Observed AFTER the attempt, not inferred from assembly.
+    /// DEPRECATED since V2.1: per-instruction CPU register snapshots were
+    /// removed (~90% of debugger command time; no GUI consumer). Always
+    /// `None` in V2.1 output; retained solely to deserialize V2 traces.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub registers: Option<RegisterObservation>,
     pub memory: Vec<MemoryObservation>,
 }
@@ -562,6 +569,10 @@ pub struct RecordingData {
     pub instruction_events: Vec<InstructionEvent>,
     /// References into legacy snapshots; no duplicate large memory objects.
     pub source_checkpoints: Vec<usize>,
+    /// DEPRECATED since V2.1: initial register snapshots removed with the
+    /// per-instruction capture. Always `None` in V2.1 output; retained
+    /// solely to deserialize V2 traces.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub initial_registers: Option<RegisterObservation>,
     pub trace_gaps: Vec<TraceGap>,
     pub instruction_count: u64,
@@ -615,6 +626,9 @@ pub struct Profiling {
     pub enabled: bool,
     pub step_time_us: u64,
     pub disassembly_time_us: u64,
+    /// Time spent in register queries. Always 0 since V2.1 (per-instruction
+    /// register capture removed); kept so historical V2 metrics stay
+    /// comparable and the field is never reused for unrelated debugger work.
     pub register_time_us: u64,
     pub capture_time_us: u64,
     pub debugger_time_us: u64,

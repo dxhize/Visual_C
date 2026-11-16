@@ -46,11 +46,8 @@ pub struct Recorder {
     config: TracingConfig,
     limits: ExecutionLimits,
     cache: HashMap<String, u64>,
-    registers: HashMap<String, HashMap<u32, RegisterValue>>,
     journal: Journal,
     resident: usize,
-    /// Gaps invalidate delta bases: the first observation afterward is full.
-    need_full: bool,
     module_epoch: u64,
     journaled_allocations: usize,
 }
@@ -72,7 +69,8 @@ impl Recorder {
             ],
         }, ..Default::default() };
         data.storage.journal = config.journal.as_ref().map(|p| p.display().to_string());
-        data.profiling.enabled = config.profiling;
+        // Baseline profiling metrics are always collected (F-06).
+        data.profiling.enabled = true;
         let mut journal = Journal::new(config.journal.as_deref(), limits.max_trace_bytes)?;
         journal.append("configuration", config)?;
         Ok(Self {
@@ -80,10 +78,8 @@ impl Recorder {
             config: config.clone(),
             limits: limits.clone(),
             cache: HashMap::new(),
-            registers: HashMap::new(),
             journal,
             resident: 0,
-            need_full: true,
             module_epoch: 0,
             journaled_allocations: 0,
         })
@@ -100,12 +96,6 @@ impl Recorder {
         {
             self.data.coverage.truncation_reasons.push(reason.into());
         }
-    }
-
-    pub fn initial_registers(&mut self, registers: Option<RegisterObservation>) -> Result<()> {
-        self.journal.append("initial_registers", &registers)?;
-        self.data.initial_registers = registers;
-        Ok(())
     }
 
     fn reserve(&mut self, size: usize) -> Result<()> {
@@ -151,7 +141,6 @@ impl Recorder {
         origin: &str,
         reason: &str,
     ) -> Result<()> {
-        self.need_full = true;
         let gap = TraceGap {
             instruction_position: self.data.instruction_count,
             start_address: start,
@@ -231,126 +220,6 @@ impl Recorder {
             }
         }
         Ok(self.cache.get(addr).copied())
-    }
-
-    pub async fn registers(
-        &mut self,
-        session: &mut GdbSession,
-        thread: Option<String>,
-    ) -> Result<Option<RegisterObservation>> {
-        if !self.config.registers {
-            return Ok(None);
-        }
-        let start = Instant::now();
-        if session.register_names.is_empty() {
-            let response = session.execute("-data-list-register-names").await?;
-            if let Some(MiValue::List(names)) = response.record.result("register-names") {
-                session.register_names = names
-                    .iter()
-                    .map(|i| match i {
-                        MiListItem::Value(v) => as_const(v).unwrap_or("").into(),
-                        _ => String::new(),
-                    })
-                    .collect();
-            }
-            session.architecture = session
-                .execute("-interpreter-exec console \"show architecture\"")
-                .await
-                .map(|r| {
-                    r.streams
-                        .iter()
-                        .map(|(_, text)| text.as_str())
-                        .collect::<String>()
-                        .trim()
-                        .to_owned()
-                })
-                .unwrap_or_else(|_| "unknown".into());
-        }
-        let response = session.execute("-data-list-register-values x").await?;
-        if let Some(message) = response.error_message() {
-            return Err(EngineError::Gdb(message));
-        }
-        let mut current = HashMap::new();
-        if let Some(MiValue::List(items)) = response.record.result("register-values") {
-            for item in items {
-                let MiListItem::Value(MiValue::Tuple(fields)) = item else {
-                    continue;
-                };
-                let Some(number) = field(fields, "number").and_then(|v| v.parse::<u32>().ok())
-                else {
-                    continue;
-                };
-                let raw = field(fields, "value");
-                let valid = raw.is_some_and(|v| !v.contains("unavailable") && !v.is_empty());
-                current.insert(
-                    number,
-                    RegisterValue {
-                        number,
-                        name: session
-                            .register_names
-                            .get(number as usize)
-                            .cloned()
-                            .unwrap_or_default(),
-                        value: raw.filter(|_| valid).map(str::to_owned),
-                        availability: if valid {
-                            DataValidity::Valid
-                        } else {
-                            DataValidity::Unavailable
-                        },
-                    },
-                );
-            }
-        }
-        let key = thread.clone().unwrap_or_else(|| "unknown".into());
-        let full = self.need_full
-            || self
-                .data
-                .instruction_count
-                .is_multiple_of(self.config.register_checkpoint_interval.max(1) as u64)
-            || !self.registers.contains_key(&key);
-        let previous = self.registers.entry(key).or_default();
-        for (number, old) in previous.iter() {
-            current.entry(*number).or_insert_with(|| RegisterValue {
-                number: *number,
-                name: old.name.clone(),
-                value: None,
-                availability: DataValidity::Unavailable,
-            });
-        }
-        let mut values: Vec<_> = current
-            .values()
-            .filter(|v| {
-                full || !previous
-                    .get(&v.number)
-                    .is_some_and(|old| old.value == v.value && old.availability == v.availability)
-            })
-            .cloned()
-            .collect();
-        values.sort_by_key(|v| v.number);
-        let bytes = serde_json::to_vec(&values)?.len();
-        if bytes > self.limits.max_register_snapshot_bytes {
-            // Do not establish a delta base using values that were never emitted.
-            return Ok(Some(RegisterObservation {
-                full_checkpoint: full,
-                architecture: session.architecture.clone(),
-                thread_id: thread,
-                values: Vec::new(),
-                complete: false,
-                error: Some("max_register_snapshot_bytes".into()),
-            }));
-        }
-        let complete = !current.is_empty();
-        *previous = current;
-        self.need_full = !complete;
-        self.data.profiling.register_time_us += start.elapsed().as_micros() as u64;
-        Ok(Some(RegisterObservation {
-            full_checkpoint: full,
-            architecture: session.architecture.clone(),
-            thread_id: thread,
-            values,
-            complete,
-            error: None,
-        }))
     }
 
     pub async fn selected_memory(&self, session: &mut GdbSession) -> Vec<MemoryObservation> {

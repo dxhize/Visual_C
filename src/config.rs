@@ -75,6 +75,15 @@ pub struct TraceConfig {
     pub pretty: bool,
     /// Keep the session temporary directory after the run (default false).
     pub keep_temp: bool,
+    /// When to run the sanitizer reproduction pass (default: on crash or
+    /// when Valgrind reports memory errors).
+    pub sanitizer_trigger: SanitizerTrigger,
+    /// Optional explicit path to the valgrind executable; resolved via PATH
+    /// when unset (execvp semantics: non-executable matches are skipped).
+    pub valgrind_path: Option<String>,
+    /// Optional explicit path to the gdb executable; resolved via PATH when
+    /// unset (execvp semantics).
+    pub gdb_path: Option<String>,
     pub tracing: TracingConfig,
 }
 
@@ -88,6 +97,9 @@ impl Default for TraceConfig {
             output_file: None,
             pretty: true,
             keep_temp: false,
+            sanitizer_trigger: SanitizerTrigger::default(),
+            valgrind_path: None,
+            gdb_path: None,
             tracing: TracingConfig::default(),
         }
     }
@@ -117,6 +129,9 @@ pub struct ConfigFile {
     pub output_file: Option<PathBuf>,
     pub pretty: Option<bool>,
     pub keep_temp: Option<bool>,
+    pub sanitizer_trigger: Option<SanitizerTrigger>,
+    pub valgrind_path: Option<String>,
+    pub gdb_path: Option<String>,
     pub tracing: TracingConfig,
 }
 
@@ -128,12 +143,39 @@ pub enum TraceMode {
     Dual,
 }
 
+/// When the sanitizer (ASan) reproduction pass runs (V2.1, fixes audit F-02).
+///
+/// `never` disables the pass; `on_crash` restores V2 behavior; the default
+/// `on_crash_or_valgrind_error` additionally runs ASan when Valgrind reported
+/// memory errors even though the traced run exited cleanly; `always` runs it
+/// for every successful build, deadline permitting.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, Default, PartialEq, Eq, clap::ValueEnum)]
+#[serde(rename_all = "snake_case")]
+pub enum SanitizerTrigger {
+    Never,
+    OnCrash,
+    #[default]
+    OnCrashOrValgrindError,
+    Always,
+}
+
+impl SanitizerTrigger {
+    pub fn runs_on_crash(self) -> bool {
+        !matches!(self, SanitizerTrigger::Never)
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(default, deny_unknown_fields)]
 pub struct TracingConfig {
     pub mode: TraceMode,
+    /// DEPRECATED since V2.1: per-instruction CPU register capture was
+    /// removed (V2 audit: ~90% of debugger command time, no GUI consumer).
+    /// Retained only so older config files keep parsing; has no effect.
     pub registers: bool,
     pub static_disassembly: bool,
+    /// DEPRECATED since V2.1: was the periodic register checkpoint cadence.
+    /// Retained only so older config files keep parsing; has no effect.
     pub register_checkpoint_interval: usize,
     /// User-specified expressions read at instruction stops. Never evaluated as writes.
     pub memory_regions: Vec<MemoryRegion>,
@@ -142,6 +184,8 @@ pub struct TracingConfig {
     /// Durable JSONL journal; dynamic events need not remain resident.
     pub journal: Option<PathBuf>,
     pub retain_instruction_events: bool,
+    /// DEPRECATED since V2.1: baseline profiling metrics are always collected
+    /// (`profiling.enabled` is always `true`). Retained for config compat.
     pub profiling: bool,
 }
 
@@ -155,9 +199,9 @@ impl Default for TracingConfig {
     fn default() -> Self {
         Self {
             mode: TraceMode::Dual,
-            registers: true,
+            registers: false,
             static_disassembly: true,
-            register_checkpoint_interval: 256,
+            register_checkpoint_interval: 0,
             memory_regions: Vec::new(),
             globals: Vec::new(),
             discover_globals: true,

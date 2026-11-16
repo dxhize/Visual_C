@@ -137,8 +137,6 @@ pub struct Cli {
     #[arg(long, value_enum)]
     pub trace_mode: Option<crate::config::TraceMode>,
     #[arg(long)]
-    pub no_registers: bool,
-    #[arg(long)]
     pub max_instruction_events: Option<usize>,
     #[arg(long)]
     pub max_gdb_commands: Option<u64>,
@@ -153,13 +151,19 @@ pub struct Cli {
     /// Keep dynamic instruction events only in the journal.
     #[arg(long, requires = "journal")]
     pub journal_only: bool,
+    /// When to run the ASan reproduction pass (default: on crash or when
+    /// Valgrind reports memory errors).
+    #[arg(long, value_enum)]
+    pub sanitizer_trigger: Option<crate::config::SanitizerTrigger>,
+    /// Explicit path to the valgrind executable (default: resolve via PATH).
     #[arg(long)]
-    pub profile: bool,
+    pub valgrind_path: Option<String>,
+    /// Explicit path to the gdb executable (default: resolve via PATH).
+    #[arg(long)]
+    pub gdb_path: Option<String>,
     /// Extra global/static GDB expression (repeatable).
     #[arg(long = "global")]
     pub globals: Vec<String>,
-    #[arg(long)]
-    pub max_register_snapshot_bytes: Option<usize>,
     #[arg(long)]
     pub max_globals: Option<usize>,
     #[arg(long)]
@@ -289,11 +293,7 @@ impl Cli {
         if let Some(mode) = self.trace_mode {
             tracing.mode = mode;
         }
-        if self.no_registers {
-            tracing.registers = false;
-        }
         tracing.globals.extend(self.globals.clone());
-        tracing.profiling |= self.profile;
         if self.journal.is_some() {
             tracing.journal = self.journal.clone();
         }
@@ -332,9 +332,6 @@ impl Cli {
         if let Some(v) = self.max_source_checkpoints {
             limits.max_source_checkpoints = v;
         }
-        if let Some(v) = self.max_register_snapshot_bytes {
-            limits.max_register_snapshot_bytes = v;
-        }
         if let Some(v) = self.max_globals {
             limits.max_globals = v;
         }
@@ -359,6 +356,12 @@ impl Cli {
             output_file,
             pretty,
             keep_temp,
+            sanitizer_trigger: self
+                .sanitizer_trigger
+                .or(file.sanitizer_trigger)
+                .unwrap_or_default(),
+            valgrind_path: self.valgrind_path.clone().or(file.valgrind_path.clone()),
+            gdb_path: self.gdb_path.clone().or(file.gdb_path.clone()),
             tracing,
         })
     }

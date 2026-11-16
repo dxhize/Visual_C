@@ -1,0 +1,412 @@
+{
+  "execution_limits": {
+    "max_steps": 1000,
+    "timeout_seconds": 10,
+    "max_memory_mb": 256,
+    "max_output_bytes": 1048576,
+    "max_heap_allocations": 10000,
+    "max_snapshot_count": 1000,
+    "max_snapshot_memory_bytes": 1048576,
+    "max_memory_read_bytes": 4096,
+    "max_process_count": 16,
+    "max_variables_per_snapshot": 24,
+    "max_instruction_events": 100000,
+    "max_source_checkpoints": 1000,
+    "max_trace_bytes": 134217728,
+    "max_trace_memory_bytes": 33554432,
+    "max_gdb_commands": 1000000,
+    "max_globals": 32,
+    "compiler_timeout_seconds": 30,
+    "debugger_timeout_seconds": 30,
+    "analysis_timeout_seconds": 10
+  },
+  "execution": {
+    "outcome": "completed",
+    "exit_code": 0,
+    "signal": null,
+    "instruction_address": null,
+    "reason": null
+  },
+  "internal_diagnostics": [
+    "Reading symbols from /tmp/c-trace-560967-1794752235411842043/program_debug...",
+    "[Thread debugging using libthread_db enabled]",
+    "Using host libthread_db library \"/lib64/libthread_db.so.1\".",
+    "",
+    "Breakpoint 2, main () at fixtures/c/hello.c:4",
+    "4\tint main(void) {",
+    "",
+    "Breakpoint 1, main () at fixtures/c/hello.c:5",
+    "5\t    printf(\"hello from c-trace-engine\\n\");",
+    "[Inferior 1 (process 561009) exited normally]"
+  ],
+  "disassembly_table": [],
+  "instruction_events": [],
+  "source_checkpoints": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "trace_gaps": [
+    {
+      "instruction_position": 0,
+      "start_address": null,
+      "end_address": "0x0000000000400546",
+      "origin": "unknown",
+      "reason": "startup_before_main"
+    },
+    {
+      "instruction_position": 0,
+      "start_address": "0x0000000000400546",
+      "end_address": "0x000000000040054a",
+      "origin": "user_code",
+      "reason": "source_only_stepping"
+    },
+    {
+      "instruction_position": 0,
+      "start_address": "0x000000000040054a",
+      "end_address": "0x0000000000400554",
+      "origin": "user_code",
+      "reason": "source_only_stepping"
+    },
+    {
+      "instruction_position": 0,
+      "start_address": "0x0000000000400554",
+      "end_address": "0x0000000000400559",
+      "origin": "user_code",
+      "reason": "source_only_stepping"
+    },
+    {
+      "instruction_position": 0,
+      "start_address": "0x0000000000400559",
+      "end_address": "0x00007ffff7da2681",
+      "origin": "user_code",
+      "reason": "source_only_stepping"
+    },
+    {
+      "instruction_position": 0,
+      "start_address": "0x00007ffff7da2681",
+      "end_address": null,
+      "origin": "system_library",
+      "reason": "source_only_stepping"
+    }
+  ],
+  "instruction_count": 0,
+  "coverage": {
+    "scope": "user_code",
+    "instruction_capture_enabled": false,
+    "complete_for_scope": false,
+    "truncation_reasons": [],
+    "stop_model": "gdb_all_stop",
+    "limitations": [
+      "Capture begins at main; startup and excluded-code intervals are gaps.",
+      "Memory is exact only at its recorded stopped observation, never inferred from registers.",
+      "Lexical DWARF DIE IDs and non-top-frame locals are not collected.",
+      "All-stop pauses inferior threads, not external processes sharing memory.",
+      "Disassembly assumes unchanged user code; self-modifying/JIT code is unsupported."
+    ]
+  },
+  "storage": {
+    "journal": null,
+    "finalized": true,
+    "bytes_written": 3826,
+    "resident_event_bytes": 3318
+  },
+  "profiling": {
+    "engine_peak_rss_kib": 10784,
+    "source_resolution_time_us": 5,
+    "command_time_us": 1122368,
+    "mi_parse_time_us": 12296,
+    "memory_read_time_us": 0,
+    "enabled": true,
+    "step_time_us": 127113,
+    "disassembly_time_us": 0,
+    "register_time_us": 0,
+    "capture_time_us": 5697,
+    "debugger_time_us": 1023966,
+    "disassembly_queries": 0,
+    "disassembly_cache_hits": 0,
+    "journal_time_us": 0
+  },
+  "allocation_lifetimes": [],
+  "tracing_configuration": {
+    "mode": "source",
+    "registers": false,
+    "static_disassembly": true,
+    "register_checkpoint_interval": 0,
+    "memory_regions": [],
+    "globals": [],
+    "discover_globals": true,
+    "journal": null,
+    "retain_instruction_events": true,
+    "profiling": false
+  },
+  "schema_version": 2,
+  "compiled_successfully": true,
+  "compile_errors": [],
+  "snapshots": [
+    {
+      "observation": {
+        "stop_id": 1,
+        "instruction_position": 0,
+        "instruction_address": "0x0000000000400546",
+        "thread_id": "1",
+        "pid": 561009,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 0,
+      "file": "fixtures/c/hello.c",
+      "line": 4,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/hello.c",
+          "line": 4,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/hello.c",
+          "address": "0x0000000000400546"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "breakpoint-hit",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "observation": {
+        "stop_id": 2,
+        "instruction_position": 0,
+        "instruction_address": "0x000000000040054a",
+        "thread_id": "1",
+        "pid": 561009,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 1,
+      "file": "fixtures/c/hello.c",
+      "line": 5,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/hello.c",
+          "line": 5,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/hello.c",
+          "address": "0x000000000040054a"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [],
+      "stdout_so_far": "",
+      "stopped_reason": "breakpoint-hit",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "observation": {
+        "stop_id": 3,
+        "instruction_position": 0,
+        "instruction_address": "0x0000000000400554",
+        "thread_id": "1",
+        "pid": 561009,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 2,
+      "file": "fixtures/c/hello.c",
+      "line": 6,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/hello.c",
+          "line": 6,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/hello.c",
+          "address": "0x0000000000400554"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [],
+      "stdout_so_far": "hello from c-trace-engine\r\n",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    },
+    {
+      "observation": {
+        "stop_id": 4,
+        "instruction_position": 0,
+        "instruction_address": "0x0000000000400559",
+        "thread_id": "1",
+        "pid": 561009,
+        "origin": "user_code",
+        "globals": [],
+        "complete": true,
+        "errors": [],
+        "heap_event_count": 0
+      },
+      "step_index": 3,
+      "file": "fixtures/c/hello.c",
+      "line": 7,
+      "func": "main",
+      "call_stack": [
+        {
+          "level": 0,
+          "func": "main",
+          "file": "fixtures/c/hello.c",
+          "line": 7,
+          "full_file": "/home/xe/Documents/visual_c/fixtures/c/hello.c",
+          "address": "0x0000000000400559"
+        }
+      ],
+      "variables": [],
+      "heap_blocks": [],
+      "stdout_so_far": "hello from c-trace-engine\r\n",
+      "stopped_reason": "end-stepping-range",
+      "signal": null,
+      "memory_truncated": false,
+      "stdout_truncated": false
+    }
+  ],
+  "heap_events": [],
+  "heap_state": [],
+  "crash_report": null,
+  "valgrind_report": {
+    "observed_summary": {
+      "total_allocs": 1,
+      "total_frees": 1,
+      "bytes_allocated": 4096,
+      "bytes_in_use_at_exit": 0,
+      "blocks_in_use_at_exit": 0
+    },
+    "output_complete": true,
+    "summary_available": true,
+    "parse_error": null,
+    "total_allocs": 1,
+    "total_frees": 1,
+    "bytes_allocated": 4096,
+    "definitely_lost_bytes": 0,
+    "indirectly_lost_bytes": 0,
+    "possibly_lost_bytes": 0,
+    "still_reachable_bytes": 0,
+    "errors": [],
+    "detailed_errors": [],
+    "blocks_in_use_at_exit": 0,
+    "bytes_in_use_at_exit": 0,
+    "all_heap_blocks_freed": true,
+    "exit_code": 0,
+    "timed_out": false
+  },
+  "execution_status": "completed",
+  "resource_usage": {
+    "wall_time_ms": 4032,
+    "gdb_commands_issued": 28,
+    "snapshots_captured": 4,
+    "allocation_events_ingested": 0,
+    "program_output_bytes": 27,
+    "program_output_truncated": false,
+    "limits_triggered": [],
+    "inferior_exit_code": 0
+  },
+  "sanitizer_report": null,
+  "session_meta": {
+    "sanitizer_variant": "address",
+    "session_dir": "/tmp/c-trace-560967-1794752235411842043",
+    "debug_binary": "/tmp/c-trace-560967-1794752235411842043/program_debug",
+    "sanitized_binary": "/tmp/c-trace-560967-1794752235411842043/program_asan",
+    "gcc_version": "gcc (GCC) 16.2.1 20261029 (Red Hat 16.2.1-3)",
+    "gdb_version": "GNU gdb (Fedora Linux) 18.1-1.fc44",
+    "valgrind_version": "valgrind-3.27.1",
+    "addr2line_version": "GNU addr2line version 2.46.1-1.fc44",
+    "cgroup_enforced": false,
+    "build": {
+      "source_file": "fixtures/c/hello.c",
+      "additional_sources": [],
+      "object_files": [],
+      "include_dirs": [],
+      "defines": [],
+      "compiler_flags": [],
+      "linker_flags": [],
+      "library_dirs": [],
+      "libraries": [],
+      "output_name": null,
+      "working_directory": null
+    },
+    "program_args": [],
+    "working_directory": null
+  },
+  "analysis_notes": [
+    "sanitizer build degraded to address; combined runtime unavailable",
+    "cgroup unavailable: per-tree memory/process limits not enforced; inferior rlimits remain active"
+  ],
+  "stage_results": {
+    "compiler": {
+      "status": "completed",
+      "start_offset_ms": 269,
+      "end_offset_ms": 808,
+      "duration_ms": 538,
+      "exit_code": 0,
+      "reason": null,
+      "output_complete": true,
+      "partial_results_available": false
+    },
+    "debugger": {
+      "status": "completed",
+      "start_offset_ms": 808,
+      "end_offset_ms": 2233,
+      "duration_ms": 1424,
+      "exit_code": 0,
+      "reason": null,
+      "output_complete": true,
+      "partial_results_available": true
+    },
+    "valgrind": {
+      "status": "completed",
+      "start_offset_ms": 2233,
+      "end_offset_ms": 4032,
+      "duration_ms": 1799,
+      "exit_code": 0,
+      "reason": null,
+      "output_complete": true,
+      "partial_results_available": true
+    },
+    "sanitizer": {
+      "status": "skipped",
+      "start_offset_ms": null,
+      "end_offset_ms": null,
+      "duration_ms": null,
+      "exit_code": null,
+      "reason": "trigger mode 'on_crash_or_valgrind_error': no crash and Valgrind reported no memory errors",
+      "output_complete": false,
+      "partial_results_available": null
+    },
+    "allocation_tracker": {
+      "status": "completed",
+      "start_offset_ms": 808,
+      "end_offset_ms": 2233,
+      "duration_ms": 1424,
+      "exit_code": null,
+      "reason": null,
+      "output_complete": true,
+      "partial_results_available": false
+    }
+  }
+}

@@ -8,6 +8,8 @@ Semantics matched to the PROBED engine schema (not assumed):
   base_address, offset_bytes, ...}
 - register blocks in instruction events are POST-attempt observations:
   event N's rip equals its next_address (for faulted events, address).
+  V2.1 traces contain no register blocks (capture removed); E8a/E8b/E8c
+  detect this and validate V2.1 address semantics instead.
 - valgrind detailed_errors entries may be dicts OR plain strings.
 """
 import json, re, sys
@@ -102,16 +104,21 @@ def validate_trace(x, ctx):
             f"bad={tbad[:5]}" if tbad else f"table={len(table)} events={len(events)}")
 
     if dual:
+        # V2.1 detection: per-instruction CPU register capture was removed.
+        # A trace with neither an initial register checkpoint nor per-event
+        # register blocks follows V2.1 semantics; anything else is a legacy
+        # V2 trace and keeps the original checks.
+        v21 = not x.get("initial_registers") and not any(e.get("registers") for e in events)
         init = x.get("initial_registers")
-        if init and (init.get("values") or []):
+        if v21:
             add("E8a_initial_registers_present", "PASS",
-                f"{len(init['values'])} registers, full={init.get('full_checkpoint')}")
+                "V2.1: register capture removed; initial_registers deprecated/absent")
+        elif init and (init.get("values") or []):
+            add("E8a_initial_registers_present", "PASS",
+                f"legacy V2: {len(init['values'])} registers, full={init.get('full_checkpoint')}")
         else:
             add("E8a_initial_registers_present", "FAIL",
-                "dual mode without initial register checkpoint")
-        # Register blocks are POST-attempt observations (documented in docs/v2.md):
-        # rip captured after the attempt == next_address; for a faulted attempt the
-        # PC stays on the faulting instruction, so rip == address there.
+                "legacy dual mode without initial register checkpoint")
         rip_bad, fulls = [], 0
         for e in events:
             rb = e.get("registers")
@@ -127,11 +134,18 @@ def validate_trace(x, ctx):
             if _hx(rip["value"]) != expect:
                 rip_bad.append(f"ev{e.get('event_id')}({e.get('outcome')}):"
                                f"rip={rip.get('value')},expected={hex(expect) if expect else '?' }")
-        add("E8b_rip_matches_post_attempt_pc", "PASS" if not rip_bad else "FAIL",
-            "rip==next_address (faulted: rip==address)" if not rip_bad else str(rip_bad[:3]))
-        n = len(events)
-        add("E8c_full_checkpoint_cadence", "WARN" if n < 256 else "PASS",
-            f"{fulls} full checkpoints in {n} events (<256 events: cadence not exercised)")
+        if v21:
+            add("E8b_rip_matches_post_attempt_pc", "PASS",
+                "V2.1: no register blocks; instruction addresses are stop-frame "
+                "based and validated by E6/E7")
+            add("E8c_full_checkpoint_cadence", "PASS",
+                "V2.1: register capture removed; no checkpoint cadence")
+        else:
+            add("E8b_rip_matches_post_attempt_pc", "PASS" if not rip_bad else "FAIL",
+                "rip==next_address (faulted: rip==address)" if not rip_bad else str(rip_bad[:3]))
+            n = len(events)
+            add("E8c_full_checkpoint_cadence", "WARN" if n < 256 else "PASS",
+                f"{fulls} full checkpoints in {n} events (<256 events: cadence not exercised)")
 
     # ---- allocation lifetime model (event_type: allocated | freed) ----
     hev = x.get("heap_events") or []
@@ -222,7 +236,8 @@ def validate_trace(x, ctx):
         add("E13_limits_metadata", "FAIL", f"status={st} but limits_triggered empty")
     elif st == "timeout" and not deadline_lims:
         add("E13_limits_metadata", "FAIL", f"status=timeout but no deadline limit in {lim}")
-    elif st not in ("step_limit_reached", "resource_limit_reached", "timeout") and lim:
+    elif st not in ("step_limit_reached", "resource_limit_reached", "timeout",
+                    "output_limit_reached") and lim:
         add("E13_limits_metadata", "WARN", f"status={st} but limits_triggered={lim}")
     else:
         add("E13_limits_metadata", "PASS", f"status={st} limits={lim or 'none'}")
@@ -580,12 +595,21 @@ def semantic_checks(x, test_id, fixture):
             f"queries={prof.get('disassembly_queries')} hits={prof.get('disassembly_cache_hits')}")
     if test_id == "C4":
         prof = x.get("profiling") or {}
-        add("C4_register_capture",
-            "PASS" if (prof.get("register_time_us") or 0) > 0 else "FAIL",
-            f"register_time_us={prof.get('register_time_us')}")
         vals = [e for e in events if e.get("registers")]
-        add("C4_deltas_present", "PASS" if vals else "FAIL",
-            f"{len(vals)} events with register blocks")
+        if not vals and not x.get("initial_registers"):
+            # V2.1: register capture was removed from the engine. The check
+            # inverts: zero register query time and zero register blocks prove
+            # the expensive GDB polling is gone, not merely hidden.
+            add("C4_register_capture", "PASS" if (prof.get("register_time_us") or 0) == 0 else "FAIL",
+                f"V2.1: register_time_us={prof.get('register_time_us')} (must be 0)")
+            add("C4_deltas_present", "PASS",
+                "V2.1: 0 events with register blocks (capture removed)")
+        else:
+            add("C4_register_capture",
+                "PASS" if (prof.get("register_time_us") or 0) > 0 else "FAIL",
+                f"legacy V2: register_time_us={prof.get('register_time_us')}")
+            add("C4_deltas_present", "PASS" if vals else "FAIL",
+                f"legacy V2: {len(vals)} events with register blocks")
         xsum = [v for _, v in var_values("sum") if (v.get("value") or "").strip() == "30"]
         add("C4_sum_value_30", "PASS" if xsum else "FAIL", "sum==30 observed")
     if test_id == "C6":

@@ -171,6 +171,10 @@ pub struct GdbLaunchOptions {
     /// Extra environment variables for GDB; the inferior inherits GDB's
     /// environment, so this is how the allocation event file is advertised.
     pub env: Vec<(String, String)>,
+    /// V2.1 (F-05): explicit gdb executable path; when unset, `gdb` is
+    /// resolved via PATH (execvp semantics: non-executable PATH matches are
+    /// skipped, so a shadowing non-executable file cannot satisfy discovery).
+    pub gdb_path: Option<String>,
 }
 
 pub struct MiCommandResponse {
@@ -212,8 +216,6 @@ pub struct GdbSession {
     deadline: Instant,
     max_commands: u64,
     poisoned: bool,
-    pub register_names: Vec<String>,
-    pub architecture: String,
     activations: HashMap<String, Vec<(String, u64)>>,
     selected_thread: Option<String>,
     next_activation: u64,
@@ -237,7 +239,7 @@ impl GdbSession {
         }
         let pty = create_pty()?;
         crate::supervisor::enable_subreaper();
-        let mut cmd = tokio::process::Command::new("gdb");
+        let mut cmd = tokio::process::Command::new(opts.gdb_path.as_deref().unwrap_or("gdb"));
         cmd.args(["--nx", "--quiet", "--interpreter=mi2"])
             .env("DEBUGINFOD_URLS", "")
             .arg(&opts.binary)
@@ -304,8 +306,6 @@ impl GdbSession {
             deadline: crate::supervisor::stage_deadline(opts.limits.debugger_timeout_seconds),
             max_commands: opts.limits.max_gdb_commands,
             poisoned: false,
-            register_names: Vec::new(),
-            architecture: String::new(),
             activations: HashMap::new(),
             selected_thread: None,
             next_activation: 1,
@@ -1884,6 +1884,7 @@ mod routing_regressions {
             program_args: Vec::new(),
             limits: Default::default(),
             env: Vec::new(),
+            gdb_path: None,
         };
         let mut session = GdbSession::launch(&options).await.unwrap();
         let start = Instant::now();

@@ -86,10 +86,13 @@ Notes:
 
 V2 adds the `tracing` object and additional `limits` fields. See
 [V2 configuration and defaults](v2.md#configuration-example) and `--help`.
-Notable flags: `--trace-mode source|dual`, `--no-registers`, `--no-disassembly`,
+Notable flags: `--trace-mode source|dual`, `--no-disassembly`,
 `--journal`, `--journal-only`, `--global`, `--no-global-discovery`, `--memory-region`,
-`--profile`,
+`--sanitizer-trigger never|on_crash|on_crash_or_valgrind_error|always`,
+`--gdb-path`, `--valgrind-path`,
 `--max-instruction-events`, `--max-gdb-commands`, `--max-source-checkpoints`,
-`--max-trace-bytes`, `--max-trace-memory-bytes`, `--max-register-snapshot-bytes`,
+`--max-trace-bytes`, `--max-trace-memory-bytes`,
 `--max-globals`, `--compiler-timeout`, `--debugger-timeout`, `--analysis-timeout`.
-All stage deadlines are clamped to `--timeout`.
+(V2's `--no-registers`, `--profile` and `--max-register-snapshot-bytes` were
+removed with per-instruction register capture in V2.1.) All stage deadlines
+are clamped to `--timeout`.

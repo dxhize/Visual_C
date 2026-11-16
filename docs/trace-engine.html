@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>The Trace Engine — Visual C Documentation</title>
+<!--
+  Part of the Visual C documentation set.
+  Presentation: dark documentation theme in the style of docs.python.org /
+  rustdoc (sticky top bar, sidebar navigation, admonitions, ¶ section anchors),
+  with an optional light theme via the toggle in the top bar (choice is
+  remembered in localStorage). The page remains self-contained (no external
+  assets); the only JavaScript is ~25 inline lines for the theme toggle.
+  Anchor ids are stable: #overview #pipeline #steps #trace-tour #sync
+  #honesty #limits #memory-errors #performance #run-it #limitations #glossary
+  Deep technical companions: docs/v2.md (schema contract) and docs/v2.1/ (update reports).
+-->
+<script>
+/* apply the saved theme before first paint, so there is no flash */
+try {
+  var t = localStorage.getItem('vc-theme');
+  if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+} catch (e) {}
+</script>
+<style>
+  :root {
+    color-scheme: dark;
+    --bg: #0f1318;            /* page background */
+    --bg-panel: #151b23;      /* sidebar, admonitions, diagram cards */
+    --bg-elev: #0b0f14;       /* top bar */
+    --line: #2a313c;
+    --line-soft: #1f252e;
+    --text: #c9d3de;
+    --text-strong: #e7edf5;
+    --muted: #8a97a5;
+    --link: #5aa9e6;
+    --accent: #4c9fff;
+    --inline-code: #e6c07b;   /* python-docs-style literal color */
+    --code-bg: #1a212b;
+    --code-border: #2d3540;
+    --pre-bg: #0b0f14;        /* code blocks stay dark in both themes */
+    --pre-ink: #c9d3de;
+    --sel: rgba(76,159,255,.35);
+    --scroll-thumb: #262d38;
+    --hover-bg: #1c232d;
+    --active-bg: rgba(76,159,255,.13);
+    --active-ink: #9ccbff;
+    --note-ink: #79b8ff;
+    --warn-ink: #f0b34a;
+    --warn-border: #e3a328;
+    --warn-bg: #1d1a12;
+    --ok-ink: #57c787;
+    --glow-border: rgba(76,159,255,.55);
+    --glow-shadow: rgba(76,159,255,.12);
+    --zebra: rgba(255,255,255,.018);
+    --pill-ink: #57c787;
+    --pill-bg: rgba(63,185,80,.1);
+    --pill-border: #3fb95066;
+  }
+  html[data-theme="light"] {
+    color-scheme: light;
+    --bg: #f7f8fb;
+    --bg-panel: #ffffff;
+    --bg-elev: #ffffff;
+    --line: #d9dfe8;
+    --line-soft: #e5eaf1;
+    --text: #3a4453;
+    --text-strong: #1c2330;
+    --muted: #5b6575;
+    --link: #0b62d6;
+    --accent: #0b62d6;
+    --inline-code: #8a5a00;
+    --code-bg: #eef1f6;
+    --code-border: #dbe0e9;
+    --pre-bg: #0f1721;
+    --pre-ink: #dbe7f3;
+    --sel: rgba(11,98,214,.18);
+    --scroll-thumb: #c3ccd8;
+    --hover-bg: #e8edf4;
+    --active-bg: rgba(11,98,214,.09);
+    --active-ink: #0b62d6;
+    --note-ink: #0b62d6;
+    --warn-ink: #9a6b00;
+    --warn-border: #d9a300;
+    --warn-bg: #fdf6e3;
+    --ok-ink: #1a7f37;
+    --glow-border: rgba(11,98,214,.45);
+    --glow-shadow: rgba(11,98,214,.08);
+    --zebra: rgba(23,42,68,.03);
+    --pill-ink: #1a7f37;
+    --pill-bg: rgba(26,127,55,.08);
+    --pill-border: #1a7f3766;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 15.5px/1.7 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", "DejaVu Sans", Arial, sans-serif;
+  }
+  ::selection { background: var(--sel); }
+  a { color: var(--link); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+
+  /* ------------------------------------------------------------------ */
+  /* top bar                                                             */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    display: flex; align-items: center; gap: 12px;
+    background: var(--bg-elev);
+    border-bottom: 1px solid var(--line);
+    padding: 9px 22px;
+  }
+  .topbar .brand { font-weight: 700; color: var(--text-strong); letter-spacing: .01em; }
+  .topbar .crumb { color: var(--muted); }
+  .topbar .crumb b { color: var(--text); font-weight: 600; }
+  .topbar .version {
+    margin-left: auto; font-size: 12px; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 999px; padding: 2px 11px;
+    background: var(--bg-panel);
+  }
+  .topbar .version b { color: var(--text); font-weight: 600; }
+  .theme-toggle {
+    display: inline-grid; place-items: center; flex: none;
+    width: 30px; height: 30px; padding: 0;
+    background: transparent; color: var(--muted);
+    border: 1px solid var(--line); border-radius: 8px;
+    cursor: pointer;
+  }
+  .theme-toggle:hover { color: var(--text-strong); background: var(--bg-panel); }
+  .theme-toggle svg { display: block; }
+
+  /* ------------------------------------------------------------------ */
+  /* layout: sidebar + content, like python docs / rustdoc               */
+  .layout { display: grid; grid-template-columns: 288px minmax(0, 1fr); }
+  .sidebar {
+    position: sticky; top: 44px; height: calc(100vh - 44px); overflow-y: auto;
+    background: var(--bg-panel);
+    border-right: 1px solid var(--line-soft);
+    padding: 18px 12px 40px;
+    font-size: 14px;
+  }
+  .sidebar::-webkit-scrollbar { width: 10px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 5px; }
+  .navgroup { margin-bottom: 22px; }
+  .navtitle {
+    font-size: 11.5px; font-weight: 700; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--muted);
+    padding: 0 10px 6px;
+  }
+  .sidebar a {
+    display: block; color: var(--text);
+    padding: 3.5px 10px; border-radius: 7px; line-height: 1.45;
+  }
+  .sidebar a:hover { background: var(--hover-bg); text-decoration: none; }
+  .sidebar a.current {
+    background: var(--active-bg); color: var(--active-ink); font-weight: 600;
+  }
+  .sidebar .num { color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  .main { padding: 34px 46px 80px; max-width: 920px; }
+  .main > p.lede { font-size: 16px; color: var(--text); }
+
+  [id] { scroll-margin-top: 58px; }
+
+  /* ------------------------------------------------------------------ */
+  /* headings with ¶ anchors, python-docs style                          */
+  h2 {
+    font-size: 21px; color: var(--text-strong);
+    margin: 44px 0 10px; padding-bottom: 7px;
+    border-bottom: 1px solid var(--line-soft);
+    line-height: 1.3;
+  }
+  h2:first-of-type { margin-top: 8px; }
+  h3 { font-size: 16.5px; color: var(--text-strong); margin: 26px 0 6px; }
+  h2 .pilcrow, h3 .pilcrow { opacity: 0; margin-left: 9px; font-size: 15px; }
+  h2:hover .pilcrow, h3:hover .pilcrow { opacity: .65; }
+  .pilcrow:hover { text-decoration: none; }
+
+  p { margin: 9px 0; }
+  .muted { color: var(--muted); }
+  .small { font-size: 13.5px; }
+
+  /* ------------------------------------------------------------------ */
+  /* admonitions (python-docs style: Note / Warning / See also)          */
+  .admonition {
+    background: var(--bg-panel);
+    border: 1px solid var(--line-soft); border-left-width: 3px;
+    border-radius: 8px; padding: 10px 16px 11px; margin: 16px 0;
+  }
+  .admonition .title {
+    display: block; font-size: 12px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase; margin-bottom: 3px;
+  }
+  .admonition p:first-of-type { margin-top: 0; }
+  .admonition p:last-child { margin-bottom: 0; }
+  .admonition.note    { border-left-color: var(--accent); }
+  .admonition.note    .title { color: var(--note-ink); }
+  .admonition.warning { border-left-color: var(--warn-border); background: var(--warn-bg); }
+  .admonition.warning .title { color: var(--warn-ink); }
+  .admonition.seealso { border-left-color: var(--ok-ink); }
+  .admonition.seealso .title { color: var(--ok-ink); }
+
+  /* ------------------------------------------------------------------ */
+  /* code                                                                */
+  pre {
+    background: var(--pre-bg); color: var(--pre-ink);
+    border: 1px solid var(--line-soft); border-radius: 8px;
+    padding: 13px 16px; overflow-x: auto;
+    font-size: 13.5px; line-height: 1.6;
+  }
+  code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "DejaVu Sans Mono", monospace; }
+  p code, li code, td code, th code, dd code, .admonition code {
+    background: var(--code-bg); border: 1px solid var(--code-border);
+    border-radius: 5px; padding: 1px 5px; font-size: 12.8px;
+    color: var(--inline-code);
+  }
+  pre code { background: none; border: none; padding: 0; font-size: 13.5px; color: var(--pre-ink); }
+  .cm { color: #6e7c8c; }      /* comment */
+  .k  { color: #79b8ff; }      /* keys */
+  .s  { color: #8fd18c; }      /* values */
+  .hl { color: #f0b34a; }      /* highlight */
+
+  /* ------------------------------------------------------------------ */
+  /* tables                                                              */
+  table { border-collapse: collapse; width: 100%; margin: 12px 0; font-size: 14px; }
+  th, td { border: 1px solid var(--line-soft); padding: 7px 12px; text-align: left; vertical-align: top; }
+  th { background: var(--bg-panel); color: var(--text-strong); font-weight: 600; }
+  tr:nth-child(even) td { background: var(--zebra); }
+  td code, th code { white-space: nowrap; }
+
+  /* ------------------------------------------------------------------ */
+  /* pipeline diagram                                                    */
+  .flow { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin: 18px 0 6px; }
+  .flow .stage {
+    flex: 1 1 150px; background: var(--bg-panel);
+    border: 1px solid var(--line-soft); border-radius: 10px;
+    padding: 12px 14px; min-width: 150px;
+  }
+  .flow .stage b { display: block; margin-bottom: 3px; color: var(--text-strong); }
+  .flow .stage .small { color: var(--muted); }
+  .flow .arrow { align-self: center; color: var(--muted); font-size: 22px; padding: 0 2px; }
+  .flow .stage.main {
+    border-color: var(--glow-border);
+    box-shadow: 0 0 0 3px var(--glow-shadow);
+  }
+
+  /* ------------------------------------------------------------------ */
+  /* glossary & misc                                                     */
+  dl.glossary dt { font-weight: 600; margin-top: 13px; color: var(--text-strong); }
+  dl.glossary dd { margin: 2px 0 0 0; }
+  ul.tight li, ol.tight li { margin: 4.5px 0; }
+  .pill {
+    display: inline-block; font-size: 11.5px; font-weight: 700; border-radius: 999px;
+    padding: 1px 10px; border: 1px solid var(--pill-border); background: var(--pill-bg);
+    color: var(--pill-ink); text-transform: uppercase; letter-spacing: .05em;
+  }
+  footer.docinfo {
+    margin-top: 54px; padding-top: 16px; border-top: 1px solid var(--line-soft);
+    color: var(--muted); font-size: 13.5px;
+  }
+
+  /* ------------------------------------------------------------------ */
+  @media (max-width: 940px) {
+    .layout { grid-template-columns: 1fr; }
+    .topbar { position: static; }
+    .sidebar {
+      position: static; height: auto; max-height: none;
+      border-right: none; border-bottom: 1px solid var(--line-soft);
+      columns: 2; column-gap: 24px;
+    }
+    .navgroup { break-inside: avoid; }
+    .main { padding: 24px 20px 60px; }
+  }
+  @media print {
+    .topbar, .sidebar { display: none; }
+    .layout { display: block; }
+    body { background: #fff; color: #111; }
+    h2, h3 { color: #000; }
+    pre, table th, table td, .admonition { border-color: #bbb; }
+    pre { background: #f5f5f5; color: #111; }
+    pre .cm { color: #666; }
+    pre .k { color: #0550ae; }
+    pre .s { color: #116329; }
+    pre .hl { color: #9a6700; }
+    .admonition, .admonition.warning { background: #f5f5f5; color: #111; }
+    .admonition .title { color: #000; }
+    .flow .stage { background: #fff; }
+    dl.glossary dt { color: #000; }
+    .pill { color: #1a7f37; border-color: #1a7f37; background: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <span class="brand">Visual C</span>
+  <span class="crumb">Documentation / Engine / <b>The Trace Engine</b></span>
+  <span class="version">engine <b>V2.1</b> · schema <b>2</b></span>
+  <button id="theme-toggle" class="theme-toggle" type="button" aria-label="Switch theme" title="Switch theme">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>
+  </button>
+</div>
+
+<div class="layout">
+
+<!-- ================================================================== -->
+<nav class="sidebar">
+  <div class="navgroup">
+    <div class="navtitle">The engine</div>
+    <a class="current" href="#">The Trace Engine</a>
+    <a href="architecture.md">Engine architecture</a>
+    <a href="engine-internals.md">Engine internals</a>
+  </div>
+  <div class="navgroup">
+    <div class="navtitle">Reference</div>
+    <a href="v2.md">V2 schema &amp; semantics</a>
+    <a href="build-config.md">Build configuration</a>
+    <a href="v2.1/summary.md">V2.1 update reports</a>
+  </div>
+  <div class="navgroup">
+    <div class="navtitle">On this page</div>
+    <a href="#overview"><span class="num">1.</span> What the trace engine is</a>
+    <a href="#pipeline"><span class="num">2.</span> The big picture</a>
+    <a href="#steps"><span class="num">3.</span> What happens, step by step</a>
+    <a href="#trace-tour"><span class="num">4.</span> A tour of the trace file</a>
+    <a href="#sync"><span class="num">5.</span> Keeping the views in sync</a>
+    <a href="#honesty"><span class="num">6.</span> What is exact, what is not</a>
+    <a href="#limits"><span class="num">7.</span> Limits, timeouts, partial traces</a>
+    <a href="#memory-errors"><span class="num">8.</span> Crashes and memory errors</a>
+    <a href="#performance"><span class="num">9.</span> Performance at a glance</a>
+    <a href="#run-it"><span class="num">10.</span> Running it yourself</a>
+    <a href="#limitations"><span class="num">11.</span> Known limitations</a>
+    <a href="#glossary"><span class="num">12.</span> Glossary</a>
+  </div>
+  <div class="navgroup">
+    <div class="navtitle">Examples</div>
+    <a href="../examples/v21_manifest.json">Trace manifest</a>
+    <a href="../examples/v21_dual.json">Example dual trace</a>
+  </div>
+</nav>
+
+<!-- ================================================================== -->
+<main class="main">
+
+<h1>The Trace Engine: how Visual C records a running C&nbsp;program</h1>
+
+<p class="lede">
+  The <strong>trace engine</strong> (<code>c-trace-engine</code>) is the part of Visual C
+  that actually <em>runs</em> a student's C program and turns what happens into one
+  detailed, replayable file — the <strong>trace</strong>. Everything the future Visual C
+  interface shows (the C view, the assembly view, memory, pointers, the heap, crashes)
+  is read back from that file. This page explains what the engine does and what the
+  trace contains, in plain language.
+</p>
+
+<!-- ==================================================================== -->
+<h2 id="overview">1. What the trace engine is<a class="pilcrow" href="#overview">¶</a></h2>
+
+<p>
+  Visual C is an <strong>offline-first</strong> learning tool: a student writes a small C
+  program, and Visual C shows them how it really executed — statement by statement,
+  instruction by instruction, allocation by allocation. The trace engine is the
+  command-line component that makes this possible.
+</p>
+
+<div class="admonition note">
+  <span class="title">In one sentence</span>
+  <p><strong>Compile the program, run it once under a debugger, and record
+  everything observable about that single run into a versioned JSON
+  file — the trace.</strong></p>
+</div>
+
+<p>Three principles guide every design decision:</p>
+<ul class="tight">
+  <li><strong>Real execution only.</strong> The engine never simulates loops or invents
+      instruction events. If something is not in the trace, it was not observed.</li>
+  <li><strong>One timeline.</strong> The C-level view and the machine-instruction view come
+      from the <em>same</em> debugger run, so they can never disagree about what happened.</li>
+  <li><strong>Honesty about gaps.</strong> Whenever data could not be observed (timeout,
+      limit, unreadable memory, optimized-out variable), the trace says so explicitly
+      instead of guessing.</li>
+</ul>
+
+<!-- ==================================================================== -->
+<h2 id="pipeline">2. The big picture<a class="pilcrow" href="#pipeline">¶</a></h2>
+
+<div class="flow">
+  <div class="stage"><b>Your C sources</b><span class="small">one or more <code>.c</code> files, plus build settings</span></div>
+  <div class="arrow">→</div>
+  <div class="stage"><b>Compiler stage</b><span class="small">GCC builds a debug binary; a second sanitizer binary is built for crash diagnosis</span></div>
+  <div class="arrow">→</div>
+  <div class="stage main"><b>Debug run</b><span class="small">the program runs once under GDB; the engine single-steps user code and records stops</span></div>
+  <div class="arrow">→</div>
+  <div class="stage"><b>Analysis stages</b><span class="small">Valgrind re-runs the program; the sanitizer pass runs when triggered; caller locations resolved</span></div>
+  <div class="arrow">→</div>
+  <div class="stage"><b>The trace (JSON)</b><span class="small">one file describing the whole run</span></div>
+</div>
+
+<p class="small muted">
+  The compiler, debugger and analyses are real external tools (GCC, GDB, Valgrind,
+  addr2line). The engine drives them, enforces time and memory budgets, and stitches
+  their outputs into one coherent document.
+</p>
+
+<!-- ==================================================================== -->
+<h2 id="steps">3. What happens, step by step<a class="pilcrow" href="#steps">¶</a></h2>
+
+<ol class="tight">
+  <li><strong>Compile.</strong> Every translation unit is compiled with debug info
+      (<code>-g -O0</code>). Compiler errors are captured in a machine-readable form and
+      end up in the trace, so even a failed build produces a useful partial trace.
+      A small runtime is linked in that records every <code>malloc</code>/<code>calloc</code>/
+      <code>realloc</code>/<code>free</code> the program makes to a side file.</li>
+  <li><strong>Run under GDB.</strong> The engine launches GDB in its machine-facing mode
+      (MI2), breaks at <code>main</code>, and steps through the student's code —
+      instruction by instruction in dual mode, or line by line in the cheaper
+      source-only mode. Program output is captured through a separate channel so it
+      never mixes with debugger chatter.</li>
+  <li><strong>Record at every stop.</strong> Each time the program pauses, the engine
+      records where it stopped (file, line, function, call stack), every visible
+      variable (name, type, value, its own address, and for pointers the address it
+      points to), the live contents of heap blocks, and the program's output so far.
+      In dual mode each attempted machine instruction is recorded too: its address,
+      the address of the <em>next</em> instruction, what happened (completed, faulted,
+      interrupted), and selected memory reads.</li>
+  <li><strong>Analyze independently.</strong> Valgrind re-runs the program on its own to
+      hunt for memory errors with a second opinion. When triggered — a crash, or
+      Valgrind findings — the sanitizer-built binary also runs once as a diagnostic
+      pass. Allocation callers are resolved to <code>file:line</code> in one batched
+      <code>addr2line</code> call.</li>
+  <li><strong>Assemble the trace.</strong> Everything is written as one JSON document
+      with a schema version, per-stage health reports, resource usage, and honest
+      notes about anything that was skipped or degraded.</li>
+</ol>
+
+<!-- ==================================================================== -->
+<h2 id="trace-tour">4. A guided tour of the trace file<a class="pilcrow" href="#trace-tour">¶</a></h2>
+
+<p>
+  A trace is a single JSON object. These are its main sections, grouped by what a
+  reader (and later the Visual C interface) uses them for. A full real example lives
+  at <a href="../examples/v21_dual.json"><code>examples/v21_dual.json</code></a>.
+</p>
+
+<table>
+  <tr><th>Section</th><th>What it contains</th><th>Think of it as…</th></tr>
+  <tr>
+    <td><code>snapshots</code></td>
+    <td>One record per stop in the student's code: source file/line/function, the call
+        stack, all visible variables with addresses and raw bytes, live heap-block
+        contents, and program output so far.</td>
+    <td>"A photo of the program's state" at each C statement</td>
+  </tr>
+  <tr>
+    <td><code>instruction_events</code><br><code>disassembly_table</code></td>
+    <td>Every <em>attempted</em> machine instruction in order (address, next address,
+        outcome, source line it belongs to), plus a de-duplicated table of instruction
+        definitions (text, bytes, function) referenced by ID.</td>
+    <td>"The assembly view" — what the CPU really did</td>
+  </tr>
+  <tr>
+    <td><code>heap_events</code><br><code>heap_state</code><br><code>allocation_lifetimes</code></td>
+    <td>The full allocation story: every <code>allocated</code>/<code>reallocated</code>/
+        <code>freed</code> event, the final state of every block (live or freed, with
+        contents), and each block's lifetime boundaries with stable IDs.</td>
+    <td>"The memory view" — the heap's biography</td>
+  </tr>
+  <tr>
+    <td><code>crash_report</code></td>
+    <td>For a crash: the signal (e.g. <code>SIGSEGV</code>), the exact source line and
+        faulting instruction address, and a backtrace.</td>
+    <td>"Why did it die?"</td>
+  </tr>
+  <tr>
+    <td><code>valgrind_report</code><br><code>sanitizer_report</code></td>
+    <td>The independent memory analyses: Valgrind errors (with stacks and leak
+        classification) and the sanitizer reproduction attempt, each with its own
+        completeness flags.</td>
+    <td>"Second opinions" from other tools</td>
+  </tr>
+  <tr>
+    <td><code>execution</code>, <code>execution_status</code></td>
+    <td>The overall outcome: completed, crashed, timed out, hit a limit, failed to
+        compile, and so on — with exit code and signal.</td>
+    <td>"How did the run end?"</td>
+  </tr>
+  <tr>
+    <td><code>stage_results</code></td>
+    <td>Health report per stage (compiler, debugger, Valgrind, sanitizer, allocation
+        tracker): status, duration, and a reason whenever something did not complete.</td>
+    <td>"Did each part finish, and if not, why?"</td>
+  </tr>
+  <tr>
+    <td><code>coverage</code>, <code>trace_gaps</code></td>
+    <td>Which parts of execution were observed (<code>user_code</code> scope) and which
+        intervals were not (program startup, skipped library code), with explicit gap
+        records — never guessed counts.</td>
+    <td>"What did we NOT see?"</td>
+  </tr>
+  <tr>
+    <td><code>resource_usage</code>, <code>profiling</code></td>
+    <td>Measured consumption: wall time, number of debugger commands issued, snapshot
+        count, which limits fired, timing breakdowns.</td>
+    <td>"What did the recording cost?"</td>
+  </tr>
+  <tr>
+    <td><code>analysis_notes</code>, <code>session_meta</code>,
+        <code>execution_limits</code>, <code>tracing_configuration</code>,
+        <code>compile_errors</code>, <code>storage</code></td>
+    <td>Everything else a careful reader needs: warnings and degradations, tool
+        versions, the effective limits, the configuration used, compiler diagnostics,
+        and storage/bookkeeping details.</td>
+    <td>"The fine print, in the document itself"</td>
+  </tr>
+</table>
+
+<h3>A single instruction event, annotated</h3>
+
+<p class="small muted">Real values from <code>examples/v21_dual.json</code>, annotated:</p>
+
+<pre><code>{
+  <span class="k">"event_id"</span>: <span class="s">0</span>,              <span class="cm">// ordered, zero-based: this is the 1st attempt</span>
+  <span class="k">"address"</span>: <span class="s">"0x0000000000400586"</span>,   <span class="cm">// the instruction that was ABOUT to run</span>
+  <span class="k">"next_address"</span>: <span class="s">"0x0000000000400587"</span>, <span class="cm">// actually observed next stop — never guessed</span>
+  <span class="k">"instruction_id"</span>: <span class="s">0</span>,         <span class="cm">// index into disassembly_table (no repeated text)</span>
+  <span class="k">"source"</span>: { <span class="k">"line"</span>: <span class="s">29</span>, <span class="k">"func"</span>: <span class="s">"main"</span> },
+  <span class="k">"outcome"</span>: <span class="s">"completed"</span>,      <span class="cm">// completed | faulted | interrupted | unknown</span>
+  <span class="k">"stopped_reason"</span>: <span class="s">"end-stepping-range"</span>,
+  <span class="k">"memory"</span>: <span class="s">[]</span>,               <span class="cm">// reads of user-configured watch addresses appear</span>
+                                 <span class="cm">// here (e.g. {"expression":"&amp;x","status":"valid",</span>
+                                 <span class="cm">//  "raw_bytes_hex":"0a000000"}) — none configured here</span>
+  <span class="k">"checkpoint_id"</span>: <span class="hl">0</span>           <span class="cm">// links to the nearest snapshot (the C-level state)</span>
+  <span class="cm">// note: no "registers" key — see the performance section</span>
+}</code></pre>
+
+<h3>A single variable record, annotated</h3>
+
+<p class="small muted">Real values from <code>examples/v21_dual.json</code> (the fixture's <code>int *arr</code> pointing into a heap block):</p>
+
+<pre><code>{
+  <span class="k">"name"</span>: <span class="s">"arr"</span>, <span class="k">"c_type"</span>: <span class="s">"int *"</span>,
+  <span class="k">"value"</span>: <span class="s">"0x705010"</span>,            <span class="cm">// what the pointer CONTAINS</span>
+  <span class="k">"address"</span>: <span class="s">"0x7fffffffda48"</span>,   <span class="cm">// where the pointer variable itself lives</span>
+  <span class="k">"points_to"</span>: <span class="s">"0x705010"</span>,
+  <span class="k">"target"</span>: { <span class="k">"kind"</span>: <span class="s">"heap"</span>, <span class="k">"allocation_id"</span>: <span class="s">1</span>,
+              <span class="k">"base_address"</span>: <span class="s">"0x705010"</span>, <span class="k">"offset_bytes"</span>: <span class="s">0</span> },
+  <span class="k">"raw_bytes_hex"</span>: <span class="s">"10507000…"</span>,  <span class="cm">// the pointer's own bytes, as observed</span>
+  <span class="k">"read_status"</span>: <span class="s">"valid"</span>
+}</code></pre>
+
+<p class="small muted">
+  Pointer targets are classified as <code>stack</code>, <code>heap</code> (with the
+  allocation ID it belongs to), <code>global</code>, <code>code</code>,
+  <code>null</code>, <code>unmapped</code> or <code>unknown</code> — so the interface
+  can draw "this pointer goes to that heap block" without guessing.
+</p>
+
+<!-- ==================================================================== -->
+<h2 id="sync">5. How the C view and assembly view stay in sync<a class="pilcrow" href="#sync">¶</a></h2>
+
+<p>
+  Both views come from <strong>one run of the program under one GDB session</strong>.
+  Every event in the assembly view carries a <code>stop_id</code> pair and optionally a
+  <code>checkpoint_id</code> pointing into the source view's snapshots. Concretely:
+</p>
+<ul class="tight">
+  <li>Each recorded instruction event names the source file, line and function it was
+      paused in — that is the link from assembly back to the C statement.</li>
+  <li>Snapshots (the C-level state photos) record how many instruction attempts had
+      happened before them, so either timeline can be navigated from the other.</li>
+  <li>Instruction addresses are taken from the debugger's own stop reports. The
+      <em>next</em> address is always the actually observed next stop — crucial,
+      because machine code frequently does <em>not</em> run sequentially (branches,
+      calls, returns, faults).</li>
+</ul>
+
+<div class="admonition note">
+  <span class="title">Why this matters for Visual C</span>
+  <p>The interface can highlight a C statement, show the exact machine instructions
+  that executed for it, and step through them — all from one file, with no risk of
+  the two views disagreeing.</p>
+</div>
+
+<!-- ==================================================================== -->
+<h2 id="honesty">6. What is exact, and what is not<a class="pilcrow" href="#honesty">¶</a></h2>
+
+<p>
+  A learning tool must never show invented data as if it were real. The trace follows
+  a strict honesty policy:
+</p>
+<ul class="tight">
+  <li><strong>Values are exact only at their recorded stop.</strong> A snapshot shows the
+      program's state at that moment; nothing claims to know intermediate values
+      between stops.</li>
+  <li><strong>Nothing is fabricated.</strong> Unobservable data is <code>null</code>,
+      with a machine-readable <em>why</em>: validity flags such as
+      <code>valid</code>, <code>unavailable</code>, <code>unreadable</code>,
+      <code>optimized_out</code>, <code>truncated</code>, <code>not_captured</code>.</li>
+  <li><strong>Gaps are explicit.</strong> Startup before <code>main</code>, and code the
+      engine deliberately steps over (library internals), appear as
+      <code>trace_gaps</code> with observed boundary addresses — the number of unseen
+      instructions is never invented.</li>
+  <li><strong>Partial beats silent.</strong> A timeout, a limit or a crash still yields
+      a trace containing everything captured up to that point, clearly marked as
+      incomplete.</li>
+  <li><strong>A freed block's bytes are the last bytes seen while it was alive.</strong>
+      Memory is not read after the block was freed — the trace says so rather than
+      implying the bytes are current.</li>
+</ul>
+
+<div class="admonition warning">
+  <span class="title">Rule for the interface</span>
+  <p>Never present a memory value as "current" unless its record says it was observed
+  at the displayed stop. The trace gives you the status flags to enforce this.</p>
+</div>
+
+<!-- ==================================================================== -->
+<h2 id="limits">7. Safety limits, timeouts, partial traces<a class="pilcrow" href="#limits">¶</a></h2>
+
+<p>
+  The engine wraps everything in budgets so a runaway student program cannot hang the
+  session. Limits are configurable on the command line or in a JSON config file;
+  hitting one terminates collection <em>gracefully</em> and keeps the partial trace.
+</p>
+
+<table>
+  <tr><th>Limit (flag)</th><th>Default</th><th>What it bounds</th></tr>
+  <tr><td><code>--timeout</code></td><td>10 s</td><td>The whole session: compile + run + analyses</td></tr>
+  <tr><td><code>--max-steps</code></td><td>1,000</td><td>Debugger stepping commands</td></tr>
+  <tr><td><code>--max-memory-mb</code></td><td>256 MB</td><td>Address space of the program being traced</td></tr>
+  <tr><td><code>--max-output-bytes</code></td><td>1 MiB</td><td>Captured program output (ends the run as <code>output_limit_reached</code>)</td></tr>
+  <tr><td><code>--max-heap-allocations</code></td><td>10,000</td><td>Tracked allocation records</td></tr>
+  <tr><td><code>--max-snapshots</code></td><td>1,000</td><td>State photos</td></tr>
+  <tr><td><code>--max-snapshot-memory-bytes</code></td><td>1 MiB</td><td>Variable + heap bytes read per snapshot</td></tr>
+  <tr><td><code>--max-memory-read-bytes</code></td><td>4 KiB</td><td>A single memory read</td></tr>
+  <tr><td><code>--max-instruction-events</code></td><td>100,000</td><td>Recorded instruction attempts</td></tr>
+  <tr><td><code>--max-gdb-commands</code></td><td>1,000,000</td><td>Total debugger traffic</td></tr>
+  <tr><td><code>--max-processes</code></td><td>16</td><td>Child processes (when cgroups are available)</td></tr>
+</table>
+
+<div class="admonition warning">
+  <span class="title">Not a security sandbox</span>
+  <p><strong>These limits are not a security sandbox.</strong> They protect the session
+  from runaway programs, not the machine from malicious ones. Real isolation needs a
+  container or VM.</p>
+</div>
+
+<p>
+  Every limit that fires is recorded in <code>resource_usage.limits_triggered</code>
+  (each limit appears at most once), and the overall outcome reflects the
+  <em>real</em> cause — e.g. ending because the output cap was hit is reported as
+  <code>output_limit_reached</code>, not disguised as a step limit.
+</p>
+
+<!-- ==================================================================== -->
+<h2 id="memory-errors">8. Crashes and memory errors<a class="pilcrow" href="#memory-errors">¶</a></h2>
+
+<p>Three independent sources of truth, kept strictly separate:</p>
+
+<ol class="tight">
+  <li><strong>The debugger observes the crash itself.</strong> The trace keeps the
+      signal, the exact faulting instruction (its address matches the last assembly
+      event, marked <code>faulted</code>) and the source line. No events are invented
+      after the crash.</li>
+  <li><strong>Valgrind is the second opinion.</strong> The program runs a second time
+      under Valgrind's memcheck, which can catch errors that did not crash —
+      use-after-free, out-of-bounds accesses, leaks — and reports them with stacks
+      and source locations. Findings are correlated with the heap timeline by
+      file and line.</li>
+  <li><strong>The sanitizer pass is the reproduction attempt.</strong> A second binary
+      built with AddressSanitizer (plus UBSan when installed) runs on its own. What
+      it found, and whether it truly <em>reproduced</em> the recorded crash, is kept
+      separate from the debugger's observations — an ASan finding that does not
+      match the crash is labeled <code>diagnostic_observed</code>, never forced into
+      agreement.</li>
+</ol>
+
+<h3>When does the sanitizer pass run?</h3>
+<p>Configurable with <code>--sanitizer-trigger</code>:</p>
+<table>
+  <tr><th>Mode</th><th>Meaning</th></tr>
+  <tr><td><code>never</code></td><td>Skip the pass entirely.</td></tr>
+  <tr><td><code>on_crash</code></td><td>Run only when the traced run crashed (the V2 behavior).</td></tr>
+  <tr><td><code>on_crash_or_valgrind_error</code></td><td><span class="pill">default</span> Run on a crash, <em>or</em> when Valgrind found memory errors even though the program exited cleanly.</td></tr>
+  <tr><td><code>always</code></td><td>Run for every successful build, budget permitting.</td></tr>
+</table>
+
+<div class="admonition note">
+  <span class="title">Note</span>
+  <p>Valgrind and the sanitizer never run in the same process, global time budgets are
+  always respected, and a skipped pass records the reason in
+  <code>stage_results.sanitizer</code>.</p>
+</div>
+
+<!-- ==================================================================== -->
+<h2 id="performance">9. Performance at a glance<a class="pilcrow" href="#performance">¶</a></h2>
+
+<p>
+  The engine was profiled with a formal audit. The original design polled the CPU
+  registers after every single instruction — useful for a register panel, but it
+  consumed about <strong>90&nbsp;% of all debugger time</strong>. Visual C will not show
+  register panels, so version&nbsp;2.1 removed that collection entirely.
+</p>
+
+<p>Result on the audit benchmark suite (median of 3 runs, same machine):</p>
+
+<table>
+  <tr><th>Workload</th><th>Before</th><th>After</th><th>Speed-up</th></tr>
+  <tr><td>Finite loop (1,012 instructions)</td><td>19.1 s</td><td>6.1 s</td><td>3.1×</td></tr>
+  <tr><td>Function calls (1,413)</td><td>28.5 s</td><td>8.9 s</td><td>3.2×</td></tr>
+  <tr><td>Heap churn (1,363)</td><td>31.1 s</td><td>12.3 s</td><td>2.5×</td></tr>
+  <tr><td>Nested loops (1,352)</td><td>29.9 s</td><td>13.3 s</td><td>2.2×</td></tr>
+  <tr><td>Recursion (671)</td><td>20.0 s</td><td>10.1 s</td><td>2.0×</td></tr>
+  <tr><td>Simple arithmetic (18)</td><td>3.6 s</td><td>3.8 s</td><td>— (fixed startup cost dominates)</td></tr>
+</table>
+
+<div class="admonition seealso">
+  <span class="title">See also</span>
+  <p>Instruction addresses were never taken from registers — they come from the
+  debugger's stop reports — so nothing about the recorded execution changed. The
+  same audit confirmed the remaining big cost is capturing the C-level state
+  photos, which is the core educational feature and stays. Full methodology and
+  numbers: <a href="v2.1/performance.md"><code>docs/v2.1/performance.md</code></a>.</p>
+</div>
+
+<!-- ==================================================================== -->
+<h2 id="run-it">10. Running it yourself<a class="pilcrow" href="#run-it">¶</a></h2>
+
+<pre><code><span class="cm"># the basics: compile, run, write trace.json, print the trace to stdout</span>
+cargo run -- sample.c
+
+<span class="cm"># save to a file; give the program some arguments</span>
+cargo run -- sample.c --output trace.json --  --verbose 42
+
+<span class="cm"># common knobs</span>
+cargo run -- sample.c --timeout 3 --max-steps 200
+cargo run -- sample.c --trace-mode source          <span class="cm"># cheaper, C-level only</span>
+cargo run -- sample.c --sanitizer-trigger always
+cargo run -- sample.c --gdb-path /usr/bin/gdb-14   <span class="cm"># override tool discovery</span>
+
+<span class="cm"># a failed build still produces a trace with the compiler diagnostics</span>
+cargo run -- broken.c</code></pre>
+
+<table>
+  <tr><th>Exit code</th><th>Meaning</th></tr>
+  <tr><td><code>0</code></td><td>A trace was produced (completed, crashed, timed out, or hit a limit are all "success" for the recorder).</td></tr>
+  <tr><td><code>2</code></td><td>Compilation failed; a partial trace with the diagnostics is still emitted.</td></tr>
+  <tr><td><code>1</code></td><td>Operational error (bad arguments, missing source, missing required tool). No trace.</td></tr>
+</table>
+
+<h3>The optional journal</h3>
+<p>
+  With <code>--journal run.jsonl</code> the engine additionally streams every record
+  (configuration, disassembly entries, instruction events, checkpoints, gaps, …) to a
+  line-oriented log as execution proceeds, and finalizes it with a footer record.
+  This is what allows very long runs to keep a complete, durable record even when the
+  JSON is instructed to keep only a bounded index in memory
+  (<code>--journal-only</code>).
+</p>
+
+<!-- ==================================================================== -->
+<h2 id="limitations">11. Known limitations<a class="pilcrow" href="#limitations">¶</a></h2>
+
+<ul class="tight">
+  <li>Instruction coverage is <strong>user code only</strong>: program startup and
+      excluded library internals appear as explicit gaps, not recordings.</li>
+  <li>In multi-threaded programs the engine records the <strong>selected
+      thread's</strong> steps; a complete interleaving of all threads is out of scope
+      (the trace marks coverage incomplete and explains why).</li>
+  <li>Children created by <code>fork</code> are not instruction-traced (their
+      allocations may still be recorded).</li>
+  <li>Self-modifying / JIT code is unsupported; the disassembly cache assumes code
+      does not change under the engine.</li>
+  <li>The allocator wrapper sees the program's own allocation calls; memory allocated
+      <em>inside</em> libc or other libraries is invisible to the heap timeline
+      (Valgrind still sees all of it).</li>
+  <li>Per-instruction <strong>CPU register values are not collected</strong> (removed
+      in V2.1 with the feature they served). Old traces that contain them still load.</li>
+  <li>The trace is produced by a development machine, not a security sandbox —
+      see the limits section.</li>
+</ul>
+
+<!-- ==================================================================== -->
+<h2 id="glossary">12. Glossary<a class="pilcrow" href="#glossary">¶</a></h2>
+
+<dl class="glossary">
+  <dt>Trace</dt><dd>The versioned JSON document this engine produces — the complete, replayable record of one program run. Schema version 2.</dd>
+  <dt>Snapshot / checkpoint</dt><dd>A "state photo": the source location, call stack, variables, heap contents and output captured at one debugger stop in user code.</dd>
+  <dt>Instruction event</dt><dd>One attempted machine instruction: where it was, where execution went next, and what happened. Attempts are recorded even when they fault.</dd>
+  <dt>Disassembly table</dt><dd>A de-duplicated catalog of instruction definitions (text, bytes, function). Events reference it by ID instead of repeating assembly text.</dd>
+  <dt>GDB / MI2</dt><dd>The GNU debugger, and its machine-oriented command interface ("MI") that the engine uses to drive it reliably.</dd>
+  <dt>Inferior</dt><dd>Debugger jargon for the program being debugged.</dd>
+  <dt>Valgrind / memcheck</dt><dd>An independent analysis tool that re-runs the program and detects memory errors and leaks without a crash.</dd>
+  <dt>Sanitizer (ASan/UBSan)</dt><dd>Compiler-instrumented error detection linked into a second build of the program; used here as a reproduction pass.</dd>
+  <dt>DWARF</dt><dd>The debug information format GCC embeds in the binary; it is how addresses map back to source lines, variables and types.</dd>
+  <dt>Heap timeline</dt><dd>The ordered story of <code>allocated</code> / <code>reallocated</code> / <code>freed</code> events reconstructed from the program's own allocator calls.</dd>
+  <dt>Trace gap</dt><dd>An explicit record of an interval that was deliberately or necessarily not observed (startup, skipped library code), with observed boundary addresses.</dd>
+  <dt>Stage result</dt><dd>Per-stage health report (compiler, debugger, Valgrind, sanitizer, allocation tracker): completed, failed, timed out, skipped or cancelled — with a reason.</dd>
+  <dt>Journal</dt><dd>The optional line-by-line log the engine writes while running; enables durable recording and memory-bounded operation.</dd>
+</dl>
+
+<!-- ==================================================================== -->
+<footer class="docinfo">
+  <p>
+    <strong>Document info.</strong> Trace engine version: V2.1 (schema version 2),
+    November 2026. This page is the conceptual, reader-friendly layer of the Visual C
+    documentation; the technical contract lives in
+    <a href="v2.md"><code>docs/v2.md</code></a> (schema and semantics), the conceptual
+    architecture in <a href="architecture.md"><code>docs/architecture.md</code></a>,
+    and the focused update reports in
+    <a href="v2.1/summary.md"><code>docs/v2.1/</code></a>
+    (register-capture removal, fixes F-01…F-06, benchmarks, tests). Real example
+    traces: <a href="../examples/v21_manifest.json"><code>examples/v21_manifest.json</code></a>.
+  </p>
+</footer>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+  var btn = document.getElementById('theme-toggle');
+  /* show the icon of the theme you will switch TO */
+  var ICONS = {
+    dark: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg>',
+    light: '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>'
+  };
+  var theme = root.getAttribute('data-theme') === 'light' ? 'light' : 'dark';
+  function paint() {
+    btn.innerHTML = ICONS[theme];
+    btn.setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+    btn.title = btn.getAttribute('aria-label');
+  }
+  btn.addEventListener('click', function () {
+    theme = theme === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', theme);
+    try { localStorage.setItem('vc-theme', theme); } catch (e) {}
+    paint();
+  });
+  paint();
+})();
+</script>
+</body>
+</html>

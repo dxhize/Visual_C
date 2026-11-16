@@ -342,7 +342,7 @@ async fn instruction_limit_is_not_a_crash_and_journal_recovers_order() {
 }
 
 #[tokio::test]
-async fn loop_events_are_dynamic_cached_and_registers_replay() {
+async fn loop_events_are_dynamic_and_registers_are_not_collected() {
     let Some(_permit) = tools().await else {
         return;
     };
@@ -350,20 +350,44 @@ async fn loop_events_are_dynamic_cached_and_registers_replay() {
     processor::validate(&t).unwrap();
     assert_eq!(t.execution_status, ExecutionStatus::Completed);
     let data = &t.recording;
+    // Static disassembly caching still effective; dynamic execution preserved.
     assert!(data.instruction_count > data.disassembly_table.len() as u64);
     assert!(data.profiling.disassembly_cache_hits > data.profiling.disassembly_queries);
     let unique: HashSet<_> = data.instruction_events.iter().map(|e| &e.address).collect();
     assert!(unique.len() < data.instruction_events.len());
-    let event = data
+
+    // --- V2.1 negative register assertions ---------------------------------
+    // 1. No register payload was collected or serialized on any event.
+    assert!(
+        data.instruction_events
+            .iter()
+            .all(|e| e.registers.is_none()),
+        "per-instruction register payloads must be absent in V2.1"
+    );
+    assert!(data.initial_registers.is_none());
+    // 2. The register-query time metric is zero: proves the expensive
+    //    `-data-list-register-values` polling was removed, not just hidden.
+    assert_eq!(
+        data.profiling.register_time_us, 0,
+        "register_time_us must be 0 in V2.1 (no register queries issued)"
+    );
+    // 3. The serialized event JSON contains no "registers" key at all.
+    let first_event = data
         .instruction_events
-        .iter()
-        .rfind(|e| e.registers.as_ref().is_some_and(|r| r.complete))
-        .unwrap();
-    let replay = processor::replay_registers(&t, event.event_id).unwrap();
-    assert!(!replay.is_empty());
-    assert!(replay
-        .values()
-        .all(|r| r.value.is_some() || r.availability != DataValidity::Valid));
+        .first()
+        .expect("loop produces instruction events");
+    let serialized = serde_json::to_value(first_event).unwrap();
+    assert!(
+        serialized.get("registers").is_none(),
+        "V2.1 events must not serialize a registers key: {serialized}"
+    );
+    let whole_trace = serde_json::to_value(&t).unwrap();
+    assert!(
+        whole_trace
+            .pointer("/recording/initial_registers")
+            .is_none(),
+        "V2.1 traces must not serialize initial_registers"
+    );
     assert!(t
         .snapshots
         .iter()
@@ -497,9 +521,26 @@ async fn selected_memory_output_caps_and_missing_mappings_are_explicit() {
     c.limits.max_output_bytes = 64;
     let t = trace_program(c).await.unwrap();
     assert!(t.resource_usage.program_output_truncated);
+    // V2.1 (F-04): output-limit termination has its own execution status
+    // instead of being mislabeled as a step limit.
+    assert_eq!(t.execution_status, ExecutionStatus::OutputLimitReached);
     assert_eq!(
         t.execution.outcome,
         c_trace_engine::models::ProgramOutcome::OutputLimitReached
+    );
+    assert!(t
+        .resource_usage
+        .limits_triggered
+        .iter()
+        .any(|r| r == "max_output_bytes"));
+    // The triggered limit must be recorded exactly once (F-03).
+    assert_eq!(
+        t.resource_usage
+            .limits_triggered
+            .iter()
+            .filter(|r| *r == "max_output_bytes")
+            .count(),
+        1
     );
     let mut c = config("hello.c");
     c.build.compiler_flags.push("-g0".into());
@@ -528,4 +569,225 @@ async fn all_stop_thread_limitations_are_reported() {
         .truncation_reasons
         .iter()
         .any(|r| r.contains("multiple_threads")));
+}
+
+// ---------------------------------------------------------------------------
+// V2.1 regressions: F-01 honest interrupted allocation-tracker metadata
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn allocation_tracker_metadata_is_honest_when_timed_out() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    // many_allocs.c allocates continuously; with the default step budget it
+    // will not finish within a 2 s wall deadline, so the tracker is
+    // interrupted with partial allocation events already ingested.
+    let mut c = config("many_allocs.c");
+    c.limits.timeout_seconds = 2;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Timeout);
+    let tracker = &t.stage_results.allocation_tracker;
+    // V2.1 (F-01): an interrupted run must NOT claim status=completed with
+    // output_complete=false and partial_results_available=false.
+    assert_eq!(tracker.status, Some(StageStatus::TimedOut));
+    assert!(
+        tracker.reason.is_some(),
+        "interrupted allocation tracker needs a reason"
+    );
+    assert_eq!(tracker.output_complete, Some(false));
+    assert_eq!(
+        tracker.partial_results_available,
+        Some(true),
+        "allocation events ingested before the timeout are available"
+    );
+    assert!(!t.heap_events.is_empty());
+}
+
+#[tokio::test]
+async fn allocation_tracker_metadata_is_honest_at_step_limit() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("many_allocs.c");
+    c.limits.max_steps = 50;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::StepLimitReached);
+    let tracker = &t.stage_results.allocation_tracker;
+    assert_ne!(tracker.status, Some(StageStatus::Completed));
+    assert!(
+        tracker
+            .reason
+            .as_deref()
+            .is_some_and(|r| r.contains("resource limit")),
+        "reason should name the resource-limit interruption: {:?}",
+        tracker.reason
+    );
+    assert_eq!(tracker.output_complete, Some(false));
+    assert_eq!(tracker.partial_results_available, Some(true));
+    assert!(!t.heap_events.is_empty());
+}
+
+#[tokio::test]
+async fn allocation_tracker_reports_completed_for_terminal_runs() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let t = run("pointer_demo.c").await;
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    let tracker = &t.stage_results.allocation_tracker;
+    assert_eq!(tracker.status, Some(StageStatus::Completed));
+    assert_eq!(tracker.output_complete, Some(true));
+}
+
+// ---------------------------------------------------------------------------
+// V2.1 regressions: F-02 sanitizer trigger modes
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn sanitizer_trigger_never_skips_the_pass() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("null_deref.c");
+    c.sanitizer_trigger = c_trace_engine::config::SanitizerTrigger::Never;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Crashed);
+    assert!(t.sanitizer_report.is_none());
+    assert_eq!(t.stage_results.sanitizer.status, Some(StageStatus::Skipped));
+    assert!(t
+        .stage_results
+        .sanitizer
+        .reason
+        .as_deref()
+        .is_some_and(|r| r.contains("never")));
+}
+
+#[tokio::test]
+async fn sanitizer_trigger_on_crash_runs_on_crash_and_skips_clean_runs() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("null_deref.c");
+    c.sanitizer_trigger = c_trace_engine::config::SanitizerTrigger::OnCrash;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Crashed);
+    // V2 behavior restored: the pass runs on crash.
+    assert!(
+        t.sanitizer_report.is_some(),
+        "on_crash must run the sanitizer pass for a crashing program; stage: {:?}",
+        t.stage_results.sanitizer
+    );
+    // A clean, memory-safe program must not trigger the pass.
+    let mut c = config("hello.c");
+    c.sanitizer_trigger = c_trace_engine::config::SanitizerTrigger::OnCrash;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    assert!(t.sanitizer_report.is_none());
+    assert!(t
+        .stage_results
+        .sanitizer
+        .reason
+        .as_deref()
+        .is_some_and(|r| r.contains("on_crash")));
+}
+
+#[tokio::test]
+async fn sanitizer_trigger_on_crash_or_valgrind_error_covers_noncrashing_valgrind_findings() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("use_after_free.c");
+    c.limits.timeout_seconds = 12;
+    c.sanitizer_trigger = c_trace_engine::config::SanitizerTrigger::OnCrashOrValgrindError;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    // Valgrind finds the UAF even though the program exits cleanly; the
+    // sanitizer pass must therefore run (F-02) rather than be skipped.
+    let vg_had_errors = t
+        .valgrind_report
+        .as_ref()
+        .is_some_and(|r| !r.errors.is_empty() || !r.detailed_errors.is_empty());
+    if !vg_had_errors {
+        // Tool unavailable on this machine: the valgrind stage must explain it.
+        assert_eq!(t.stage_results.valgrind.status, Some(StageStatus::Skipped));
+        return;
+    }
+    assert!(
+        t.sanitizer_report.is_some(),
+        "default trigger must run ASan after non-crashing Valgrind errors; stage: {:?} notes: {:?}",
+        t.stage_results.sanitizer,
+        t.analysis_notes
+    );
+    // A normal memory-safe program must not trigger the pass.
+    let mut c = config("hello.c");
+    c.limits.timeout_seconds = 12;
+    c.sanitizer_trigger = c_trace_engine::config::SanitizerTrigger::OnCrashOrValgrindError;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    if t.stage_results.valgrind.status == Some(StageStatus::Skipped) {
+        return; // valgrind unavailable: cannot have reported errors
+    }
+    assert!(t.sanitizer_report.is_none());
+    assert!(t
+        .stage_results
+        .sanitizer
+        .reason
+        .as_deref()
+        .is_some_and(|r| r.contains("on_crash_or_valgrind_error")));
+}
+
+#[tokio::test]
+async fn sanitizer_trigger_always_runs_even_for_clean_safe_programs() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("hello.c");
+    c.sanitizer_trigger = c_trace_engine::config::SanitizerTrigger::Always;
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    assert!(
+        t.sanitizer_report.is_some(),
+        "always must run the sanitizer pass; stage: {:?}",
+        t.stage_results.sanitizer
+    );
+}
+
+// ---------------------------------------------------------------------------
+// V2.1 regressions: F-05 explicit tool-path overrides
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn gdb_path_override_allows_failure_injection() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("hello.c");
+    c.gdb_path = Some("/nonexistent/cannot-be-gdb".into());
+    let result = trace_program(c).await;
+    match result {
+        Err(c_trace_engine::error::EngineError::MissingTool { tool, .. }) => {
+            assert!(tool.contains("cannot-be-gdb") || tool == "gdb");
+        }
+        other => panic!("expected MissingTool for a bogus gdb path, got: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn valgrind_path_override_allows_failure_injection() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let mut c = config("pointer_demo.c");
+    c.valgrind_path = Some("/nonexistent/cannot-be-valgrind".into());
+    let t = trace_program(c).await.unwrap();
+    // GDB execution is unaffected; Valgrind discovery fails and is skipped
+    // with an explanatory note (never silently).
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    assert_eq!(t.stage_results.valgrind.status, Some(StageStatus::Skipped));
+    assert!(t.valgrind_report.is_none());
+    assert!(t
+        .analysis_notes
+        .iter()
+        .any(|n| n.contains("valgrind not found")));
 }

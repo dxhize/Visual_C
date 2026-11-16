@@ -5,12 +5,15 @@
 Dual capture is now the default. Source checkpoints and executed-instruction
 attempts come from **one GDB run**, not two executions. Legacy JSON fields are
 retained with `schema_version: 2`; see [V2 schema and semantics](docs/v2.md).
-For a conceptual architectural overview (channels, budgets, the stop loop,
-the trust model), see [Engine architecture](docs/architecture.md).
+New to the engine or want the plain-language version? Start with
+**[The Trace Engine](docs/trace-engine.html)** — a visual, self-contained
+introduction (pipeline, trace contents, guarantees, limits). For a conceptual
+architectural overview (channels, budgets, the stop loop, the trust model),
+see [Engine architecture](docs/architecture.md).
 
 ```sh
 cargo run -- sample.c --timeout 20 --output trace.json
-cargo run -- sample.c --trace-mode dual --profile
+cargo run -- sample.c --trace-mode dual --sanitizer-trigger always
 cargo run -- sample.c --trace-mode source             # lower-cost capture
 cargo run -- sample.c --max-instruction-events 5000 --max-gdb-commands 50000
 cargo run -- sample.c --journal run.jsonl --journal-only --output index.json
@@ -73,7 +76,7 @@ cargo run -- broken.c                              # exit code 2 + diagnostics
 
 ```jsonc
 {
-  "execution_status": "completed | compile_failed | crashed | timeout | step_limit_reached | ...",
+  "execution_status": "completed | compile_failed | crashed | timeout | step_limit_reached | output_limit_reached | ...",
   "compiled_successfully": true,
   "compile_errors": [ { "file": "...", "line": 1, "column": 15, "kind": "error", "message": "..." } ],
   "snapshots": [                     // one per GDB stop in user code (bounded)
@@ -150,9 +153,11 @@ real document produced by `cargo run -- sample.c`.
    `file:line` in one batched call.
 4. **Independent analyses**: Valgrind runs the program separately (its XML
    parsed with `roxmltree`, findings correlated with allocation ids by
-   file/line). On a crash, the sanitized binary runs once as a diagnostic
-   pass. Native sanitizer findings are retained; a crash summary is attached
-   only when source-site evidence supports correlation.
+   file/line). The sanitized binary runs as a diagnostic pass when the
+   configured trigger fires — by default on a crash *or* when Valgrind
+   reported memory errors (`--sanitizer-trigger`; V2.1). Native sanitizer
+   findings are retained; a crash summary is attached only when source-site
+   evidence supports correlation.
 
 Partial results are always preserved: a timeout, step limit or crash yields
 a trace with everything captured up to that point.
@@ -160,6 +165,17 @@ a trace with everything captured up to that point.
 Traces emit `schema_version: 2` and `stage_results` to distinguish completed,
 failed, timed-out, and skipped analyses. Older trace JSON without these fields
 remains deserializable; absent stage metadata is unknown, not a clean result.
+
+### V2.1: what changed and why
+
+The V2 audit measured per-instruction CPU register collection at ~90 % of
+debugger command time. Since register visualization is not part of the GUI
+plan, V2.1 removes the collection itself (not just the JSON fields):
+instruction addresses always came from GDB stop frames, so dual-level
+source+assembly tracing, snapshots, heap tracking and crash handling are
+unchanged, while dual-mode wall time improved 2.0×–3.2× on the audit
+benchmarks (e.g. the finite-loop workload: 19.11 s → 6.10 s). Details and
+evidence: [`docs/v2.1/`](docs/v2.1/summary.md).
 
 ## Resource limits
 
@@ -201,7 +217,12 @@ Scalar flags override the JSON config file; list flags (`--define`,
 * A freed block's raw bytes are the **last bytes captured while it was
   alive**; freed memory contents are not read after the fact.
 * The sanitized pass is ASan-only when libubsan is not installed (the
-  engine notes this in `analysis_notes`).
+  engine notes this in `analysis_notes`). Since V2.1 the pass is triggered
+  by `sanitizer_trigger` (default: crash or Valgrind memory errors); ASan
+  need not reproduce every Valgrind finding.
+* Per-instruction CPU register values are **not collected** since V2.1
+  (audit: ~90 % of command time, no GUI consumer); legacy V2 traces
+  containing register payloads still deserialize.
 * Program output and GDB console chatter are kept separate (pty); the
   MI-facing `@` target stream is treated as program output for GDB versions
   without tty support.
@@ -210,15 +231,24 @@ Scalar flags override the JSON config file; list flags (`--define`,
 * Multi-thread/fork instruction interleavings, JIT/self-modifying code and hard
   engine-RSS limits are not implemented. See [explicit limitations](docs/v2.md).
 
-## Generated V2 examples
+## Generated examples
 
-[`examples/v2_manifest.json`](examples/v2_manifest.json) records actual outcomes,
-counts, sizes and reference validation for:
+[`examples/v21_manifest.json`](examples/v21_manifest.json) records the V2.1
+examples' actual outcomes, counts, sizes and register-capture evidence
+(`register_time_us == 0`, no `registers` key in any event):
 
-- [`v2_success.json`](examples/v2_success.json): normal source-only capture.
-- [`v2_null_pointer.json`](examples/v2_null_pointer.json): null write and faulting instruction.
-- [`v2_bounded_infinite.json`](examples/v2_bounded_infinite.json): deadline and partial results.
-- [`v2_dual.json`](examples/v2_dual.json): synchronized C/assembly, registers and heap.
+- [`v21_normal.json`](examples/v21_normal.json): normal source-only capture.
+- [`v21_loop.json`](examples/v21_loop.json): finite loop, dual level.
+- [`v21_heap.json`](examples/v21_heap.json): heap allocation/free, pointers, dual level.
+- [`v21_crash.json`](examples/v21_crash.json): null write and faulting instruction.
+- [`v21_dual.json`](examples/v21_dual.json): synchronized C/assembly and heap.
+- [`v21_bounded_infinite.json`](examples/v21_bounded_infinite.json): deadline and partial results.
+
+The superseded V2 examples (`v2_success.json`, `v2_null_pointer.json`,
+`v2_bounded_infinite.json`, `v2_dual.json` with their
+[`v2_manifest.json`](examples/v2_manifest.json)) are kept for historical
+before/after comparison; they contain register payloads that V2.1 no longer
+collects.
 
 ## Development
 
@@ -232,6 +262,8 @@ python3 scripts/benchmark.py            # build first; three serial samples per 
 The integration suite skips gracefully (with a printed reason) when a tool
 is missing. Layout: `src/` modules mirror the pipeline stages; `c_runtime/`
 holds the embedded C tracking runtime; `fixtures/c/` one deliberate bug per
-file for manual and automated testing.
+file for manual and automated testing; `docs/v2.1/` holds the V2.1 update
+reports (register dependency audit, schema, fixes F-01…F-06, correctness,
+performance, tests, summary).
 
 License: MIT.

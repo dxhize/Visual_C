@@ -7,7 +7,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a1_vars.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.76,
+   "wall_seconds": 5.63,
    "status": "PASS",
    "checks": [
     [
@@ -111,10 +111,10 @@
     "outcome": "completed",
     "snapshots": 8,
     "instruction_count": 25,
-    "gdb_commands": 192,
-    "wall_ms": 3728,
+    "gdb_commands": 164,
+    "wall_ms": 5483,
     "limits": [],
-    "trace_bytes": 157192
+    "trace_bytes": 72046
    },
    "evidence_dir": "test_reports/v2_validation/evidence/A1"
   },
@@ -124,7 +124,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a1_vars.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.77,
+   "wall_seconds": 5.02,
    "status": "PASS",
    "checks": [
     [
@@ -170,17 +170,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "2 full checkpoints in 25 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -238,10 +238,10 @@
     "outcome": "completed",
     "snapshots": 8,
     "instruction_count": 25,
-    "gdb_commands": 192,
-    "wall_ms": 3737,
+    "gdb_commands": 164,
+    "wall_ms": 4989,
     "limits": [],
-    "trace_bytes": 157192
+    "trace_bytes": 72043
    },
    "evidence_dir": "test_reports/v2_validation/evidence/A1D"
   },
@@ -251,7 +251,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a2_calls.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.54,
+   "wall_seconds": 5.76,
    "status": "PASS",
    "checks": [
     [
@@ -297,17 +297,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 76 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -357,7 +357,7 @@
     [
      "A2_functions_observed",
      "PASS",
-     "funcs={'middle', 'main', 'leaf'}"
+     "funcs={'main', 'leaf', 'middle'}"
     ],
     [
      "A2_nested_frames",
@@ -375,10 +375,10 @@
     "outcome": "completed",
     "snapshots": 17,
     "instruction_count": 76,
-    "gdb_commands": 278,
-    "wall_ms": 4495,
+    "gdb_commands": 199,
+    "wall_ms": 5730,
     "limits": [],
-    "trace_bytes": 223249
+    "trace_bytes": 112209
    },
    "evidence_dir": "test_reports/v2_validation/evidence/A2"
   },
@@ -388,7 +388,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a3_recurse.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 5.15,
+   "wall_seconds": 5.43,
    "status": "PASS",
    "checks": [
     [
@@ -434,17 +434,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 99 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -517,10 +517,10 @@
     "outcome": "completed",
     "snapshots": 38,
     "instruction_count": 99,
-    "gdb_commands": 448,
-    "wall_ms": 5095,
+    "gdb_commands": 346,
+    "wall_ms": 5386,
     "limits": [],
-    "trace_bytes": 330808
+    "trace_bytes": 205341
    },
    "evidence_dir": "test_reports/v2_validation/evidence/A3"
   },
@@ -530,7 +530,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a4_globals.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.15,
+   "wall_seconds": 5.13,
    "status": "PASS",
    "checks": [
     [
@@ -576,17 +576,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 41 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -659,10 +659,10 @@
     "outcome": "completed",
     "snapshots": 16,
     "instruction_count": 41,
-    "gdb_commands": 389,
-    "wall_ms": 4112,
+    "gdb_commands": 345,
+    "wall_ms": 5095,
     "limits": [],
-    "trace_bytes": 198527
+    "trace_bytes": 121876
    },
    "evidence_dir": "test_reports/v2_validation/evidence/A4"
   },
@@ -672,7 +672,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a5_main.c --add-source /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a5_helper.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.0,
+   "wall_seconds": 5.01,
    "status": "PASS",
    "checks": [
     [
@@ -718,17 +718,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "2 full checkpoints in 33 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -796,10 +796,10 @@
     "outcome": "completed",
     "snapshots": 9,
     "instruction_count": 33,
-    "gdb_commands": 144,
-    "wall_ms": 3973,
+    "gdb_commands": 108,
+    "wall_ms": 4974,
     "limits": [],
-    "trace_bytes": 154767
+    "trace_bytes": 60266
    },
    "evidence_dir": "test_reports/v2_validation/evidence/A5"
   },
@@ -809,7 +809,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/null_write.c --timeout 20",
    "expected": "crashed",
    "engine_exit": 0,
-   "wall_seconds": 3.87,
+   "wall_seconds": 5.07,
    "status": "PASS",
    "checks": [
     [
@@ -855,17 +855,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 5 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -978,10 +978,10 @@
     "outcome": "crashed",
     "snapshots": 4,
     "instruction_count": 5,
-    "gdb_commands": 56,
-    "wall_ms": 3838,
+    "gdb_commands": 48,
+    "wall_ms": 5039,
     "limits": [],
-    "trace_bytes": 81928
+    "trace_bytes": 35446
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B1"
   },
@@ -991,7 +991,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b2_heap.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.84,
+   "wall_seconds": 4.6,
    "status": "PASS",
    "checks": [
     [
@@ -1037,17 +1037,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "3 full checkpoints in 28 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -1125,10 +1125,10 @@
     "outcome": "completed",
     "snapshots": 9,
     "instruction_count": 28,
-    "gdb_commands": 175,
-    "wall_ms": 3804,
+    "gdb_commands": 144,
+    "wall_ms": 4570,
     "limits": [],
-    "trace_bytes": 177368
+    "trace_bytes": 67929
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B2"
   },
@@ -1138,7 +1138,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b3_realloc.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.28,
+   "wall_seconds": 5.43,
    "status": "PASS",
    "checks": [
     [
@@ -1184,17 +1184,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "6 full checkpoints in 47 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -1262,10 +1262,10 @@
     "outcome": "completed",
     "snapshots": 14,
     "instruction_count": 47,
-    "gdb_commands": 387,
-    "wall_ms": 4222,
+    "gdb_commands": 337,
+    "wall_ms": 5391,
     "limits": [],
-    "trace_bytes": 333995
+    "trace_bytes": 144391
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B3"
   },
@@ -1275,7 +1275,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b4_alias.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.91,
+   "wall_seconds": 5.26,
    "status": "PASS",
    "checks": [
     [
@@ -1321,17 +1321,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "3 full checkpoints in 29 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -1394,10 +1394,10 @@
     "outcome": "completed",
     "snapshots": 10,
     "instruction_count": 29,
-    "gdb_commands": 228,
-    "wall_ms": 3877,
+    "gdb_commands": 196,
+    "wall_ms": 5232,
     "limits": [],
-    "trace_bytes": 194638
+    "trace_bytes": 83934
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B4"
   },
@@ -1407,7 +1407,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/use_after_free.c --timeout 20",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.86,
+   "wall_seconds": 5.03,
    "status": "PASS",
    "checks": [
     [
@@ -1453,17 +1453,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "4 full checkpoints in 24 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -1528,7 +1528,7 @@
     [
      "B5_asan",
      "WARN",
-     "reproduction=None"
+     "reproduction=diagnostic_observed"
     ],
     [
      "B5_pointer_value_preserved",
@@ -1546,10 +1546,10 @@
     "outcome": "completed",
     "snapshots": 9,
     "instruction_count": 24,
-    "gdb_commands": 167,
-    "wall_ms": 3827,
+    "gdb_commands": 140,
+    "wall_ms": 5006,
     "limits": [],
-    "trace_bytes": 192533
+    "trace_bytes": 71546
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B5"
   },
@@ -1559,7 +1559,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b6_double_free.c --timeout 20",
    "expected": "crashed",
    "engine_exit": 0,
-   "wall_seconds": 3.72,
+   "wall_seconds": 5.7,
    "status": "PASS",
    "checks": [
     [
@@ -1605,17 +1605,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "3 full checkpoints in 16 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -1698,10 +1698,10 @@
     "outcome": "crashed",
     "snapshots": 7,
     "instruction_count": 16,
-    "gdb_commands": 102,
-    "wall_ms": 3687,
+    "gdb_commands": 83,
+    "wall_ms": 5675,
     "limits": [],
-    "trace_bytes": 157609
+    "trace_bytes": 60245
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B6"
   },
@@ -1711,7 +1711,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b7_oob.c --timeout 20",
    "expected": "crashed",
    "engine_exit": 0,
-   "wall_seconds": 3.74,
+   "wall_seconds": 5.29,
    "status": "PASS",
    "checks": [
     [
@@ -1757,17 +1757,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "3 full checkpoints in 22 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -1816,8 +1816,8 @@
     ],
     [
      "B7_asan_overflow",
-     "WARN",
-     "category= "
+     "PASS",
+     "category=heap-buffer-overflow SUMMARY: AddressSanitizer: heap-buffer-overflow /home/xe/Do"
     ],
     [
      "B7_valgrind_finding",
@@ -1835,10 +1835,10 @@
     "outcome": "completed",
     "snapshots": 8,
     "instruction_count": 22,
-    "gdb_commands": 152,
-    "wall_ms": 3712,
+    "gdb_commands": 127,
+    "wall_ms": 5261,
     "limits": [],
-    "trace_bytes": 170014
+    "trace_bytes": 70111
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B7"
   },
@@ -1848,7 +1848,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b2_heap.c --trace-mode source",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.53,
+   "wall_seconds": 4.93,
    "status": "PASS",
    "checks": [
     [
@@ -1948,9 +1948,9 @@
     "snapshots": 10,
     "instruction_count": 0,
     "gdb_commands": 136,
-    "wall_ms": 3519,
+    "wall_ms": 4878,
     "limits": [],
-    "trace_bytes": 46314
+    "trace_bytes": 46294
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B8"
   },
@@ -1960,7 +1960,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_b9_bytes.c --trace-mode dual",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.58,
+   "wall_seconds": 5.16,
    "status": "PASS",
    "checks": [
     [
@@ -2006,17 +2006,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 19 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2084,10 +2084,10 @@
     "outcome": "completed",
     "snapshots": 6,
     "instruction_count": 19,
-    "gdb_commands": 130,
-    "wall_ms": 3551,
+    "gdb_commands": 108,
+    "wall_ms": 5124,
     "limits": [],
-    "trace_bytes": 114154
+    "trace_bytes": 54480
    },
    "evidence_dir": "test_reports/v2_validation/evidence/B9"
   },
@@ -2097,7 +2097,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c1_arith.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.6,
+   "wall_seconds": 4.66,
    "status": "PASS",
    "checks": [
     [
@@ -2143,17 +2143,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 13 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2231,10 +2231,10 @@
     "outcome": "completed",
     "snapshots": 6,
     "instruction_count": 13,
-    "gdb_commands": 118,
-    "wall_ms": 3573,
+    "gdb_commands": 102,
+    "wall_ms": 4599,
     "limits": [],
-    "trace_bytes": 105308
+    "trace_bytes": 51928
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C1"
   },
@@ -2244,7 +2244,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c2_loop.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.85,
+   "wall_seconds": 5.22,
    "status": "PASS",
    "checks": [
     [
@@ -2290,17 +2290,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 37 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2373,10 +2373,10 @@
     "outcome": "completed",
     "snapshots": 5,
     "instruction_count": 37,
-    "gdb_commands": 127,
-    "wall_ms": 3828,
+    "gdb_commands": 87,
+    "wall_ms": 5182,
     "limits": [],
-    "trace_bytes": 119123
+    "trace_bytes": 53205
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C2"
   },
@@ -2386,7 +2386,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a2_calls.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.55,
+   "wall_seconds": 5.48,
    "status": "PASS",
    "checks": [
     [
@@ -2432,17 +2432,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 76 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2500,10 +2500,10 @@
     "outcome": "completed",
     "snapshots": 17,
     "instruction_count": 76,
-    "gdb_commands": 278,
-    "wall_ms": 4512,
+    "gdb_commands": 199,
+    "wall_ms": 5443,
     "limits": [],
-    "trace_bytes": 223249
+    "trace_bytes": 112206
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C3"
   },
@@ -2513,7 +2513,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c4_regs.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.82,
+   "wall_seconds": 5.52,
    "status": "PASS",
    "checks": [
     [
@@ -2559,17 +2559,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 19 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2619,12 +2619,12 @@
     [
      "C4_register_capture",
      "PASS",
-     "register_time_us=297159"
+     "V2.1: register_time_us=0 (must be 0)"
     ],
     [
      "C4_deltas_present",
      "PASS",
-     "19 events with register blocks"
+     "V2.1: 0 events with register blocks (capture removed)"
     ],
     [
      "C4_sum_value_30",
@@ -2642,10 +2642,10 @@
     "outcome": "completed",
     "snapshots": 8,
     "instruction_count": 19,
-    "gdb_commands": 202,
-    "wall_ms": 3785,
+    "gdb_commands": 180,
+    "wall_ms": 5498,
     "limits": [],
-    "trace_bytes": 136895
+    "trace_bytes": 77730
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C4"
   },
@@ -2655,7 +2655,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/null_write.c --timeout 20",
    "expected": "crashed",
    "engine_exit": 0,
-   "wall_seconds": 3.63,
+   "wall_seconds": 3.96,
    "status": "PASS",
    "checks": [
     [
@@ -2701,17 +2701,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 5 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2824,10 +2824,10 @@
     "outcome": "crashed",
     "snapshots": 4,
     "instruction_count": 5,
-    "gdb_commands": 56,
-    "wall_ms": 3609,
+    "gdb_commands": 48,
+    "wall_ms": 3935,
     "limits": [],
-    "trace_bytes": 81927
+    "trace_bytes": 35441
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C5"
   },
@@ -2837,7 +2837,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c6_oneline.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.68,
+   "wall_seconds": 4.13,
    "status": "PASS",
    "checks": [
     [
@@ -2883,17 +2883,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 21 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -2961,10 +2961,10 @@
     "outcome": "completed",
     "snapshots": 2,
     "instruction_count": 21,
-    "gdb_commands": 98,
-    "wall_ms": 3654,
+    "gdb_commands": 74,
+    "wall_ms": 4101,
     "limits": [],
-    "trace_bytes": 104911
+    "trace_bytes": 45805
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C6"
   },
@@ -2974,7 +2974,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c7_libcalls.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.03,
+   "wall_seconds": 4.66,
    "status": "PASS",
    "checks": [
     [
@@ -3020,17 +3020,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "4 full checkpoints in 38 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -3103,10 +3103,10 @@
     "outcome": "completed",
     "snapshots": 11,
     "instruction_count": 38,
-    "gdb_commands": 218,
-    "wall_ms": 3989,
+    "gdb_commands": 177,
+    "wall_ms": 4631,
     "limits": [],
-    "trace_bytes": 223016
+    "trace_bytes": 84342
    },
    "evidence_dir": "test_reports/v2_validation/evidence/C7"
   },
@@ -3116,7 +3116,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/fixtures/c/spin_same_line.c --timeout 10 --max-steps 1000000",
    "expected": "timeout",
    "engine_exit": 0,
-   "wall_seconds": 10.25,
+   "wall_seconds": 10.46,
    "status": "PASS",
    "checks": [
     [
@@ -3142,7 +3142,7 @@
     [
      "E:E4_event_ids_unique",
      "PASS",
-     "n=566 first=[0] last=[565]"
+     "n=1875 first=[0] last=[1874]"
     ],
     [
      "E:E5_events_ordered",
@@ -3157,22 +3157,22 @@
     [
      "E:E7_disassembly_refs",
      "PASS",
-     "table=43 events=566"
+     "table=43 events=1875"
     ],
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
      "PASS",
-     "3 full checkpoints in 566 events (<256 events: cadence not exercised)"
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -3201,8 +3201,8 @@
     ],
     [
      "E:E14_stage_statuses",
-     "WARN",
-     "allocation_tracker: completed but output incomplete without reason"
+     "PASS",
+     "consistent"
     ],
     [
      "E:E16_startup_gap",
@@ -3217,7 +3217,7 @@
     [
      "E:E17_termination_events",
      "PASS",
-     "1 unknown-outcome events (bounded, honest)"
+     "2 unknown-outcome events (bounded, honest)"
     ],
     [
      "E:E18_snapshot_event_linkage",
@@ -3254,14 +3254,14 @@
     "execution_status": "timeout",
     "outcome": "timed_out",
     "snapshots": 3,
-    "instruction_count": 566,
-    "gdb_commands": 1168,
-    "wall_ms": 10110,
+    "instruction_count": 1875,
+    "gdb_commands": 1908,
+    "wall_ms": 10028,
     "limits": [
      "session_or_debugger_deadline",
      "overall_session_deadline"
     ],
-    "trace_bytes": 654851
+    "trace_bytes": 1039486
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D1"
   },
@@ -3271,7 +3271,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c2_loop.c --max-instruction-events 25",
    "expected": "step_limit_reached",
    "engine_exit": 0,
-   "wall_seconds": 3.69,
+   "wall_seconds": 4.63,
    "status": "PASS",
    "checks": [
     [
@@ -3317,17 +3317,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 25 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -3356,8 +3356,8 @@
     ],
     [
      "E:E14_stage_statuses",
-     "WARN",
-     "allocation_tracker: completed but output incomplete without reason"
+     "PASS",
+     "consistent"
     ],
     [
      "E:E16_startup_gap",
@@ -3410,12 +3410,12 @@
     "outcome": "step_limit_reached",
     "snapshots": 3,
     "instruction_count": 25,
-    "gdb_commands": 89,
-    "wall_ms": 3663,
+    "gdb_commands": 61,
+    "wall_ms": 4605,
     "limits": [
      "max_instruction_events"
     ],
-    "trace_bytes": 100293
+    "trace_bytes": 42664
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D2"
   },
@@ -3425,7 +3425,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_a4_globals.c --max-source-checkpoints 3 --trace-mode dual",
    "expected": "step_limit_reached",
    "engine_exit": 0,
-   "wall_seconds": 3.4,
+   "wall_seconds": 5.67,
    "status": "PASS",
    "checks": [
     [
@@ -3471,17 +3471,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "1 full checkpoints in 5 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -3510,8 +3510,8 @@
     ],
     [
      "E:E14_stage_statuses",
-     "WARN",
-     "allocation_tracker: completed but output incomplete without reason"
+     "PASS",
+     "consistent"
     ],
     [
      "E:E16_startup_gap",
@@ -3559,12 +3559,12 @@
     "outcome": "step_limit_reached",
     "snapshots": 3,
     "instruction_count": 5,
-    "gdb_commands": 76,
-    "wall_ms": 3380,
+    "gdb_commands": 68,
+    "wall_ms": 5639,
     "limits": [
      "max_source_checkpoints"
     ],
-    "trace_bytes": 83329
+    "trace_bytes": 36687
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D3"
   },
@@ -3574,7 +3574,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_d4_output.c --trace-mode source --max-output-bytes 16384 --timeout 60",
    "expected": "step_limit_reached",
    "engine_exit": 0,
-   "wall_seconds": 14.26,
+   "wall_seconds": 18.55,
    "status": "PASS",
    "checks": [
     [
@@ -3634,13 +3634,13 @@
     ],
     [
      "E:E13_limits_metadata",
-     "PASS",
-     "status=step_limit_reached limits=['max_output_bytes', 'max_output_bytes']"
+     "WARN",
+     "status=output_limit_reached but limits_triggered=['max_output_bytes']"
     ],
     [
      "E:E14_stage_statuses",
-     "WARN",
-     "allocation_tracker: completed but output incomplete without reason"
+     "PASS",
+     "consistent"
     ],
     [
      "E:E16_startup_gap",
@@ -3670,7 +3670,7 @@
     [
      "D4_no_status_confusion",
      "PASS",
-     "status=step_limit_reached outcome=output_limit_reached"
+     "status=output_limit_reached outcome=output_limit_reached"
     ],
     [
      "cleanup_no_survivors",
@@ -3679,17 +3679,16 @@
     ]
    ],
    "summary": {
-    "execution_status": "step_limit_reached",
+    "execution_status": "output_limit_reached",
     "outcome": "output_limit_reached",
     "snapshots": 731,
     "instruction_count": 0,
     "gdb_commands": 5127,
-    "wall_ms": 13084,
+    "wall_ms": 17354,
     "limits": [
-     "max_output_bytes",
      "max_output_bytes"
     ],
-    "trace_bytes": 7889085
+    "trace_bytes": 7889158
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D4"
   },
@@ -3699,7 +3698,7 @@
    "command": "/home/xe/Documents/visual_c/target/debug/c-trace-engine /home/xe/Documents/visual_c/test_reports/v2_validation/fixtures/audit_c2_loop.c --journal-only --journal /home/xe/Documents/visual_c/test_reports/v2_validation/evidence/J1/session.jsonl",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 3.8,
+   "wall_seconds": 4.97,
    "status": "PASS",
    "checks": [
     [
@@ -3745,17 +3744,17 @@
     [
      "E:E8a_initial_registers_present",
      "PASS",
-     "111 registers, full=True"
+     "V2.1: register capture removed; initial_registers deprecated/absent"
     ],
     [
      "E:E8b_rip_matches_post_attempt_pc",
      "PASS",
-     "rip==next_address (faulted: rip==address)"
+     "V2.1: no register blocks; instruction addresses are stop-frame based and validated by E6/E7"
     ],
     [
      "E:E8c_full_checkpoint_cadence",
-     "WARN",
-     "0 full checkpoints in 0 events (<256 events: cadence not exercised)"
+     "PASS",
+     "V2.1: register capture removed; no checkpoint cadence"
     ],
     [
      "E:E9_alloc_ids_stable",
@@ -3805,7 +3804,7 @@
     [
      "E:E20_journal",
      "PASS",
-     "lines=91 kinds={'configuration': 1, 'gap': 2, 'initial_registers': 1, 'checkpoint': 5, 'disassembly': 44, 'instruction': 37, 'finalized': 1}"
+     "lines=90 kinds={'configuration': 1, 'gap': 2, 'checkpoint': 5, 'disassembly': 44, 'instruction': 37, 'finalized': 1}"
     ],
     [
      "cleanup_no_survivors",
@@ -3823,10 +3822,10 @@
     "outcome": "completed",
     "snapshots": 5,
     "instruction_count": 37,
-    "gdb_commands": 127,
-    "wall_ms": 3782,
+    "gdb_commands": 87,
+    "wall_ms": 4907,
     "limits": [],
-    "trace_bytes": 53095
+    "trace_bytes": 32668
    },
    "evidence_dir": "test_reports/v2_validation/evidence/J1"
   },
@@ -3835,7 +3834,7 @@
    "fixture": "audit_a1_vars.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 4.1,
+   "wall_seconds": 4.51,
    "status": "BLOCKED",
    "checks": [
     [
@@ -3939,7 +3938,7 @@
     "outcome": "completed",
     "snapshots": 8,
     "limits": [],
-    "wall_ms": 4065
+    "wall_ms": 4486
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D6A"
   },
@@ -3948,7 +3947,7 @@
    "fixture": "audit_a1_vars.c",
    "expected": "completed",
    "engine_exit": 0,
-   "wall_seconds": 2.9,
+   "wall_seconds": 2.83,
    "status": "PASS",
    "checks": [
     [
@@ -4052,7 +4051,7 @@
     "outcome": "completed",
     "snapshots": 8,
     "limits": [],
-    "wall_ms": 2822
+    "wall_ms": 2763
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D6B"
   },
@@ -4061,7 +4060,7 @@
    "fixture": "audit_a1_vars.c",
    "expected": "debugger_failed",
    "engine_exit": 0,
-   "wall_seconds": 1.89,
+   "wall_seconds": 1.76,
    "status": "PASS",
    "checks": [
     [
@@ -4165,29 +4164,9 @@
     "outcome": "debugger_failed",
     "snapshots": 0,
     "limits": [],
-    "wall_ms": 1881
+    "wall_ms": 1738
    },
    "evidence_dir": "test_reports/v2_validation/evidence/D6C"
   }
- ],
- "totals": {
-  "passed": 29,
-  "failed": 0,
-  "warnings": 31,
-  "skipped": 0,
-  "blocked": 1
- },
- "warnings_breakdown": {
-  "informational": 24,
-  "substantive": 7,
-  "substantive_tests": [
-   "B5",
-   "B6",
-   "B7",
-   "D1",
-   "D2",
-   "D3",
-   "D4"
-  ]
- }
+ ]
 }

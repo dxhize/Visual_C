@@ -14,10 +14,12 @@ CASES = [
     ("hello_source", "fixtures/c/hello.c", ["--trace-mode", "source"]),
     ("hello_dual", "fixtures/c/hello.c", []),
     ("loop_dual", "fixtures/c/finite_loop.c", []),
-    ("loop_no_registers", "fixtures/c/finite_loop.c", ["--no-registers"]),
+    # V2.1: register capture was removed from the engine; the former
+    # "loop_no_registers" case (which measured `--no-registers`) is no longer
+    # meaningful. The journal-only and tight-loop cases remain.
     ("loop_journal_only", "fixtures/c/finite_loop.c", ["--journal-only"]),
     ("tight_loop_journal_only", "fixtures/c/spin_same_line.c",
-     ["--no-registers", "--journal-only", "--max-instruction-events", "2000", "--analysis-timeout", "1"]),
+     ["--journal-only", "--max-instruction-events", "2000", "--analysis-timeout", "1"]),
 ]
 
 results = []
@@ -31,7 +33,7 @@ with tempfile.TemporaryDirectory(prefix="cte-benchmark-") as directory:
             timing = trace.with_suffix(".time")
             journal = trace.with_suffix(".jsonl")
             args = ["target/debug/c-trace-engine", fixture, "--timeout", "30",
-                    "--max-steps", "10000", "--profile", "--output", str(trace), *flags]
+                    "--max-steps", "10000", "--output", str(trace), *flags]
             if "--journal-only" in flags:
                 args.extend(["--journal", str(journal)])
             subprocess.run(["/usr/bin/time", "-f", "%e %M", "-o", str(timing), *args],
