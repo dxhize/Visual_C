@@ -1,7 +1,7 @@
 //! Same-run instruction recording. Processing and pointer enrichment live elsewhere.
 use crate::config::{TraceMode, TracingConfig};
 use crate::error::{EngineError, Result};
-use crate::gdb_mi::{GdbSession, StoppedInfo};
+use crate::gdb_mi::{GdbSession, GlobalStaticMeta, StoppedInfo};
 use crate::mi_parser::{as_const, MiListItem, MiValue};
 use crate::models::*;
 use crate::resource_limits::ExecutionLimits;
@@ -34,6 +34,156 @@ pub fn set_validity(var: &mut VariableInfo) {
     };
 }
 
+pub(crate) struct MemoryBudget {
+    pub remaining_bytes: usize,
+    pub max_object_bytes: usize,
+    pub max_read_bytes: usize,
+    /// None is unlimited. A cached read does not consume a command.
+    pub remaining_reads: Option<usize>,
+}
+
+pub(crate) async fn capture_variable_memory(
+    session: &mut GdbSession,
+    var: &mut VariableInfo,
+    reads: &mut crate::gdb_mi::CheckpointReads,
+    budget: &mut MemoryBudget,
+) {
+    var.initialization_status = Some("unknown".into());
+    if var.size_source.as_deref() != Some("dwarf") {
+        var.runtime_size_bytes = var.size_bytes;
+        var.size_source = var.size_bytes.map(|_| "gdb".into());
+    }
+    let mut evidence = MemoryEvidence {
+        extent_bytes: var.size_bytes,
+        ..Default::default()
+    };
+    match (var.address.as_deref(), var.size_bytes) {
+        (None, _) => {
+            evidence.status = "unavailable".into();
+            evidence.reason = Some("debugger did not resolve object storage".into());
+        }
+        (Some(_), None) => {
+            evidence.status = "unknown".into();
+            evidence.reason = Some("object extent unavailable".into());
+        }
+        (Some(addr), Some(extent)) => {
+            let allowed = extent
+                .min(budget.max_object_bytes as u64)
+                .min(budget.remaining_bytes as u64);
+            let valid_range = crate::memory::address(addr)
+                .and_then(|base| base.checked_add(extent))
+                .is_some();
+            if !valid_range {
+                evidence.status = "unknown".into();
+                evidence.reason = Some("invalid or overflowing memory range".into());
+            } else if extent == 0 {
+                evidence.status = "full".into();
+                var.raw_bytes_hex = Some(String::new());
+            } else if allowed == 0 || budget.max_read_bytes == 0 {
+                evidence.status = "unattempted".into();
+                evidence.reason = Some("object or checkpoint memory budget exhausted".into());
+                evidence.limit = Some(
+                    if budget.remaining_bytes == 0 {
+                        "max_snapshot_memory_bytes"
+                    } else if budget.max_object_bytes != budget.max_read_bytes {
+                        "max_aggregate_bytes"
+                    } else {
+                        "max_memory_read_bytes"
+                    }
+                    .into(),
+                );
+            } else {
+                let mut hex = String::new();
+                let mut failure = None;
+                let mut read_cap = false;
+                while (hex.len() / 2) < allowed as usize {
+                    let offset = (hex.len() / 2) as u64;
+                    let chunk = (allowed - offset).min(budget.max_read_bytes as u64);
+                    let chunk_address =
+                        format!("0x{:x}", crate::memory::address(addr).unwrap() + offset);
+                    let cached = reads.lookup(&chunk_address, chunk);
+                    if cached.is_none() && budget.remaining_reads == Some(0) {
+                        read_cap = true;
+                        break;
+                    }
+                    evidence.requested_bytes += chunk;
+                    let (part, error) = if let Some(hex) = cached {
+                        session.saved_memory_reads += 1;
+                        (hex, None)
+                    } else {
+                        if let Some(left) = &mut budget.remaining_reads {
+                            *left -= 1;
+                        }
+                        let result = session
+                            .read_memory_bytes_partial(&chunk_address, chunk)
+                            .await;
+                        (result.hex, result.error)
+                    };
+                    let short = (part.len() / 2) as u64 != chunk;
+                    hex.push_str(&part);
+                    if let Some(error) = error {
+                        failure = Some(error);
+                        break;
+                    }
+                    if short {
+                        failure = Some("short memory response".into());
+                        break;
+                    }
+                }
+                evidence.captured_bytes = (hex.len() / 2) as u64;
+                budget.remaining_bytes = budget
+                    .remaining_bytes
+                    .saturating_sub(evidence.captured_bytes as usize);
+                if !hex.is_empty() {
+                    reads.insert(addr, evidence.captured_bytes, &hex);
+                    var.raw_bytes_hex = Some(hex);
+                }
+                evidence.status = if evidence.captured_bytes == extent {
+                    "full"
+                } else if read_cap && evidence.captured_bytes == 0 {
+                    "unattempted"
+                } else if failure.is_some() && evidence.captured_bytes == 0 {
+                    "unreadable"
+                } else if failure.is_some() {
+                    "partial"
+                } else {
+                    "truncated"
+                }
+                .into();
+                if let Some(error) = failure {
+                    evidence.reason = Some(error.clone());
+                    var.read_error = Some(format!("memory read failed: {error}"));
+                } else if read_cap {
+                    evidence.reason = Some("max_extra_memory_reads exhausted".into());
+                    evidence.limit = Some("max_extra_memory_reads".into());
+                } else if evidence.status == "truncated" {
+                    evidence.limit = Some(
+                        if allowed < extent.min(budget.max_object_bytes as u64) {
+                            "max_snapshot_memory_bytes"
+                        } else if budget.max_object_bytes != budget.max_read_bytes {
+                            "max_aggregate_bytes"
+                        } else {
+                            "max_memory_read_bytes"
+                        }
+                        .into(),
+                    );
+                    evidence.reason =
+                        Some(if allowed < extent.min(budget.max_object_bytes as u64) {
+                            "checkpoint memory budget".into()
+                        } else {
+                            "per-object memory limit".into()
+                        });
+                }
+            }
+        }
+    }
+    set_validity(var);
+    if evidence.status == "unreadable" {
+        var.bytes_status = DataValidity::Unreadable;
+    }
+    var.memory_evidence = Some(evidence);
+}
+
 fn field<'a>(fields: &'a [crate::mi_parser::MiResult], key: &str) -> Option<&'a str> {
     fields
         .iter()
@@ -63,7 +213,7 @@ impl Recorder {
             limitations: vec![
                 "Capture begins at main; startup and excluded-code intervals are gaps.".into(),
                 "Memory is exact only at its recorded stopped observation, never inferred from registers.".into(),
-                "Lexical DWARF DIE IDs and non-top-frame locals are not collected.".into(),
+                "Variables are observed at checkpoints; caller frames are configuration-bounded. Lexical scope and readable bytes do not establish initialization; initialization remains unknown.".into(),
                 "All-stop pauses inferior threads, not external processes sharing memory.".into(),
                 "Disassembly assumes unchanged user code; self-modifying/JIT code is unsupported.".into(),
             ],
@@ -230,31 +380,56 @@ impl Recorder {
                 .size
                 .min(self.limits.max_memory_read_bytes)
                 .min(budget);
+            let limit_error = if size < region.size.min(self.limits.max_memory_read_bytes) {
+                "memory observation budget exhausted"
+            } else {
+                "memory observation per-read limit exhausted"
+            };
             let address = session
                 .evaluate(&format!("(unsigned long)({})", region.address))
                 .await
                 .ok()
                 .and_then(|s| s.parse::<u64>().ok())
                 .map(|n| format!("0x{n:x}"));
-            let result = if size == 0 {
-                Err("memory observation budget exhausted".into())
-            } else if let Some(address) = &address {
-                session.read_memory_bytes(address, size as u64).await
-            } else {
-                Err("address expression unavailable at this stop".into())
-            };
-            budget = budget.saturating_sub(size);
-            let (raw_bytes_hex, status, error) = match result {
-                Ok(hex) => (
-                    Some(hex),
-                    if size < region.size {
-                        DataValidity::Truncated
-                    } else {
-                        DataValidity::Valid
-                    },
+            let (raw_bytes_hex, status, error) = if address.is_none() {
+                (
                     None,
-                ),
-                Err(e) => (None, DataValidity::Unreadable, Some(e)),
+                    DataValidity::Unavailable,
+                    Some("address expression unavailable at this stop".into()),
+                )
+            } else if size == 0 && region.size > 0 {
+                (None, DataValidity::Truncated, Some(limit_error.into()))
+            } else {
+                let read = session
+                    .read_memory_bytes_partial(address.as_deref().unwrap(), size as u64)
+                    .await;
+                let captured = read.hex.len() / 2;
+                budget = budget.saturating_sub(captured);
+                let status = if captured == 0 && read.error.is_some() {
+                    DataValidity::Unreadable
+                } else if read.error.is_some() || captured < size || size < region.size {
+                    DataValidity::Truncated
+                } else {
+                    DataValidity::Valid
+                };
+                let error = read.error.or_else(|| {
+                    if captured < size {
+                        Some(format!("short memory response: {captured} of {size} bytes"))
+                    } else if size < region.size {
+                        Some(limit_error.into())
+                    } else {
+                        None
+                    }
+                });
+                (
+                    if captured > 0 || size == 0 {
+                        Some(read.hex)
+                    } else {
+                        None
+                    },
+                    status,
+                    error,
+                )
             };
             observations.push(MemoryObservation {
                 expression: region.address.clone(),
@@ -334,11 +509,34 @@ pub fn event_outcome(before: &StoppedInfo, after: &StoppedInfo) -> &'static str 
     }
 }
 
-pub async fn capture_global(
+pub(crate) async fn capture_global(
     session: &mut GdbSession,
     name: &str,
     limits: &ExecutionLimits,
+    reads: &mut crate::gdb_mi::CheckpointReads,
+    budget: &mut MemoryBudget,
+    types: Option<&crate::dwarf::ObservationTypes>,
+    func: &str,
 ) -> VariableInfo {
+    // Explicit function-qualified symbols can be observed before the owner
+    // runs. Prove static storage once; qualification alone is not sufficient.
+    if name.contains("::") && !name.starts_with('\'') && !session.symbol_scopes.contains_key(name) {
+        if let Ok(response) = session
+            .execute(&format!(
+                "-interpreter-exec console {}",
+                crate::gdb_mi::quote_for_mi(&format!("info address {name}"))
+            ))
+            .await
+        {
+            if response
+                .streams
+                .iter()
+                .any(|(_, text)| text.contains("static storage at address"))
+            {
+                session.symbol_scopes.insert(name.into(), "static".into());
+            }
+        }
+    }
     let mut var = VariableInfo {
         name: name.into(),
         scope: Some(
@@ -355,42 +553,84 @@ pub async fn capture_global(
         Ok(value) => var.value = value,
         Err(e) => {
             var.read_error = Some(e.to_string());
-            set_validity(&mut var);
-            return var;
         }
     }
-    let type_key = format!("global:{}:{name}", session.module_epoch());
-    if let Some(c_type) = session.type_cache.get(&type_key) {
-        var.c_type = c_type.clone();
+    let meta_key = format!("global:{}:{name}", session.module_epoch());
+    // Optimization D: only file-qualified names (the `'file.c'::name` form
+    // produced by symbol discovery) have proven frame-independent static
+    // storage; their type/address/size are invariant within a module epoch.
+    // Function-local statics (`func::name`) stay on the query path.
+    let cacheable = name.starts_with('\'') && name.contains("'::");
+    let cached = if cacheable {
+        session.global_meta_cache.get(&meta_key).cloned()
     } else {
-        if let Ok(response) = session
-            .execute(&format!(
-                "-interpreter-exec console {}",
-                crate::gdb_mi::quote_for_mi(&format!("whatis {name}"))
-            ))
-            .await
-        {
-            for (_, text) in response.streams {
-                if let Some(t) = text.trim().strip_prefix("type = ") {
-                    var.c_type = t.into();
+        None
+    };
+    if let Some(meta) = cached {
+        session.global_meta_cache_hits += 1;
+        if let Some(t) = &meta.c_type {
+            var.c_type = t.clone();
+        }
+        var.address = meta.address;
+        var.size_bytes = meta.size_bytes;
+    } else {
+        if let Some(c_type) = session.type_cache.get(&meta_key) {
+            var.c_type = c_type.clone();
+        } else {
+            if let Ok(response) = session
+                .execute(&format!(
+                    "-interpreter-exec console {}",
+                    crate::gdb_mi::quote_for_mi(&format!("whatis {name}"))
+                ))
+                .await
+            {
+                for (_, text) in response.streams {
+                    if let Some(t) = text.trim().strip_prefix("type = ") {
+                        var.c_type = t.into();
+                    }
                 }
             }
+            if !var.c_type.is_empty() {
+                session
+                    .type_cache
+                    .insert(meta_key.clone(), var.c_type.clone());
+            }
         }
-        if !var.c_type.is_empty() {
-            session.type_cache.insert(type_key, var.c_type.clone());
+        var.address = session
+            .evaluate(&format!("&({name})"))
+            .await
+            .ok()
+            .and_then(|s| crate::gdb_mi::extract_hex_address(&s));
+        var.size_bytes = session
+            .evaluate(&format!("sizeof({name})"))
+            .await
+            .ok()
+            .and_then(|s| s.parse().ok());
+        // Cache only when both stable properties were observed: a transient
+        // evaluation failure must be retried on the next capture, never
+        // remembered as "unavailable".
+        if cacheable && !var.c_type.is_empty() && var.address.is_some() {
+            if let Some(size) = var.size_bytes {
+                session.global_meta_cache.insert(
+                    meta_key,
+                    GlobalStaticMeta {
+                        c_type: if var.c_type.is_empty() {
+                            None
+                        } else {
+                            Some(var.c_type.clone())
+                        },
+                        address: var.address.clone(),
+                        size_bytes: Some(size),
+                    },
+                );
+            }
         }
     }
-    var.address = session
-        .evaluate(&format!("&({name})"))
-        .await
-        .ok()
-        .and_then(|s| crate::gdb_mi::extract_hex_address(&s));
-    var.size_bytes = session
-        .evaluate(&format!("sizeof({name})"))
-        .await
-        .ok()
-        .and_then(|s| s.parse().ok());
-    if var.c_type.contains('*') {
+    let aggregate = types.is_some_and(|types| types.enrich(&mut var, func));
+    let pointer = types
+        .and_then(|types| types.is_pointer(&var))
+        .unwrap_or_else(|| crate::gdb_mi::is_scalar_pointer_type(&var.c_type));
+    if !aggregate && pointer {
         var.points_to = session
             .evaluate(&format!("(unsigned long)({name})"))
             .await
@@ -398,15 +638,50 @@ pub async fn capture_global(
             .and_then(|v| v.parse::<u64>().ok())
             .map(|v| format!("0x{v:x}"));
     }
-    if let (Some(addr), Some(size)) = (&var.address, var.size_bytes) {
-        match session
-            .read_memory_bytes(addr, size.min(limits.max_memory_read_bytes as u64))
-            .await
-        {
-            Ok(hex) => var.raw_bytes_hex = Some(hex),
-            Err(e) => var.read_error = Some(e),
-        }
-    }
-    set_validity(&mut var);
+    budget.max_object_bytes = if aggregate {
+        limits.max_aggregate_bytes
+    } else {
+        limits.max_memory_read_bytes
+    };
+    capture_variable_memory(session, &mut var, reads, budget).await;
     var
+}
+
+#[cfg(test)]
+mod coverage_regressions {
+    use super::*;
+
+    /// Scope, bytes and initialization are independent evidence axes.
+    #[test]
+    fn limitations_match_current_recording_behavior() {
+        let config = TracingConfig::default();
+        let limits = ExecutionLimits::default();
+        let recorder = Recorder::new(&config, &limits).unwrap();
+        let limitations = &recorder.data.coverage.limitations;
+        let joined = limitations.join("\n");
+        assert!(
+            !limitations
+                .iter()
+                .any(|l| l.contains("Lexical DWARF DIE IDs")),
+            "stale limitation string still present: {joined}"
+        );
+        assert!(
+            limitations
+                .iter()
+                .any(|l| l.contains("caller frames are configuration-bounded")),
+            "scope-evidence statement missing: {joined}"
+        );
+        assert!(
+            limitations
+                .iter()
+                .all(|l| !l.contains("innermost frame only")),
+            "stale frame-0-only statement: {joined}"
+        );
+        assert!(
+            limitations
+                .iter()
+                .any(|l| l.contains("initialization remains unknown")),
+            "initialization limitation missing: {joined}"
+        );
+    }
 }

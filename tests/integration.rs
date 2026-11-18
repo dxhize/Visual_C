@@ -77,6 +77,8 @@ fn config_for(source: &std::path::Path, extra: impl FnOnce(&mut TraceConfig)) ->
         sanitizer_trigger: Default::default(),
         valgrind_path: None,
         gdb_path: None,
+        clang_ast: false,
+        clang_path: None,
         tracing: c_trace_engine::config::TracingConfig {
             mode: c_trace_engine::config::TraceMode::Source,
             ..Default::default()

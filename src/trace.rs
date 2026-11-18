@@ -21,7 +21,8 @@ use std::path::{Path, PathBuf};
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 use crate::allocation_tracker::{
-    apply_caller_locations, resolve_caller_locations, EventFileReader, HeapTimeline,
+    apply_caller_locations, resolve_caller_locations, verify_event_status, EventFileReader,
+    HeapTimeline,
 };
 use crate::compiler;
 use crate::config::TraceConfig;
@@ -36,10 +37,6 @@ use crate::models::{
 use crate::resource_limits::{CgroupGuard, ExecutionLimits};
 use crate::sanitizer;
 use crate::valgrind;
-
-/// Cap on heap blocks serialized per snapshot (the timeline itself is capped
-/// by `max_heap_allocations`; this bounds per-snapshot JSON size).
-const MAX_HEAP_BLOCKS_PER_SNAPSHOT: usize = 512;
 
 /// Run the ASan/UBSan reproduction pass once and record its stage result.
 ///
@@ -235,7 +232,7 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     let build_deadline = crate::supervisor::stage_deadline(limits.compiler_timeout_seconds);
     let build = crate::supervisor::scope_until(
         build_deadline,
-        compiler::compile_project(&config.build, &session_dir, Some(tracker_source)),
+        compiler::compile_project(&config.build, &session_dir, Some(tracker_source.clone())),
     )
     .await;
     let (debug_build, asan_build) = match build {
@@ -351,6 +348,44 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
         }
         return Ok(trace);
     }
+    // Phase 3: one bounded static pass over the actual GCC debug artifact.
+    // Supplemental metadata must never suppress or reinterpret GDB evidence.
+    let mut dwarf_metrics = crate::dwarf::ExtractionMetrics::default();
+    if Instant::now() < session_deadline && !crate::supervisor::cancelled() {
+        match crate::dwarf::extract_excluding(&debug_build.binary_path, &tracker_source) {
+            Ok((registry, metrics)) => {
+                trace.type_registry = Some(registry);
+                dwarf_metrics = metrics;
+            }
+            Err(reason) => notes.push(format!("DWARF metadata unavailable: {reason}")),
+        }
+    } else {
+        notes.push("DWARF metadata skipped: session deadline or cancellation".into());
+    }
+    let mut ast_time_us = None;
+    if config.clang_ast {
+        if Instant::now() < session_deadline && !crate::supervisor::cancelled() {
+            let (registry, duration) = crate::clang_ast::analyze(
+                &config.build,
+                config.clang_path.as_deref().unwrap_or("clang"),
+                trace.type_registry.as_ref(),
+            )
+            .await;
+            for unit in &registry.translation_units {
+                if let Some(reason) = &unit.reason {
+                    notes.push(format!("Clang AST {}: {reason}", unit.file));
+                }
+            }
+            ast_time_us = Some(duration);
+            trace.source_metadata = Some(registry);
+        } else {
+            trace.source_metadata = Some(crate::clang_ast::SourceMetadataRegistry {
+                provider: "clang-ast-json".into(),
+                limitations: vec!["AST skipped: session deadline or cancellation".into()],
+                ..Default::default()
+            });
+        }
+    }
     if !asan_build.success {
         let reason = asan_build
             .diagnostics
@@ -378,6 +413,7 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     // ---- GDB execution + heap instrumentation -------------------------------
     let classifier = UserCodeClassifier::from_build(&config.build);
     let event_file = session_dir.join("alloc_events.txt");
+    let event_status_file = session_dir.join("alloc_event_status.txt");
     let mut timeline = HeapTimeline::new(limits.max_heap_allocations);
     let mut reader = EventFileReader::new(event_file.clone());
 
@@ -388,9 +424,14 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
         &classifier,
         &debug_build.binary_path,
         &event_file,
+        &event_status_file,
         &mut reader,
         &mut timeline,
         &mut notes,
+        trace
+            .type_registry
+            .as_ref()
+            .map(|registry| std::sync::Arc::new(crate::dwarf::ObservationTypes::new(registry))),
     )
     .await
     {
@@ -426,9 +467,17 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
                 cgroup_enforced: false,
                 recording,
                 executable_bias: None,
+                heap_event_ingest_time_us: 0,
+                pointer_enrichment_time_us: 0,
             }
         }
     };
+    // The final event read has completed. A missing/damaged terminal ACK does
+    // not erase observed events, but later lifetime state is unverified.
+    let status_errors = verify_event_status(&event_status_file, &timeline, phase.inferior_pid);
+    if !status_errors.is_empty() {
+        timeline.mark_transport_incomplete();
+    }
     trace.stage_results.debugger = crate::supervisor::stage(
         started,
         debugger_started,
@@ -473,6 +522,8 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     );
     let (tracker_status, tracker_reason) = if !reader.parse_errors.is_empty() {
         (StageStatus::Failed, reader.parse_errors.first().cloned())
+    } else if !status_errors.is_empty() && tracker_terminal {
+        (StageStatus::Failed, status_errors.first().cloned())
     } else if crate::supervisor::cancelled() {
         (
             StageStatus::Cancelled,
@@ -516,7 +567,7 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
         tracker_status,
         None,
         tracker_reason,
-        tracker_terminal && reader.parse_errors.is_empty(),
+        tracker_terminal && reader.parse_errors.is_empty() && status_errors.is_empty(),
         !timeline.events().is_empty(),
     );
     if phase.inferior_pid.is_none() {
@@ -547,9 +598,11 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
             .collect();
         callers.extend(timeline.event_callers().iter().copied().filter(|c| *c != 0));
         if !callers.is_empty() {
+            // The wrapper captures the *return* PC. Resolve the preceding
+            // instruction instead; preserve the actual return PC in JSON.
             let normalized: Vec<u64> = callers
                 .iter()
-                .filter_map(|pc| pc.checked_sub(phase.executable_bias?))
+                .filter_map(|pc| pc.checked_sub(phase.executable_bias?)?.checked_sub(1))
                 .collect();
             match tokio::time::timeout_at(
                 session_deadline.into(),
@@ -564,7 +617,10 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
                     let relocated = resolved
                         .into_iter()
                         .filter_map(|(pc, info)| {
-                            Some((pc.checked_add(phase.executable_bias?)?, info))
+                            Some((
+                                pc.checked_add(1)?.checked_add(phase.executable_bias?)?,
+                                info,
+                            ))
                         })
                         .collect();
                     apply_caller_locations(&mut timeline, &relocated);
@@ -644,23 +700,16 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
         .await
         {
             Ok(run) => {
-                if let Some(mut report) = run.report {
+                if let Some(report) = run.report {
                     let output_complete =
                         report.output_complete && !run.timed_out && !run.cancelled;
                     if run.timed_out {
                         notes.push("valgrind exceeded its timeout: XML may be incomplete".into());
                     }
-                    // Correlate valgrind sites with allocation ids by (file, line).
-                    let sites: Vec<(String, u32, u64)> = timeline
-                        .blocks()
-                        .iter()
-                        .filter_map(|b| {
-                            let file = b.caller_file.clone()?;
-                            let line = b.caller_line?;
-                            Some((file, line, timeline.global_id(b.pid, b.allocation_id)))
-                        })
-                        .collect();
-                    valgrind::correlate_with_allocations(&mut report, &sites);
+                    // Valgrind is a separate execution with unrelated ASLR,
+                    // allocator outcomes and event counts. Same source line
+                    // is not proof of the primary run's allocation identity.
+                    // Keep its complete original diagnostics unmatched.
                     valgrind_report = Some(report);
                     trace.stage_results.valgrind = crate::supervisor::stage(
                         started,
@@ -798,10 +847,106 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
 
     // ---- assemble ------------------------------------------------------------
     let parent_pid = infer_parent_pid(&timeline, phase.inferior_pid);
+    let reconstruction_started = Instant::now();
     trace.snapshots = backfill_snapshots(&timeline, phase.snapshots, parent_pid);
     trace.heap_events = final_events(&timeline);
+    if reader.parse_error_count != 0 || reader.incomplete_line() || !status_errors.is_empty() {
+        for event in &mut trace.heap_events {
+            event.heap_usage_complete = Some(false);
+        }
+    }
     trace.heap_state = build_heap_state(&timeline, &trace.snapshots, parent_pid);
+    let reconstruction_time_us = reconstruction_started.elapsed().as_micros() as u64;
+    let correlation_started = Instant::now();
+    correlate_heap_intervals(
+        &mut trace.heap_events,
+        &trace.snapshots,
+        timeline.history_complete()
+            && reader.parse_error_count == 0
+            && !reader.incomplete_line()
+            && tracker_terminal,
+    );
+    let correlation_time_us = correlation_started.elapsed().as_micros() as u64;
     trace.recording = phase.recording;
+    trace.recording.profiling.heap_event_ingest_time_us = Some(phase.heap_event_ingest_time_us);
+    trace
+        .recording
+        .profiling
+        .heap_snapshot_reconstruction_time_us = Some(reconstruction_time_us);
+    trace.recording.profiling.heap_interval_correlation_time_us = Some(correlation_time_us);
+    trace.recording.profiling.pointer_enrichment_time_us = Some(phase.pointer_enrichment_time_us);
+    let history_complete = timeline.history_complete()
+        && reader.parse_error_count == 0
+        && !reader.incomplete_line()
+        && tracker_terminal;
+    let mut transport_errors = reader.parse_errors.clone();
+    if reader.parse_error_count > transport_errors.len() as u64 {
+        transport_errors.push(format!(
+            "{} additional malformed allocation lines",
+            reader.parse_error_count - transport_errors.len() as u64
+        ));
+    }
+    if reader.incomplete_line() {
+        transport_errors.push("partial allocation event line remained after final read".into());
+    }
+    transport_errors.extend(status_errors);
+    trace.recording.heap_history = Some(crate::models::HeapHistoryCoverage {
+        complete: history_complete,
+        sequence_gaps: timeline
+            .history_gaps
+            .iter()
+            .map(|gap| crate::models::HeapSequenceGap {
+                pid: gap.pid,
+                expected_sequence: gap.expected_seq,
+                observed_sequence: gap.observed_seq,
+            })
+            .collect(),
+        missing_events: timeline.sequence_gaps,
+        duplicate_events: timeline.duplicate_events,
+        out_of_order_events: timeline.out_of_order_events,
+        accepted_events: timeline.event_count_total,
+        retained_events: timeline.events().len(),
+        malformed_lines: reader.parse_error_count,
+        transport_errors,
+        blocks_truncated: timeline.blocks_capped,
+        events_truncated: timeline.events_capped,
+        id_widening_overflow: timeline.id_widening_overflow,
+    });
+    if !history_complete && phase.inferior_pid.is_some() {
+        trace.stage_results.allocation_tracker.output_complete = Some(false);
+        if trace.stage_results.allocation_tracker.status == Some(StageStatus::Completed) {
+            trace.stage_results.allocation_tracker.status = Some(StageStatus::Failed);
+            trace.stage_results.allocation_tracker.reason = Some(
+                "allocation history incomplete (event sequence, transport, or retention gap)"
+                    .into(),
+            );
+        }
+    }
+    trace.recording.profiling.dwarf_extraction_time_us = trace
+        .type_registry
+        .as_ref()
+        .map(|_| dwarf_metrics.extraction_us);
+    trace.recording.profiling.dwarf_resolution_time_us = trace
+        .type_registry
+        .as_ref()
+        .map(|_| dwarf_metrics.resolution_us);
+    if trace.type_registry.is_some() {
+        trace.recording.profiling.dwarf_association_time_us =
+            Some(crate::dwarf::associate(&mut trace));
+    }
+    if let Some(registry) = trace.source_metadata.as_mut() {
+        trace.recording.profiling.clang_ast_time_us = ast_time_us;
+        trace.recording.profiling.clang_parse_time_us = Some(
+            registry
+                .translation_units
+                .iter()
+                .map(|unit| unit.parse_time_us)
+                .sum(),
+        );
+    }
+    // One bounded reconciliation pass after DWARF association, heap history
+    // and all runtime observations exist. No GDB queries, no checkpoint work.
+    crate::evidence::fuse(&mut trace);
     trace.recording.profiling.source_resolution_time_us = source_resolution_time_us;
     trace.recording.profiling.engine_peak_rss_kib = std::fs::read_to_string("/proc/self/status")
         .ok()
@@ -828,6 +973,16 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
                 "unresolved"
             }
             .into(),
+            lifetime_status: Some(
+                if !timeline.history_complete() || !timeline.is_pid_complete(b.pid) {
+                    "unknown"
+                } else if b.freed {
+                    "observed_freed"
+                } else {
+                    "observed_active"
+                }
+                .into(),
+            ),
         })
         .collect();
     trace.crash_report = crash;
@@ -915,6 +1070,8 @@ pub struct GdbPhaseResult {
     pub program_output_truncated: bool,
     pub snapshots: Vec<ExecutionSnapshot>,
     pub cgroup_enforced: bool,
+    pub heap_event_ingest_time_us: u64,
+    pub pointer_enrichment_time_us: u64,
 }
 
 impl GdbPhaseResult {
@@ -940,9 +1097,11 @@ pub async fn run_gdb_phase(
     classifier: &UserCodeClassifier,
     binary: &Path,
     event_file: &Path,
+    event_status_file: &Path,
     reader: &mut EventFileReader,
     timeline: &mut HeapTimeline,
     notes: &mut Vec<String>,
+    type_metadata: Option<std::sync::Arc<crate::dwarf::ObservationTypes>>,
 ) -> Result<GdbPhaseResult> {
     let mut runtime_classifier = classifier.clone();
     runtime_classifier.instrumentation_file = binary.parent().map(|dir| {
@@ -972,6 +1131,8 @@ pub async fn run_gdb_phase(
         program_output_truncated: false,
         snapshots: Vec::new(),
         cgroup_enforced: false,
+        heap_event_ingest_time_us: 0,
+        pointer_enrichment_time_us: 0,
     };
     if crate::supervisor::remaining().is_zero() {
         result.status = ExecutionStatus::Timeout;
@@ -995,10 +1156,13 @@ pub async fn run_gdb_phase(
         limits: limits.clone(),
         // The inferior inherits GDB's environment; the C runtime reads
         // C_TRACE_EVENT_FILE to find its dedicated event trace file.
-        env: vec![(
-            "C_TRACE_EVENT_FILE".into(),
-            event_file.display().to_string(),
-        )],
+        env: vec![
+            ("C_TRACE_EVENT_FILE".into(), event_file.display().to_string()),
+            (
+                "C_TRACE_EVENT_STATUS_FILE".into(),
+                event_status_file.display().to_string(),
+            ),
+        ],
         gdb_path: config.gdb_path.clone(),
     };
 
@@ -1115,6 +1279,15 @@ pub async fn run_gdb_phase(
         max_variables: limits.max_variables_per_snapshot,
         max_memory_read: limits.max_memory_read_bytes,
         memory_budget: limits.max_snapshot_memory_bytes,
+        max_caller_frames: limits.max_caller_frames,
+        max_caller_variables: limits.max_caller_variables,
+        max_extra_memory_reads: limits.max_extra_memory_reads,
+        max_aggregate_bytes: limits.max_aggregate_bytes,
+        type_metadata: type_metadata.clone(),
+        // Crash captures below clone-and-disable this: they need the full
+        // frame list.
+        stopped_frame: None,
+        derive_chain: false,
     };
 
     let mut steps: usize = 0;
@@ -1168,7 +1341,9 @@ pub async fn run_gdb_phase(
     }
     let mut finish_chain: usize = 0;
     let mut snapshot_cap_noted = false;
-    let mut memory_cap_noted = false;
+    // Static aliases are proven symbol metadata, not inferred runtime objects.
+    let mut static_aliases = HashMap::new();
+    let mut alias_epoch = session.module_epoch();
     let mut read_cap_noted = false;
 
     loop {
@@ -1187,11 +1362,17 @@ pub async fn run_gdb_phase(
             result.push_limit_once("max_gdb_commands");
             break;
         }
-        // Ingest allocation events emitted since the last stop. The inferior
-        // is stopped here, so the event file is complete up to now.
-        for ev in reader.read_new() {
+        // Ingest complete lines available at this stop; other processes and
+        // buffered/partial transport can leave the history incomplete.
+        let ingest_started = Instant::now();
+        let events = reader.read_new();
+        if reader.transport_damaged() {
+            timeline.mark_transport_incomplete();
+        }
+        for ev in events {
             timeline.ingest(&ev);
         }
+        result.heap_event_ingest_time_us += ingest_started.elapsed().as_micros() as u64;
         if let Err(e) = recorder.allocations(timeline.events(), stop_id) {
             result.push_limit_once(&e.to_string());
             recorder.truncate(&e.to_string());
@@ -1239,7 +1420,8 @@ pub async fn run_gdb_phase(
             match classify_signal(stop.signal_name.as_deref()) {
                 SignalClass::Fatal => {
                     // Capture the crash state (registers are still valid).
-                    let state = capture_or_empty(&mut session, &capture_opts).await;
+                    let mut reads = crate::gdb_mi::CheckpointReads::default();
+                    let state = capture_or_empty(&mut session, &capture_opts, &mut reads).await;
                     let pid = inferior_pid_of(&session);
                     let previous_count = result.snapshots.len();
                     push_snapshot(
@@ -1251,7 +1433,6 @@ pub async fn run_gdb_phase(
                         pid,
                         limits,
                         &mut snapshot_cap_noted,
-                        &mut memory_cap_noted,
                         &mut read_cap_noted,
                         notes,
                     )
@@ -1282,7 +1463,11 @@ pub async fn run_gdb_phase(
                             heap_event_count: timeline.events().len(),
                             ..Default::default()
                         };
-                        crate::memory::enrich(&mut snapshot.variables, &[], timeline, pid);
+                        let enrichment_started = Instant::now();
+                        crate::memory::enrich_snapshot(snapshot, timeline, pid);
+                        result.pointer_enrichment_time_us +=
+                            enrichment_started.elapsed().as_micros() as u64;
+                        finalize_memory_coverage(snapshot, &mut result.limits_triggered);
                         if let Err(e) = recorder.checkpoint(snapshot) {
                             recorder.truncate(&e.to_string());
                         }
@@ -1350,8 +1535,27 @@ pub async fn run_gdb_phase(
         }
         // Rich dynamic state is read only at source transitions, while all-stop.
         let capture_start = Instant::now();
+        let mut checkpoint_reads = crate::gdb_mi::CheckpointReads::default();
         let state = if checkpoint || !is_user_stop {
-            capture_or_empty(&mut session, &capture_opts).await
+            // Optimization C: transient non-user stops only feed activation
+            // bookkeeping; their captured state is discarded. Derive the
+            // call chain from the stop record instead of listing 200 frames.
+            // Guard: callee-entry stop of a non-multi-threaded session with
+            // breakpoints installed, before any finish chain, with a known
+            // stop frame. Anything else keeps the full listing.
+            let derive = !checkpoint
+                && !is_user_stop
+                && have_breakpoint
+                && finish_chain == 0
+                && !session.multi_threaded()
+                && stop.reason.is_some()
+                && stop.frame.is_some();
+            let mut opts = capture_opts.clone();
+            if derive {
+                opts.stopped_frame = stop.frame.clone();
+                opts.derive_chain = true;
+            }
+            capture_or_empty(&mut session, &opts, &mut checkpoint_reads).await
         } else {
             crate::gdb_mi::CapturedState {
                 current: Some(frame.clone()),
@@ -1381,7 +1585,6 @@ pub async fn run_gdb_phase(
                 pid,
                 limits,
                 &mut snapshot_cap_noted,
-                &mut memory_cap_noted,
                 &mut read_cap_noted,
                 notes,
             )
@@ -1415,33 +1618,35 @@ pub async fn run_gdb_phase(
                         .map(|s| s.len() / 2)
                         .sum(),
                 );
+                let mut budget = crate::recorder::MemoryBudget {
+                    remaining_bytes: global_budget,
+                    max_object_bytes: limits.max_memory_read_bytes,
+                    max_read_bytes: limits.max_memory_read_bytes,
+                    remaining_reads: None,
+                };
                 for name in &global_names {
-                    let mut global_limits = limits.clone();
-                    global_limits.max_memory_read_bytes =
-                        global_limits.max_memory_read_bytes.min(global_budget);
-                    let global =
-                        crate::recorder::capture_global(&mut session, name, &global_limits).await;
-                    global_budget = global_budget
-                        .saturating_sub(global.raw_bytes_hex.as_ref().map_or(0, |s| s.len() / 2));
+                    let global = crate::recorder::capture_global(
+                        &mut session,
+                        name,
+                        limits,
+                        &mut checkpoint_reads,
+                        &mut budget,
+                        type_metadata.as_deref(),
+                        &frame.func,
+                    )
+                    .await;
                     snapshot.observation.globals.push(global);
                 }
-                crate::memory::enrich(
-                    &mut snapshot.variables,
-                    &snapshot.observation.globals,
-                    timeline,
-                    pid,
-                );
-                let symbols = snapshot.observation.globals.clone();
-                crate::memory::enrich(&mut snapshot.observation.globals, &symbols, timeline, pid);
-                snapshot.observation.complete &= snapshot
-                    .variables
-                    .iter()
-                    .chain(&snapshot.observation.globals)
-                    .all(|v| {
-                        v.read_status == crate::models::DataValidity::Valid
-                            && v.read_error.is_none()
-                            && v.bytes_status != crate::models::DataValidity::Truncated
-                    });
+                if alias_epoch != session.module_epoch() {
+                    static_aliases.clear();
+                    alias_epoch = session.module_epoch();
+                }
+                canonicalize_static_aliases(snapshot, &mut static_aliases);
+                let enrichment_started = Instant::now();
+                crate::memory::enrich_snapshot(snapshot, timeline, pid);
+                result.pointer_enrichment_time_us +=
+                    enrichment_started.elapsed().as_micros() as u64;
+                finalize_memory_coverage(snapshot, &mut result.limits_triggered);
                 if globals_capped {
                     snapshot.observation.complete = false;
                     snapshot
@@ -1769,9 +1974,15 @@ pub async fn run_gdb_phase(
 
     // Post-mortem events (destructors, exit handlers) may have landed after
     // the final stop.
-    for ev in reader.read_new() {
+    let ingest_started = Instant::now();
+    let events = reader.read_new();
+    if reader.transport_damaged() || reader.incomplete_line() {
+        timeline.mark_transport_incomplete();
+    }
+    for ev in events {
         timeline.ingest(&ev);
     }
+    result.heap_event_ingest_time_us += ingest_started.elapsed().as_micros() as u64;
     if let Err(e) = recorder.allocations(timeline.events(), stop_id) {
         recorder.truncate(&e.to_string());
     }
@@ -1798,6 +2009,14 @@ pub async fn run_gdb_phase(
     recorder.data.profiling.command_time_us = session.command_time_us;
     recorder.data.profiling.mi_parse_time_us = session.parse_time_us();
     recorder.data.profiling.memory_read_time_us = session.memory_read_time_us;
+    // V2.2 optimization counters (additive optional fields).
+    recorder.data.profiling.gdb_command_categories = Some(session.command_categories());
+    recorder.data.profiling.lexical_probe_cache_hits = Some(session.probe_cache_hits);
+    recorder.data.profiling.saved_variable_metadata_queries =
+        Some(session.saved_variable_meta_queries);
+    recorder.data.profiling.saved_memory_read_queries = Some(session.saved_memory_reads);
+    recorder.data.profiling.derived_frame_stops = Some(session.derived_frame_stops);
+    recorder.data.profiling.global_metadata_cache_hits = Some(session.global_meta_cache_hits);
     recorder.data.internal_diagnostics = session.console_log().lines().map(str::to_owned).collect();
     result.recording = recorder.finish();
     Ok(result)
@@ -1925,8 +2144,9 @@ fn finish_phase(
 async fn capture_or_empty(
     session: &mut GdbSession,
     opts: &CaptureOptions,
+    reads: &mut crate::gdb_mi::CheckpointReads,
 ) -> crate::gdb_mi::CapturedState {
-    match capture_state(session, opts).await {
+    match capture_state(session, opts, reads).await {
         Ok(state) => state,
         Err(e) => crate::gdb_mi::CapturedState {
             errors: vec![e.to_string()],
@@ -1945,7 +2165,6 @@ async fn push_snapshot(
     pid: Option<u32>,
     limits: &ExecutionLimits,
     snapshot_cap_noted: &mut bool,
-    memory_cap_noted: &mut bool,
     read_cap_noted: &mut bool,
     notes: &mut Vec<String>,
 ) {
@@ -1960,23 +2179,38 @@ async fn push_snapshot(
     // Live heap reads within the remaining per-snapshot budget (the budget is
     // shared with the variable raw-byte reads performed by capture_state).
     let mut heap_blocks: Vec<HeapBlockInfo> = Vec::new();
-    let mut budget_left = limits
+    let budget_left = limits
         .max_snapshot_memory_bytes
         .saturating_sub(state.memory_used);
-    let mut memory_truncated = budget_left == 0
-        || state
-            .variables
-            .iter()
-            .any(|v| v.bytes_status == crate::models::DataValidity::Truncated);
+    let mut memory_truncated = state
+        .variables
+        .iter()
+        .chain(state.caller_frames.iter().flat_map(|f| &f.variables))
+        .any(|v| v.bytes_status == crate::models::DataValidity::Truncated);
+    let mut heap_reads = crate::gdb_mi::CheckpointReads::default();
+    let mut budget = crate::recorder::MemoryBudget {
+        remaining_bytes: budget_left,
+        max_object_bytes: limits.max_memory_read_bytes,
+        max_read_bytes: limits.max_memory_read_bytes,
+        remaining_reads: None,
+    };
     if let Some(pid) = pid {
         let alive = timeline.alive_blocks(pid);
-        let over_block_cap = alive.len() > MAX_HEAP_BLOCKS_PER_SNAPSHOT;
-        for block in alive.into_iter().take(MAX_HEAP_BLOCKS_PER_SNAPSHOT) {
+        let over_block_cap = alive.len() > limits.max_heap_blocks_per_snapshot;
+        for block in alive.into_iter().take(limits.max_heap_blocks_per_snapshot) {
             let addr = format!("0x{:x}", block.addr);
-            let read_size = block
-                .size
-                .min(limits.max_memory_read_bytes as u64)
-                .min(budget_left as u64) as usize;
+            let mut observation = crate::models::VariableInfo {
+                address: Some(addr.clone()),
+                size_bytes: Some(block.size),
+                ..Default::default()
+            };
+            crate::recorder::capture_variable_memory(
+                session,
+                &mut observation,
+                &mut heap_reads,
+                &mut budget,
+            )
+            .await;
             let mut info = HeapBlockInfo {
                 observed_at_stop: None,
                 allocation_id: block.allocation_id,
@@ -1989,25 +2223,27 @@ async fn push_snapshot(
                 raw_bytes_hex: None,
                 memory_read_error: None,
                 realloc_from_id: block.realloc_from_id,
+                memory_evidence: observation.memory_evidence,
+                lifetime_status: Some(
+                    if timeline.history_complete() && timeline.is_pid_complete(block.pid) {
+                        "observed_active"
+                    } else {
+                        "unknown"
+                    }
+                    .into(),
+                ),
             };
-            if block.size as usize > limits.max_memory_read_bytes && !*read_cap_noted {
+            if block.size > limits.max_memory_read_bytes as u64 && !*read_cap_noted {
                 result.push_limit_once("max_memory_read_bytes");
                 *read_cap_noted = true;
             }
-            if read_size == 0 {
-                info.memory_read_error = Some("snapshot memory budget exhausted".into());
-                memory_truncated = true;
-                heap_blocks.push(info);
-                continue;
-            }
-            match session.read_memory_bytes(&addr, read_size as u64).await {
-                Ok(hex) => info.raw_bytes_hex = Some(hex),
-                Err(e) => info.memory_read_error = Some(format!("memory read failed: {e}")),
-            }
-            budget_left = budget_left.saturating_sub(read_size);
-            if read_size < block.size as usize {
-                memory_truncated = true; // partial capture
-            }
+            info.raw_bytes_hex = observation.raw_bytes_hex;
+            info.memory_read_error = observation
+                .read_error
+                .or_else(|| info.memory_evidence.as_ref().and_then(|m| m.reason.clone()));
+            memory_truncated |= info.memory_evidence.as_ref().is_some_and(|m| {
+                matches!(m.status.as_str(), "partial" | "truncated" | "unattempted")
+            });
             heap_blocks.push(info);
         }
         if over_block_cap {
@@ -2015,13 +2251,10 @@ async fn push_snapshot(
             notes.push(format!(
                 "snapshot {} heap truncated to {} blocks",
                 result.snapshots.len(),
-                MAX_HEAP_BLOCKS_PER_SNAPSHOT
+                limits.max_heap_blocks_per_snapshot
             ));
+            result.push_limit_once("max_heap_blocks_per_snapshot");
         }
-    }
-    if memory_truncated && !*memory_cap_noted {
-        result.push_limit_once("max_snapshot_memory_bytes");
-        *memory_cap_noted = true;
     }
 
     // Program output accumulated so far (head-truncated per snapshot).
@@ -2041,6 +2274,7 @@ async fn push_snapshot(
         func: frame.func,
         call_stack: state.frames.clone(),
         variables: state.variables.clone(),
+        caller_frames: state.caller_frames.clone(),
         heap_blocks,
         stdout_so_far: stdout_head,
         stopped_reason: stop.reason.clone(),
@@ -2048,6 +2282,114 @@ async fn push_snapshot(
         memory_truncated,
         stdout_truncated: output_truncated || output.len() > STDOUT_HEAD_CAP,
     });
+}
+
+fn canonicalize_static_aliases(
+    snapshot: &mut ExecutionSnapshot,
+    aliases: &mut HashMap<(String, String, u64), String>,
+) {
+    // Keep the established global symbol ID before and after its owner runs.
+    // A declaration plus actual storage and extent proves a static alias.
+    for var in &snapshot.observation.globals {
+        if var.scope.as_deref() != Some("static") {
+            continue;
+        }
+        if let (Some(decl), Some(address), Some(size), Some(identity)) = (
+            &var.declaration_ref,
+            &var.address,
+            var.size_bytes,
+            &var.identity,
+        ) {
+            aliases
+                .entry((decl.clone(), address.clone(), size))
+                .or_insert_with(|| identity.clone());
+        }
+    }
+    for var in snapshot
+        .variables
+        .iter_mut()
+        .chain(
+            snapshot
+                .caller_frames
+                .iter_mut()
+                .flat_map(|f| &mut f.variables),
+        )
+        .chain(&mut snapshot.observation.globals)
+    {
+        if var.scope.as_deref() != Some("static") {
+            continue;
+        }
+        if let (Some(decl), Some(address), Some(size)) =
+            (&var.declaration_ref, &var.address, var.size_bytes)
+        {
+            if let Some(identity) = aliases.get(&(decl.clone(), address.clone(), size)) {
+                var.identity = Some(identity.clone());
+            }
+        }
+    }
+}
+
+fn finalize_memory_coverage(snapshot: &mut ExecutionSnapshot, limits_triggered: &mut Vec<String>) {
+    let mut incomplete = 0;
+    for var in snapshot
+        .variables
+        .iter()
+        .chain(&snapshot.observation.globals)
+        .chain(snapshot.caller_frames.iter().flat_map(|f| &f.variables))
+    {
+        let full = var
+            .memory_evidence
+            .as_ref()
+            .is_none_or(|m| m.status == "full");
+        if !full
+            || var.read_status != crate::models::DataValidity::Valid
+            || var.read_error.is_some()
+        {
+            incomplete += 1;
+        }
+        snapshot.memory_truncated |= var
+            .memory_evidence
+            .as_ref()
+            .is_some_and(|m| matches!(m.status.as_str(), "partial" | "truncated" | "unattempted"));
+        if let Some(limit) = var.memory_evidence.as_ref().and_then(|m| m.limit.as_ref()) {
+            if !limits_triggered.contains(limit) {
+                limits_triggered.push(limit.clone());
+            }
+        }
+    }
+    for block in &snapshot.heap_blocks {
+        if block
+            .memory_evidence
+            .as_ref()
+            .is_some_and(|m| m.status != "full")
+        {
+            incomplete += 1;
+        }
+        if let Some(limit) = block
+            .memory_evidence
+            .as_ref()
+            .and_then(|m| m.limit.as_ref())
+        {
+            if !limits_triggered.contains(limit) {
+                limits_triggered.push(limit.clone());
+            }
+        }
+    }
+    if incomplete > 0 {
+        snapshot.observation.errors.push(format!(
+            "memory evidence: {incomplete} incomplete object observations"
+        ));
+    }
+    for caller in &snapshot.caller_frames {
+        snapshot.observation.errors.extend(
+            caller
+                .errors
+                .iter()
+                .map(|e| format!("frame {}: {e}", caller.frame.level)),
+        );
+    }
+    snapshot.observation.complete &=
+        !snapshot.memory_truncated && snapshot.observation.errors.is_empty();
 }
 
 fn char_safe_head(s: &str, cap_bytes: usize) -> String {
@@ -2177,6 +2519,48 @@ fn final_events(timeline: &HeapTimeline) -> Vec<crate::models::HeapEvent> {
         .collect()
 }
 
+/// A count sampled at a checkpoint brackets events; it is not the event's
+/// exact stop or source location. This pass is O(events + snapshots).
+fn correlate_heap_intervals(
+    events: &mut [crate::models::HeapEvent],
+    snapshots: &[ExecutionSnapshot],
+    history_reliable: bool,
+) {
+    let mut next = 0;
+    let mut before = None;
+    for (position, event) in events.iter_mut().enumerate() {
+        while snapshots
+            .get(next)
+            .is_some_and(|snap| snap.observation.heap_event_count <= position)
+        {
+            before = Some(next);
+            next += 1;
+        }
+        let interval = crate::models::HeapCheckpointInterval {
+            before_checkpoint: before,
+            after_checkpoint: snapshots.get(next).map(|_| next),
+            before_stop: before.map(|index| snapshots[index].observation.stop_id),
+            after_stop: snapshots.get(next).map(|snap| snap.observation.stop_id),
+        };
+        let attribution = event.attribution.get_or_insert_with(Default::default);
+        attribution.call_site_resolution =
+            if event.source_file.is_some() && event.source_line.is_some() {
+                "resolved_return_address_minus_one"
+            } else if event
+                .raw_caller_address
+                .as_deref()
+                .is_some_and(|pc| pc != "0x0")
+            {
+                "unresolved_return_address"
+            } else {
+                "unavailable"
+            }
+            .into();
+        attribution.checkpoint_interval = Some(interval);
+        attribution.history_reliable = history_reliable;
+    }
+}
+
 /// Final heap state: every reconstructed block with its end-of-run status.
 /// `raw_bytes_hex` carries the last bytes captured while the block was alive
 /// (from any snapshot); freed blocks keep that historical capture, live
@@ -2186,11 +2570,17 @@ fn build_heap_state(
     snapshots: &[ExecutionSnapshot],
     _parent_pid: Option<u32>,
 ) -> Vec<HeapBlockInfo> {
-    let mut last_contents: HashMap<u64, (String, Option<u64>)> = HashMap::new();
+    let mut last_contents: HashMap<
+        u64,
+        (String, Option<u64>, Option<crate::models::MemoryEvidence>),
+    > = HashMap::new();
     for snap in snapshots {
         for b in &snap.heap_blocks {
             if let Some(hex) = &b.raw_bytes_hex {
-                last_contents.insert(b.allocation_id, (hex.clone(), b.observed_at_stop));
+                last_contents.insert(
+                    b.allocation_id,
+                    (hex.clone(), b.observed_at_stop, b.memory_evidence.clone()),
+                );
             }
         }
     }
@@ -2200,7 +2590,7 @@ fn build_heap_state(
         .map(|b| {
             let global = timeline.global_id(b.pid, b.allocation_id);
             HeapBlockInfo {
-                observed_at_stop: last_contents.get(&global).and_then(|(_, stop)| *stop),
+                observed_at_stop: last_contents.get(&global).and_then(|(_, stop, _)| *stop),
                 allocation_id: global,
                 address: format!("0x{:x}", b.addr),
                 size_bytes: b.size,
@@ -2208,9 +2598,24 @@ fn build_heap_state(
                 is_freed: b.freed,
                 allocation_file: b.caller_file.clone(),
                 allocation_line: b.caller_line,
-                raw_bytes_hex: last_contents.get(&global).map(|(bytes, _)| bytes.clone()),
+                raw_bytes_hex: last_contents
+                    .get(&global)
+                    .map(|(bytes, _, _)| bytes.clone()),
                 memory_read_error: None,
                 realloc_from_id: b.realloc_from_id.map(|id| timeline.global_id(b.pid, id)),
+                memory_evidence: last_contents
+                    .get(&global)
+                    .and_then(|(_, _, evidence)| evidence.clone()),
+                lifetime_status: Some(
+                    if !timeline.history_complete() || !timeline.is_pid_complete(b.pid) {
+                        "unknown"
+                    } else if b.freed {
+                        "observed_freed"
+                    } else {
+                        "observed_active"
+                    }
+                    .into(),
+                ),
             }
         })
         .collect()
@@ -2269,6 +2674,87 @@ mod tests {
     }
 
     #[test]
+    fn heap_attribution_brackets_events_without_fabricating_a_stop() {
+        let mut timeline = HeapTimeline::new(10);
+        for line in [
+            "42 1 malloc 1 1000 8 0 0 401000 ok",
+            "42 2 free 1 1000 8 0 0 401010 ok",
+            "42 3 malloc 2 1000 8 0 0 401020 ok",
+        ] {
+            timeline.ingest(&parse_event_line(line).unwrap());
+        }
+        let snapshots = [
+            ExecutionSnapshot {
+                observation: crate::models::SnapshotObservation {
+                    stop_id: 10,
+                    heap_event_count: 0,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+            ExecutionSnapshot {
+                step_index: 1,
+                observation: crate::models::SnapshotObservation {
+                    stop_id: 16,
+                    heap_event_count: 2,
+                    ..Default::default()
+                },
+                ..Default::default()
+            },
+        ];
+        let mut events = timeline.events().to_vec();
+        correlate_heap_intervals(&mut events, &snapshots, false);
+        let first = events[0].attribution.as_ref().unwrap();
+        let interval = first.checkpoint_interval.as_ref().unwrap();
+        assert_eq!(
+            (interval.before_checkpoint, interval.after_checkpoint),
+            (Some(0), Some(1))
+        );
+        assert_eq!(
+            (interval.before_stop, interval.after_stop),
+            (Some(10), Some(16))
+        );
+        assert!(!first.history_reliable);
+        assert_eq!(
+            events[1]
+                .attribution
+                .as_ref()
+                .unwrap()
+                .checkpoint_interval
+                .as_ref()
+                .unwrap()
+                .after_stop,
+            Some(16)
+        );
+        assert_eq!(
+            events[2]
+                .attribution
+                .as_ref()
+                .unwrap()
+                .checkpoint_interval
+                .as_ref()
+                .unwrap()
+                .after_stop,
+            None
+        );
+        assert_eq!(
+            events[2]
+                .attribution
+                .as_ref()
+                .unwrap()
+                .checkpoint_interval
+                .as_ref()
+                .unwrap()
+                .before_stop,
+            Some(16)
+        );
+        assert_eq!(
+            events[2].attribution.as_ref().unwrap().call_site_resolution,
+            "unresolved_return_address"
+        );
+    }
+
+    #[test]
     fn exit_code_parsing() {
         assert_eq!(parse_mi_exit_code("0"), Some(0));
         assert_eq!(parse_mi_exit_code("42"), Some(42));
@@ -2293,6 +2779,7 @@ mod tests {
         timeline
             .ingest(&parse_event_line("102772 1 malloc 1 7f0000000000 4 0 0 401000 ok").unwrap());
         let snap = ExecutionSnapshot {
+            caller_frames: Vec::new(),
             observation: Default::default(),
             step_index: 0,
             file: "x.c".into(),
@@ -2312,6 +2799,8 @@ mod tests {
                 raw_bytes_hex: Some("deadbeef".into()),
                 memory_read_error: None,
                 realloc_from_id: None,
+                memory_evidence: None,
+                lifetime_status: Some("unknown".into()),
             }],
             stdout_so_far: String::new(),
             stopped_reason: None,

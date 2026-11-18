@@ -5,6 +5,7 @@
 //! absent address, value or memory capture means "could not be observed".
 
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 
 use crate::config::BuildConfig;
 
@@ -74,6 +75,9 @@ pub struct ExecutionSnapshot {
     pub func: String,
     pub call_stack: Vec<StackFrameInfo>,
     pub variables: Vec<VariableInfo>,
+    /// Caller-frame evidence; `variables` continues to mean frame 0 only.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub caller_frames: Vec<FrameVariables>,
     /// Heap blocks alive at this stop (contents read through GDB).
     pub heap_blocks: Vec<HeapBlockInfo>,
     /// Program output captured so far (may be head-truncated).
@@ -87,6 +91,15 @@ pub struct ExecutionSnapshot {
     pub memory_truncated: bool,
     /// True when stdout capture was truncated for this snapshot.
     pub stdout_truncated: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct FrameVariables {
+    pub frame: StackFrameInfo,
+    pub activation_id: u64,
+    pub variables: Vec<VariableInfo>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub errors: Vec<String>,
 }
 
 /// One frame of the call stack.
@@ -117,10 +130,26 @@ pub struct VariableInfo {
     pub declaration_file: Option<String>,
     #[serde(default)]
     pub declaration_line: Option<u32>,
+    /// A trace-local DWARF type reference, only when declaration correlation
+    /// is unique. Runtime GDB observations remain authoritative.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub type_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub declaration_ref: Option<String>,
+    /// Optional static source declaration resolved through the unique DWARF
+    /// declaration identity above. This never changes activation identity.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_declaration_ref: Option<String>,
     #[serde(default)]
     pub identity: Option<String>,
     #[serde(default)]
     pub scope: Option<String>,
+    /// Lexical-scope activity at capture time (see [`ScopeStatus`]).
+    /// `None` marks traces recorded before this field existed. Absent (not
+    /// `null`) in serialized traces recorded before Phase 1, so V2.1
+    /// documents round-trip unchanged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope_status: Option<ScopeStatus>,
     #[serde(default)]
     pub target: Option<PointerTarget>,
     #[serde(default)]
@@ -135,6 +164,18 @@ pub struct VariableInfo {
     /// Address of the variable itself (`0x...`), not of its contents.
     pub address: Option<String>,
     pub size_bytes: Option<u64>,
+    /// GDB's actual sizeof at this stop (also valid for runtime-sized VLAs).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub runtime_size_bytes: Option<u64>,
+    /// Authority for size_bytes: gdb or uniquely correlated static DWARF.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size_source: Option<String>,
+    /// Debugger readability and lexical activity do not establish initialization.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub initialization_status: Option<String>,
+    /// Explicit byte observation, independent of value validity/initialization.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_evidence: Option<MemoryEvidence>,
     /// Stored target address for pointer-typed variables.
     pub points_to: Option<String>,
     /// Raw memory bytes of the variable itself, hex-encoded.
@@ -143,6 +184,21 @@ pub struct VariableInfo {
     pub is_argument: Option<bool>,
     /// Why some information could not be collected, when relevant.
     pub read_error: Option<String>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
+pub struct MemoryEvidence {
+    /// Object extent when observed, not the pointer's pointee extent.
+    pub extent_bytes: Option<u64>,
+    pub requested_bytes: u64,
+    pub captured_bytes: u64,
+    /// full, partial, truncated, unreadable, unavailable, or unattempted.
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// The binding resource cap, when this observation was limited.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<String>,
 }
 
 /// One heap block. `allocation_id` is stable for the block's whole lifetime;
@@ -166,8 +222,14 @@ pub struct HeapBlockInfo {
     pub raw_bytes_hex: Option<String>,
     /// Why `raw_bytes_hex` is `None`, when known.
     pub memory_read_error: Option<String>,
-    /// For blocks created by a moving `realloc`: the allocation they replaced.
+    /// For blocks created by a successful tracked `realloc` (in-place or
+    /// moved): the observed prior lifetime, when known.
     pub realloc_from_id: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_evidence: Option<MemoryEvidence>,
+    /// observed_active, observed_freed, or unknown after incomplete telemetry.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lifetime_status: Option<String>,
 }
 
 // ---------------------------------------------------------------------------
@@ -199,6 +261,11 @@ pub struct HeapEvent {
     pub event_type: HeapEventType,
     pub address: Option<String>,
     pub size_bytes: Option<u64>,
+    /// Original calloc operands; size_bytes is None if their product overflowed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub calloc_count: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub calloc_element_size: Option<u64>,
     /// Resolved caller source location (via addr2line) when available.
     pub source_file: Option<String>,
     pub source_line: Option<u32>,
@@ -206,9 +273,35 @@ pub struct HeapEvent {
     pub old_allocation_id: Option<u64>,
     /// Total tracked live bytes after this event (per pid).
     pub heap_usage_after: u64,
+    /// False if sequence loss makes heap_usage_after only a last-known value.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap_usage_complete: Option<bool>,
     /// Extra context: `free(null)`, `double_free`, `untracked_address`,
     /// `realloc_zero_glibc_freed`, ...
     pub detail: Option<String>,
+    /// Explicit source and interval evidence; absent in older traces.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attribution: Option<HeapEventAttribution>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct HeapEventAttribution {
+    /// resolved_return_address_minus_one, unresolved, or unavailable.
+    pub call_site_resolution: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub call_site_function: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checkpoint_interval: Option<HeapCheckpointInterval>,
+    /// False when dropped/malformed/duplicate/gapped event history is known.
+    pub history_reliable: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct HeapCheckpointInterval {
+    pub before_checkpoint: Option<usize>,
+    pub after_checkpoint: Option<usize>,
+    pub before_stop: Option<u64>,
+    pub after_stop: Option<u64>,
 }
 
 // ---------------------------------------------------------------------------
@@ -406,6 +499,16 @@ pub struct DebugSessionTrace {
     pub schema_version: u32,
     pub compiled_successfully: bool,
     pub compile_errors: Vec<CompilerDiagnostic>,
+    /// One compilation-scoped static registry; absent in older traces or if
+    /// extraction failed. No type definitions are duplicated per checkpoint.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub type_registry: Option<crate::dwarf::TypeRegistry>,
+    /// Supplementary static syntax, never a source of runtime values or GCC layout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source_metadata: Option<crate::clang_ast::SourceMetadataRegistry>,
+    /// Compact result of the one-time Phase 7 reconciliation pass.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_fusion: Option<EvidenceFusionSummary>,
     pub snapshots: Vec<ExecutionSnapshot>,
     /// Chronological allocation event history (ingest order).
     pub heap_events: Vec<HeapEvent>,
@@ -428,6 +531,27 @@ fn default_schema_version() -> u32 {
     2
 }
 
+/// One bounded post-processing summary. Counts describe links actually
+/// serialized, never inferred execution or ownership.
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct EvidenceFusionSummary {
+    pub dwarf_available: bool,
+    pub ast_available: bool,
+    pub declaration_links: usize,
+    pub declaration_line_fallbacks: usize,
+    pub declaration_type_links: usize,
+    pub member_links: usize,
+    pub expression_dwarf_links: usize,
+    pub expression_type_links: usize,
+    pub runtime_source_links: usize,
+    pub heap_call_candidates: usize,
+    pub heap_call_ambiguities: usize,
+    pub runtime_variables_examined: usize,
+    pub rejected_links: usize,
+    pub fusion_time_us: u64,
+    pub validation_time_us: u64,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug, Default, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
 pub enum DataValidity {
@@ -440,6 +564,32 @@ pub enum DataValidity {
     NotCaptured,
 }
 
+/// Lexical-scope activity of one recorded variable, evaluated at the stop
+/// where it was captured. This describes **lexical scope activity only**:
+///
+/// * `Active` never implies that the declaration's initializer has executed,
+///   that storage was freshly established, or that the recorded value is
+///   meaningful. At `-O0` a function-body local's defining block spans its
+///   whole activation, so its scope is active even before its declaration
+///   line is reached.
+/// * Initialization state is deliberately **not** represented here: it is
+///   not observable through the debugger without store instrumentation.
+/// * Memory readability stays in `bytes_status`; value validity stays in
+///   `read_status`. Neither is derived from or collapsed into this status.
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum ScopeStatus {
+    /// Recorded lexical-scope evidence places the frame's program counter
+    /// inside the variable's defining block address range at capture time.
+    Active,
+    /// Recorded lexical-scope evidence places the frame's program counter
+    /// outside that range.
+    Inactive,
+    /// Scope evidence was missing or inconclusive (no lexical probe output,
+    /// unparsable scope identifier, or no frame address). Never guessed.
+    Unknown,
+}
+
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct PointerTarget {
     pub kind: String,
@@ -449,6 +599,12 @@ pub struct PointerTarget {
     pub active: Option<bool>,
     pub within_extent: Option<bool>,
     pub variable_identity: Option<String>,
+    /// Allocation at this numeric address, not proof of pointer origin.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub address_match_allocation_id: Option<u64>,
+    /// address_only, ambiguous_reuse, history_incomplete, or known_freed_address.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provenance_status: Option<String>,
 }
 impl Default for PointerTarget {
     fn default() -> Self {
@@ -460,6 +616,8 @@ impl Default for PointerTarget {
             active: None,
             within_extent: None,
             variable_identity: None,
+            address_match_allocation_id: None,
+            provenance_status: None,
         }
     }
 }
@@ -580,6 +738,32 @@ pub struct RecordingData {
     pub storage: StorageInfo,
     pub profiling: Profiling,
     pub allocation_lifetimes: Vec<AllocationLifetime>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap_history: Option<HeapHistoryCoverage>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct HeapHistoryCoverage {
+    /// False on known sequence gaps, parse errors, retention caps or abrupt end.
+    pub complete: bool,
+    pub sequence_gaps: Vec<HeapSequenceGap>,
+    pub missing_events: u64,
+    pub duplicate_events: u64,
+    pub out_of_order_events: u64,
+    pub accepted_events: u64,
+    pub retained_events: usize,
+    pub malformed_lines: u64,
+    pub transport_errors: Vec<String>,
+    pub blocks_truncated: bool,
+    pub events_truncated: bool,
+    pub id_widening_overflow: bool,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct HeapSequenceGap {
+    pub pid: u32,
+    pub expected_sequence: u64,
+    pub observed_sequence: u64,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -591,6 +775,9 @@ pub struct AllocationLifetime {
     pub raw_caller_address: String,
     pub module: Option<String>,
     pub resolution: String,
+    /// observed_active, observed_freed, or unknown due to incomplete history.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lifetime_status: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -617,6 +804,14 @@ pub struct Profiling {
     pub engine_peak_rss_kib: Option<u64>,
     #[serde(default)]
     pub source_resolution_time_us: u64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap_event_ingest_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap_snapshot_reconstruction_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub heap_interval_correlation_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pointer_enrichment_time_us: Option<u64>,
     #[serde(default)]
     pub command_time_us: u64,
     #[serde(default)]
@@ -635,6 +830,46 @@ pub struct Profiling {
     pub disassembly_queries: u64,
     pub disassembly_cache_hits: u64,
     pub journal_time_us: u64,
+    /// GDB command counts by category (V2.2, additive). Absent in traces
+    /// recorded before this field existed; `None` never means zero.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub gdb_command_categories: Option<BTreeMap<String, u64>>,
+    /// Number of lexical-probe calls whose static declaration data was served
+    /// from the per-chain probe memo (V2.2, additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub lexical_probe_cache_hits: Option<u64>,
+    /// Per-variable address/size/pointer queries replaced by lexical-probe
+    /// data (V2.2, additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub saved_variable_metadata_queries: Option<u64>,
+    /// Memory-read commands replaced by same-checkpoint byte reuse (V2.2,
+    /// additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub saved_memory_read_queries: Option<u64>,
+    /// Transient non-user stops whose activation path was derived from the stop frame
+    /// instead of a full frame listing (V2.2, additive; always 0 when the
+    /// derivation guard did not apply).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub derived_frame_stops: Option<u64>,
+    /// Global address/size queries served from the per-session global
+    /// metadata cache (V2.2, additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub global_metadata_cache_hits: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dwarf_extraction_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dwarf_resolution_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dwarf_association_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clang_ast_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub clang_parse_time_us: Option<u64>,
+    /// One-time Phase 7 fusion and its construction-time audit (additive).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_fusion_time_us: Option<u64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub evidence_validation_time_us: Option<u64>,
 }
 
 impl Default for DebugSessionTrace {
@@ -647,6 +882,9 @@ impl Default for DebugSessionTrace {
             schema_version: 2,
             compiled_successfully: false,
             compile_errors: Vec::new(),
+            type_registry: None,
+            source_metadata: None,
+            evidence_fusion: None,
             snapshots: Vec::new(),
             heap_events: Vec::new(),
             heap_state: Vec::new(),
@@ -721,5 +959,6 @@ mod schema_tests {
         let trace: DebugSessionTrace = serde_json::from_str(legacy).unwrap();
         assert_eq!(trace.schema_version, 2);
         assert_eq!(trace.stage_results.debugger.status, None);
+        assert!(trace.source_metadata.is_none());
     }
 }

@@ -19,13 +19,17 @@
 //! | `valgrind`            | Independent Valgrind run + XML parsing                 |
 //! | `sanitizer`           | Separate ASan/UBSan diagnostic pass                    |
 //! | `trace`               | Orchestrates the complete pipeline                     |
+//! | `trace_parser`        | TP-1: trace ingestion, validation, canonical store     |
 //! | `cli`                 | Argument parsing and config merging                    |
 
 pub mod allocation_tracker;
+pub mod clang_ast;
 pub mod cli;
 pub mod compiler;
 pub mod config;
+pub mod dwarf;
 pub mod error;
+pub mod evidence;
 pub mod gdb_mi;
 pub mod memory;
 pub mod mi_parser;
@@ -37,6 +41,7 @@ pub mod sanitizer;
 pub mod storage;
 pub mod supervisor;
 pub mod trace;
+pub mod trace_parser;
 pub mod valgrind;
 
 pub use config::{BuildConfig, TraceConfig};

@@ -2,13 +2,13 @@
  * c-trace-engine allocation instrumentation runtime.
  *
  * Linked into the debug binary via `-Wl,--wrap=malloc|calloc|realloc|free`.
- * Every allocation event is appended, with a single unbuffered write(), to a
+ * Every allocation event is appended, with unbuffered write(), to a
  * dedicated trace file named by the C_TRACE_EVENT_FILE environment variable
  * (never to the program's stdout/stderr).
  *
  * Event line format (space-separated, one event per line):
  *
- *     pid seq kind id addr size old_id old_addr caller status
+ *     pid seq kind id addr size old_id old_addr caller status [nmemb element_size]
  *
  *   pid      OS pid of the recording process (distinguishes forked children)
  *   seq      per-process event sequence number (1-based, monotonic)
@@ -21,6 +21,8 @@
  *   old_addr previous address for realloc (0 otherwise)
  *   caller   return address of the caller (resolved later via addr2line)
  *   status   ok | failed | ok_same | ok_moved | new | zero | null | unknown
+ *   nmemb, element_size  original calloc operands (only on calloc lines);
+ *                        size is 0 on product overflow, not a wrapped result
  *
  * Constraints honored by this runtime:
  *   - No dynamic allocation inside the tracking path: fixed-size table,
@@ -57,6 +59,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <pthread.h>
 
 /* 2^17 slots ≈ 131k concurrently tracked live addresses (3 MiB static). */
 #define CTE_TABLE_SLOTS (1u << 17)
@@ -70,10 +73,28 @@ typedef struct {
 
 static cte_slot g_table[CTE_TABLE_SLOTS];
 static int g_fd = -1;
+static int g_status_fd = -1;
 static volatile int g_spin = 0;
 static unsigned long g_seq; /* last issued event sequence */
 static unsigned long g_ids; /* last issued allocation id */
+static unsigned long g_write_failures;
+static int g_child_reset;
 static __thread int g_busy = 0;
+
+#ifdef CTE_TESTING
+/* Fixture-only: 1 partial, 2 EINTR, 3 EIO, 4 zero, 5 repeated EINTR,
+ * 6 partial followed by EIO. These cannot be activated in production. */
+static int g_test_event_fault;
+static int g_test_status_fault;
+void cte_test_fault_next_event(int mode)
+{
+    __atomic_store_n(&g_test_event_fault, mode, __ATOMIC_RELEASE);
+}
+void cte_test_fail_status_ack(void)
+{
+    __atomic_store_n(&g_test_status_fault, 1, __ATOMIC_RELEASE);
+}
+#endif
 
 extern void *__real_malloc(size_t);
 extern void *__real_calloc(size_t, size_t);
@@ -88,10 +109,14 @@ static void cte_lock(void)
 {
     for (;;) {
         if (__sync_bool_compare_and_swap(&g_spin, 0, 1))
-            return;
+            break;
         while (g_spin) {
             /* spin */
         }
+    }
+    if (g_child_reset) {
+        memset(g_table, 0, sizeof(g_table));
+        g_child_reset = 0;
     }
 }
 
@@ -99,6 +124,34 @@ static void cte_unlock(void)
 {
     __sync_lock_release(&g_spin);
 }
+
+/* A child must not wait on a lock owned by a thread that no longer exists.
+ * No prepare/parent lock is taken across third-party atfork handlers. This
+ * callback is deliberately async-signal-safe and defers table clearing to
+ * the child's first wrapper under its own lock. Fork from inside an allocator
+ * or a foreign atfork handler that acquires the lock after ours is unsupported.
+ * Child execution between fork and exec in a multithreaded process still obeys
+ * POSIX's async-signal-safe restriction; the wrapper cannot make libc malloc
+ * safe in an otherwise unsafe fork context. */
+static void cte_after_fork_child(void)
+{
+    __atomic_store_n(&g_spin, 0, __ATOMIC_RELEASE);
+    g_seq = 0;
+    g_ids = 0;
+    g_write_failures = 0;
+    g_child_reset = 1;
+}
+
+#ifdef CTE_TESTING
+void cte_test_hold_lock(int ready_fd, int release_fd)
+{
+    char byte = 'r';
+    cte_lock();
+    (void)write(ready_fd, &byte, 1);
+    (void)read(release_fd, &byte, 1);
+    cte_unlock();
+}
+#endif
 
 /* ------------------------------------------------------------------ */
 /* Fixed-size open-addressing table: address -> {id, size}.            */
@@ -165,37 +218,72 @@ static void cte_remove(unsigned long addr)
 }
 
 /* ------------------------------------------------------------------ */
-/* Event emission: one snprintf into a stack buffer, one write().      */
+/* Event emission: bounded retries into independent append-only files. */
 /* ------------------------------------------------------------------ */
 
-static void cte_write_all(const char *buf, size_t len)
+static int cte_write_all(int fd, const char *buf, size_t len, int event)
 {
     size_t off = 0;
+    unsigned int interruptions = 0;
+#ifdef CTE_TESTING
+    int fault = event ? __atomic_exchange_n(&g_test_event_fault, 0, __ATOMIC_ACQ_REL)
+                      : __atomic_load_n(&g_test_status_fault, __ATOMIC_ACQUIRE) ? 3 : 0;
+    int injected = 0;
+#else
+    (void)event;
+#endif
     while (off < len) {
-        ssize_t n = write(g_fd, buf + off, len - off);
+        ssize_t n;
+#ifdef CTE_TESTING
+        if (fault == 5 || (fault == 2 && !injected)) {
+            n = -1;
+            errno = EINTR;
+            injected = 1;
+        } else if (fault == 3 || (fault == 6 && injected)) {
+            n = -1;
+            errno = EIO;
+        } else if (fault == 4) {
+            n = 0;
+        } else if ((fault == 1 || fault == 6) && !injected) {
+            n = write(fd, buf + off, (len - off) / 2);
+            injected = 1;
+        } else
+#endif
+            n = write(fd, buf + off, len - off);
         if (n < 0) {
-            if (errno == EINTR)
+            if (errno == EINTR && ++interruptions <= 8)
                 continue;
-            return; /* unreachable file: tracking degrades to no-op */
+            return 0;
         }
         if (n == 0)
-            return;
+            return 0;
         off += (size_t)n;
     }
+    return 1;
 }
 
 /* Caller must hold the lock. Bumps the sequence counter. */
 static void cte_emit_locked(const char *kind, unsigned long id, unsigned long addr,
                             unsigned long size, unsigned long old_id, unsigned long old_addr,
-                            unsigned long caller, const char *status)
+                            unsigned long caller, const char *status,
+                            unsigned long nmemb, unsigned long element_size)
 {
     char buf[320];
     g_seq += 1;
-    int n = snprintf(buf, sizeof(buf), "%lu %lu %s %lu %lx %lu %lu %lx %lx %s\n",
+    int n;
+    if (kind[0] == 'c')
+        n = snprintf(buf, sizeof(buf), "%lu %lu %s %lu %lx %lu %lu %lx %lx %s %lu %lu\n",
+                     (unsigned long)getpid(), g_seq, kind, id, addr, size,
+                     old_id, old_addr, caller, status, nmemb, element_size);
+    else
+        n = snprintf(buf, sizeof(buf), "%lu %lu %s %lu %lx %lu %lu %lx %lx %s\n",
                      (unsigned long)getpid(), g_seq, kind, id, addr, size,
                      old_id, old_addr, caller, status);
-    if (n > 0)
-        cte_write_all(buf, (size_t)n);
+    if (n <= 0 || (size_t)n >= sizeof(buf) ||
+        !cte_write_all(g_fd, buf, (size_t)n, 1)) {
+        if (g_write_failures != ULONG_MAX)
+            g_write_failures++;
+    }
 }
 
 /* ------------------------------------------------------------------ */
@@ -209,11 +297,35 @@ static void cte_init(void)
     if (!path || !*path)
         return; /* passive mode: wrappers pass through, nothing recorded */
     g_fd = open(path, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
+    if (g_fd < 0)
+        return; /* no event writer means no valid terminal ACK */
+    const char *status = getenv("C_TRACE_EVENT_STATUS_FILE");
+    if (status && *status)
+        g_status_fd = open(status, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
+    if (pthread_atfork(NULL, NULL, cte_after_fork_child) != 0) {
+        close(g_fd);
+        g_fd = -1;
+        if (g_status_fd >= 0) {
+            close(g_status_fd);
+            g_status_fd = -1;
+        }
+    }
 }
 
 __attribute__((destructor(101)))
 static void cte_fini(void)
 {
+    if (g_fd >= 0 && g_status_fd >= 0) {
+        /* Normal termination only; _exit/crash leaves no ACK. The status FD
+         * is separate so event-write failures cannot suppress its report. */
+        char buf[96];
+        int n = snprintf(buf, sizeof(buf), "%lu %lu %lu\n",
+                         (unsigned long)getpid(), g_seq, g_write_failures);
+        if (n > 0 && (size_t)n < sizeof(buf))
+            (void)cte_write_all(g_status_fd, buf, (size_t)n, 0);
+        close(g_status_fd);
+        g_status_fd = -1;
+    }
     if (g_fd >= 0) {
         close(g_fd);
         g_fd = -1;
@@ -226,16 +338,16 @@ static void cte_fini(void)
 
 void *__wrap_malloc(size_t size)
 {
-    void *ret = __real_malloc(size);
     if (g_busy || g_fd < 0)
-        return ret;
-    int saved_errno = errno;
+        return __real_malloc(size);
     g_busy = 1;
     unsigned long caller = (unsigned long)__builtin_return_address(0);
     cte_lock();
+    void *ret = __real_malloc(size);
+    int saved_errno = errno;
     unsigned long id = ++g_ids;
     cte_emit_locked("malloc", id, (unsigned long)ret, size, 0, 0, caller,
-                    ret ? "ok" : "failed");
+                    ret ? "ok" : "failed", 0, 0);
     if (ret)
         cte_insert((unsigned long)ret, id, size);
     cte_unlock();
@@ -246,10 +358,8 @@ void *__wrap_malloc(size_t size)
 
 void *__wrap_calloc(size_t nmemb, size_t size)
 {
-    void *ret = __real_calloc(nmemb, size);
     if (g_busy || g_fd < 0)
-        return ret;
-    int saved_errno = errno;
+        return __real_calloc(nmemb, size);
     g_busy = 1;
     unsigned long caller = (unsigned long)__builtin_return_address(0);
     /* The wrapped product mirrors the ABI; the real calloc validates
@@ -257,9 +367,11 @@ void *__wrap_calloc(size_t nmemb, size_t size)
     int overflow = size != 0 && nmemb > SIZE_MAX / size;
     unsigned long total = overflow ? 0 : nmemb * size;
     cte_lock();
+    void *ret = __real_calloc(nmemb, size);
+    int saved_errno = errno;
     unsigned long id = ++g_ids;
     cte_emit_locked("calloc", id, (unsigned long)ret, total, 0, 0, caller,
-                    overflow ? "overflow" : (ret ? "ok" : "failed"));
+                    overflow ? "overflow" : (ret ? "ok" : "failed"), nmemb, size);
     if (ret)
         cte_insert((unsigned long)ret, id, total);
     cte_unlock();
@@ -288,7 +400,7 @@ void *__wrap_realloc(void *ptr, size_t size)
         id = ++g_ids;
         status = ret ? "new" : "failed"; /* realloc(NULL, n) may fail */
     } else if ((unsigned long)ret == old_addr) {
-        id = slot ? old_id : ++g_ids;
+        id = ++g_ids; /* a successful realloc begins a new object lifetime */
         status = slot ? "ok_same" : "new"; /* untracked predecessor starts observation here */
     } else if (ret != NULL) {
         id = ++g_ids;
@@ -301,14 +413,16 @@ void *__wrap_realloc(void *ptr, size_t size)
         status = "failed"; /* original allocation preserved */
     }
     cte_emit_locked("realloc", id, (unsigned long)ret, size, old_id,
-                    old_addr, caller, status);
+                    old_addr, caller, status, 0, 0);
 
     /* Table maintenance (never before emission, and state changes must
      * match what the real allocator actually did). */
     if (old_addr != 0) {
         if ((unsigned long)ret == old_addr) {
-            if (slot)
-                slot->size = size; /* id stable, size updated */
+            if (slot) {
+                slot->id = id;
+                slot->size = size;
+            }
             else if (ret)
                 cte_insert((unsigned long)ret, id, size);
         }
@@ -340,7 +454,7 @@ void __wrap_free(void *ptr)
     unsigned long size = slot ? slot->size : 0;
     __real_free(ptr);
     int saved_errno = errno;
-    cte_emit_locked("free", id, old_addr, size, 0, 0, caller, status);
+    cte_emit_locked("free", id, old_addr, size, 0, 0, caller, status, 0, 0);
     if (slot)
         cte_remove(old_addr);
     cte_unlock();

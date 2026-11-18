@@ -161,6 +161,12 @@ pub struct Cli {
     /// Explicit path to the gdb executable (default: resolve via PATH).
     #[arg(long)]
     pub gdb_path: Option<String>,
+    /// Extract supplementary Clang AST source evidence.
+    #[arg(long)]
+    pub clang_ast: bool,
+    /// Override the Clang executable used for optional AST analysis.
+    #[arg(long)]
+    pub clang_path: Option<String>,
     /// Extra global/static GDB expression (repeatable).
     #[arg(long = "global")]
     pub globals: Vec<String>,
@@ -362,6 +368,8 @@ impl Cli {
                 .unwrap_or_default(),
             valgrind_path: self.valgrind_path.clone().or(file.valgrind_path.clone()),
             gdb_path: self.gdb_path.clone().or(file.gdb_path.clone()),
+            clang_ast: self.clang_ast || file.clang_ast.unwrap_or(false),
+            clang_path: self.clang_path.clone().or(file.clang_path.clone()),
             tracing,
         })
     }

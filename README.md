@@ -9,7 +9,11 @@ New to the engine or want the plain-language version? Start with
 **[The Trace Engine](docs/trace-engine.html)** — a visual, self-contained
 introduction (pipeline, trace contents, guarantees, limits). For a conceptual
 architectural overview (channels, budgets, the stop loop, the trust model),
-see [Engine architecture](docs/architecture.md).
+see [Engine architecture](docs/architecture.md). Building on traces from Rust?
+**[Trace Parser (TP-1/TP-2/TP-3)](docs/trace-parser.md)** ingests V2/V2.1
+traces and journals, adds shared compact indexes and explicit deep validation,
+and exposes borrowed raw and semantic-input views over one canonical
+`TraceStore`.
 
 ```sh
 cargo run -- sample.c --timeout 20 --output trace.json
@@ -61,8 +65,16 @@ cargo run -- sample.c -- --verbose 42              # args for the program
 cargo run -- fixtures/c/multi_file/main.c --add-source fixtures/c/multi_file/helper.c
 cargo run -- sample.c --timeout 3 --max-steps 200 --max-snapshots 100
 cargo run -- sample.c --config build.json          # JSON BuildConfig file
+cargo run -- sample.c --clang-ast                   # optional Clang source syntax
 cargo run -- broken.c                              # exit code 2 + diagnostics
 ```
+
+Optional Phase 6 source metadata (`--clang-ast`, or `"clang_ast": true` in
+the JSON configuration) records bounded Clang AST syntax in the trace-level
+`source_metadata` registry. Use `--clang-path PATH` to select Clang. This pass
+does not change GCC compilation or runtime observations; if Clang is missing
+or rejects a GCC-compatible program, the trace records the extraction
+limitation and continues. See `docs/trace-engine-phase6.md`.
 
 ## Exit codes
 

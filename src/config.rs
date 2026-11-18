@@ -84,6 +84,10 @@ pub struct TraceConfig {
     /// Optional explicit path to the gdb executable; resolved via PATH when
     /// unset (execvp semantics).
     pub gdb_path: Option<String>,
+    /// Optional supplementary Clang source metadata pass (default off).
+    pub clang_ast: bool,
+    /// Optional explicit Clang executable, for toolchain selection/tests.
+    pub clang_path: Option<String>,
     pub tracing: TracingConfig,
 }
 
@@ -100,6 +104,8 @@ impl Default for TraceConfig {
             sanitizer_trigger: SanitizerTrigger::default(),
             valgrind_path: None,
             gdb_path: None,
+            clang_ast: false,
+            clang_path: None,
             tracing: TracingConfig::default(),
         }
     }
@@ -132,6 +138,8 @@ pub struct ConfigFile {
     pub sanitizer_trigger: Option<SanitizerTrigger>,
     pub valgrind_path: Option<String>,
     pub gdb_path: Option<String>,
+    pub clang_ast: Option<bool>,
+    pub clang_path: Option<String>,
     pub tracing: TracingConfig,
 }
 

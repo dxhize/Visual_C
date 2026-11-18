@@ -16,6 +16,8 @@ regex = "1"
 libc = "0.2"
 clap = { version = "4", features = ["derive"] }
 roxmltree = "0.20"
+gimli = { version = "0.34", default-features = false, features = ["read", "endian-reader", "std"] }
+object = { version = "0.39", default-features = false, features = ["read", "compression"] }
 
 [profile.release]
 debug = true

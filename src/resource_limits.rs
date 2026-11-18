@@ -64,10 +64,25 @@ pub struct ExecutionLimits {
     pub max_snapshot_memory_bytes: usize,
     /// Maximum bytes for a single memory read.
     pub max_memory_read_bytes: usize,
+    /// Maximum bytes retained for a reliably identified array/struct/union.
+    #[serde(skip_serializing_if = "default_aggregate_bytes")]
+    pub max_aggregate_bytes: usize,
+    /// Maximum live heap objects observed at each checkpoint.
+    #[serde(skip_serializing_if = "default_heap_blocks")]
+    pub max_heap_blocks_per_snapshot: usize,
     /// Maximum number of child processes the inferior may spawn.
     pub max_process_count: usize,
     /// Maximum variables introspected per snapshot (address/size/bytes).
     pub max_variables_per_snapshot: usize,
+    /// Caller frames in addition to frame 0. Zero retains Phase 3 behavior.
+    #[serde(skip_serializing_if = "disabled_callers")]
+    pub max_caller_frames: usize,
+    /// Additional caller variables per checkpoint, shared across frames.
+    #[serde(skip_serializing_if = "default_caller_variables")]
+    pub max_caller_variables: usize,
+    /// Additional memory-read commands at a checkpoint (zero disables the cap).
+    #[serde(skip_serializing_if = "default_extra_reads")]
+    pub max_extra_memory_reads: usize,
     pub max_instruction_events: usize,
     pub max_source_checkpoints: usize,
     pub max_trace_bytes: usize,
@@ -77,6 +92,22 @@ pub struct ExecutionLimits {
     pub compiler_timeout_seconds: u64,
     pub debugger_timeout_seconds: u64,
     pub analysis_timeout_seconds: u64,
+}
+
+fn default_aggregate_bytes(value: &usize) -> bool {
+    *value == 4096
+}
+fn default_heap_blocks(value: &usize) -> bool {
+    *value == 512
+}
+fn disabled_callers(value: &usize) -> bool {
+    *value == 0
+}
+fn default_caller_variables(value: &usize) -> bool {
+    *value == 24
+}
+fn default_extra_reads(value: &usize) -> bool {
+    *value == 32
 }
 
 impl Default for ExecutionLimits {
@@ -90,8 +121,13 @@ impl Default for ExecutionLimits {
             max_snapshot_count: 1_000,
             max_snapshot_memory_bytes: 1024 * 1024,
             max_memory_read_bytes: 4 * 1024,
+            max_aggregate_bytes: 4 * 1024,
+            max_heap_blocks_per_snapshot: 512,
             max_process_count: 16,
             max_variables_per_snapshot: 24,
+            max_caller_frames: 0,
+            max_caller_variables: 24,
+            max_extra_memory_reads: 32,
             max_instruction_events: 100_000,
             max_source_checkpoints: 1_000,
             max_trace_bytes: 128 * 1024 * 1024,

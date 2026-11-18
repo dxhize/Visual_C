@@ -1,5 +1,8 @@
 use c_trace_engine::config::TraceMode;
-use c_trace_engine::models::{DataValidity, DebugSessionTrace, ExecutionStatus, StageStatus};
+use c_trace_engine::models::{
+    DataValidity, DebugSessionTrace, ExecutionSnapshot, ExecutionStatus, PointerTarget,
+    ScopeStatus, StageStatus, VariableInfo,
+};
 use c_trace_engine::{processor, trace::trace_program, TraceConfig};
 static RECORDING: tokio::sync::Semaphore = tokio::sync::Semaphore::const_new(1);
 
@@ -161,7 +164,7 @@ async fn native_memory_errors_and_nonzero_exit_preserve_execution_outcomes() {
         .any(|e| e.size_bytes.is_none()
             && e.detail.as_deref().is_some_and(|d| d.contains("overflow"))));
 }
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
@@ -191,6 +194,89 @@ async fn tools() -> Option<tokio::sync::SemaphorePermit<'static>> {
 
 async fn run(name: &str) -> DebugSessionTrace {
     trace_program(config(name)).await.unwrap()
+}
+
+#[tokio::test]
+async fn phase2_probe_reuses_metadata_but_refreshes_array_struct_and_global_values() {
+    let Some(_permit) = tools().await else { return };
+    let t = run("aggregate.c").await;
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    processor::validate(&t).unwrap();
+    let profiling = &t.recording.profiling;
+    assert!(profiling.saved_variable_metadata_queries.unwrap_or(0) > 0);
+    assert!(
+        profiling
+            .gdb_command_categories
+            .as_ref()
+            .and_then(|counts| counts.get("lexical_probe"))
+            .copied()
+            .unwrap_or(0)
+            > 0
+    );
+    let locals: Vec<_> = t.snapshots.iter().flat_map(|s| &s.variables).collect();
+    let paths: Vec<_> = locals.iter().filter(|v| v.name == "local").collect();
+    assert!(paths.len() > 2);
+    assert!(paths.windows(2).any(|pair| pair[0].value != pair[1].value));
+    assert!(paths.iter().all(|v| v.size_bytes == Some(48)));
+    let global_values: Vec<_> = t
+        .snapshots
+        .iter()
+        .flat_map(|s| &s.observation.globals)
+        .filter(|v| v.name.ends_with("::g_path"))
+        .map(|v| v.value.as_str())
+        .collect();
+    assert!(global_values.len() > 2);
+    assert!(global_values.windows(2).any(|pair| pair[0] != pair[1]));
+    let store = c_trace_engine::trace_parser::TraceStore::from_trace(t.clone()).unwrap();
+    assert!(store.validate_deep().is_structurally_sound());
+    assert_eq!(store.raw().trace().snapshots.len(), t.snapshots.len());
+    assert_eq!(
+        store.semantic_input().raw().trace().snapshots.len(),
+        t.snapshots.len()
+    );
+}
+
+#[tokio::test]
+async fn phase2_vla_size_changes_across_distinct_activations() {
+    let Some(_permit) = tools().await else { return };
+    let t = run("vla_metadata.c").await;
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    let arrays: Vec<_> = t
+        .snapshots
+        .iter()
+        .flat_map(|s| &s.variables)
+        .filter(|v| v.name == "items" && v.size_bytes.is_some())
+        .collect();
+    let sizes: HashSet<_> = arrays.iter().filter_map(|v| v.size_bytes).collect();
+    assert!(sizes.contains(&12) && sizes.contains(&20), "{sizes:?}");
+    let activations: HashSet<_> = arrays.iter().filter_map(|v| v.activation_id).collect();
+    assert!(activations.len() >= 2);
+}
+
+#[tokio::test]
+async fn phase2_global_cache_distinguishes_same_name_in_two_translation_units() {
+    let Some(_permit) = tools().await else { return };
+    let mut c = config("two_statics_main.c");
+    c.build
+        .additional_sources
+        .push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("fixtures/c/two_statics_other.c"));
+    let t = trace_program(c).await.unwrap();
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+    let globals: Vec<_> = t
+        .snapshots
+        .iter()
+        .flat_map(|s| &s.observation.globals)
+        .filter(|v| v.name.ends_with("::shared"))
+        .collect();
+    let names: HashSet<_> = globals.iter().map(|v| v.name.as_str()).collect();
+    assert_eq!(
+        names.len(),
+        2,
+        "same-name statics need separate qualified identities: {names:?}"
+    );
+    assert!(globals.iter().any(|v| v.value == "11"));
+    assert!(globals.iter().any(|v| v.value == "20" || v.value == "22"));
+    assert!(globals.iter().any(|v| v.value == "23"));
 }
 
 #[tokio::test]
@@ -790,4 +876,375 @@ async fn valgrind_path_override_allows_failure_injection() {
         .analysis_notes
         .iter()
         .any(|n| n.contains("valgrind not found")));
+}
+
+// ---------------------------------------------------------------------------
+// V2.2 Phase 1: pointer-to-variable identity and scope liveness evidence.
+// ---------------------------------------------------------------------------
+
+fn variable<'a>(s: &'a ExecutionSnapshot, name: &str) -> Option<&'a VariableInfo> {
+    s.variables
+        .iter()
+        .find(|v| v.name == name)
+        .or_else(|| s.observation.globals.iter().find(|v| v.name == name))
+}
+
+fn target<'a>(s: &'a ExecutionSnapshot, name: &str) -> Option<&'a PointerTarget> {
+    variable(s, name)?.target.as_ref()
+}
+
+#[tokio::test]
+async fn pointer_identities_follow_reassignment_aliases_and_stay_evidence_based() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let t = run("pointer_identity.c").await;
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+
+    // A: the first stack target of `p` reuses `x`'s recorder-assigned
+    // identity — nothing is invented from the name or the address.
+    let first = t
+        .snapshots
+        .iter()
+        .find(|s| target(s, "p").is_some_and(|t| t.kind == "stack"))
+        .expect("p must resolve to a stack variable once initialized");
+    let x = variable(first, "x").expect("x recorded beside its pointer");
+    let p = target(first, "p").unwrap();
+    assert_eq!(p.base_address.as_deref(), x.address.as_deref());
+    assert_eq!(p.offset_bytes, Some(0));
+    assert_eq!(p.variable_identity.as_deref(), x.identity.as_deref());
+
+    // C: the alias `q` resolves to the same identity at the same stop.
+    let aliased = t
+        .snapshots
+        .iter()
+        .find(|s| {
+            target(s, "p").and_then(|t| t.variable_identity.as_deref())
+                == variable(s, "x").and_then(|v| v.identity.as_deref())
+                && target(s, "q").and_then(|t| t.variable_identity.as_deref())
+                    == variable(s, "x").and_then(|v| v.identity.as_deref())
+        })
+        .expect("p and q must both resolve to x while aliased");
+
+    // B: after reassignment p resolves to `y`, and `q` keeps `x` — the
+    // association follows the recorded pointer value, never a stale one.
+    let x_id = variable(aliased, "x").unwrap().identity.clone().unwrap();
+    let y_id = variable(aliased, "y")
+        .expect("y recorded")
+        .identity
+        .clone()
+        .unwrap();
+    assert_ne!(x_id, y_id);
+    let reassigned = t
+        .snapshots
+        .iter()
+        .filter(|s| {
+            target(s, "p").is_some_and(|t| t.kind == "stack")
+                && target(s, "q").is_some_and(|t| t.kind == "stack")
+        })
+        .find(|s| target(s, "p").unwrap().variable_identity.as_deref() == Some(y_id.as_str()))
+        .expect("p must resolve to y after reassignment");
+    assert_eq!(
+        target(reassigned, "q")
+            .unwrap()
+            .variable_identity
+            .as_deref(),
+        Some(x_id.as_str()),
+        "q must keep its alias target"
+    );
+
+    // Evidence-based invariant: whenever a stack target carries an identity,
+    // that identity belongs to a variable recorded in the same snapshot whose
+    // address matches the target base. No cross-snapshot or invented joins.
+    for s in &t.snapshots {
+        for v in &s.variables {
+            let Some(t) = v.target.as_ref() else {
+                continue;
+            };
+            if t.kind != "stack" {
+                continue;
+            }
+            if let Some(id) = &t.variable_identity {
+                let owner = s.variables.iter().find(|o| {
+                    o.address.as_deref() == t.base_address.as_deref()
+                        && o.identity.as_deref() == Some(id.as_str())
+                });
+                assert!(
+                    owner.is_some(),
+                    "unbacked pointer identity {id} for {} at line {}",
+                    v.name,
+                    s.line
+                );
+            }
+        }
+    }
+
+    // D: null pointers keep no identity at any stop.
+    for s in &t.snapshots {
+        if let Some(t) = target(s, "nul") {
+            assert_eq!(t.kind, "null");
+            assert_eq!(t.variable_identity, None);
+        }
+    }
+
+    // I: an interior pointer stays attributed to the container with its
+    // offset preserved; no element identity is fabricated.
+    let interior = t
+        .snapshots
+        .iter()
+        .find(|s| target(s, "mid").is_some_and(|t| t.kind == "stack"))
+        .expect("mid must resolve to its array");
+    let a = variable(interior, "a").expect("array recorded");
+    let mid = target(interior, "mid").unwrap();
+    assert_eq!(mid.base_address.as_deref(), a.address.as_deref());
+    assert_eq!(mid.offset_bytes, Some(4));
+    assert_eq!(mid.variable_identity.as_deref(), a.identity.as_deref());
+
+    // J: a heap address match identifies a region, not the pointer's origin;
+    // no local identity is assigned to heap memory.
+    let heap = t
+        .snapshots
+        .iter()
+        .find(|s| target(s, "hp").is_some_and(|t| t.kind == "heap"))
+        .expect("hp must resolve to its heap allocation");
+    let hp = target(heap, "hp").unwrap();
+    assert!(hp.address_match_allocation_id.is_some());
+    assert_eq!(hp.allocation_id, None);
+    assert_eq!(hp.variable_identity, None);
+
+    // Globals cross-enriched against frame-0 pointers reuse the recorder's
+    // `symbol:` identity (globals are recorded under their file-qualified
+    // name).
+    let global = t
+        .snapshots
+        .iter()
+        .find(|s| target(s, "gp").is_some_and(|t| t.kind == "global"))
+        .expect("gp must resolve to the global");
+    let g = global
+        .observation
+        .globals
+        .iter()
+        .find(|v| v.name.ends_with("::g_value"))
+        .expect("g_value recorded as a global");
+    assert!(g
+        .identity
+        .as_deref()
+        .is_some_and(|i| i.starts_with("symbol:")));
+    assert_eq!(
+        target(global, "gp").unwrap().variable_identity.as_deref(),
+        g.identity.as_deref()
+    );
+}
+
+#[tokio::test]
+async fn scope_liveness_tracks_lexical_blocks_without_conflating_initialization() {
+    let Some(_permit) = tools().await else {
+        return;
+    };
+    let t = run("scope_liveness.c").await;
+    assert_eq!(t.execution_status, ExecutionStatus::Completed);
+
+    // Every variable with a defining block range carries a scope status, and
+    // an Active status is backed by the frame-0 program counter actually
+    // lying inside the half-open block range.
+    for s in &t.snapshots {
+        let pc = s
+            .call_stack
+            .first()
+            .and_then(|f| f.address.as_deref())
+            .and_then(|a| a.strip_prefix("0x"))
+            .and_then(|a| u64::from_str_radix(a, 16).ok());
+        for v in &s.variables {
+            if let Some(id) = v
+                .lexical_scope_id
+                .as_deref()
+                .and_then(|id| id.strip_prefix("block:"))
+            {
+                let Some(status) = v.scope_status else {
+                    panic!("block-scoped variable without status: {}", v.name);
+                };
+                let Some((range, _)) = id.split_once(':') else {
+                    continue;
+                };
+                let Some((start, end)) = range.split_once('-') else {
+                    continue;
+                };
+                let (Ok(start), Ok(end)) =
+                    (u64::from_str_radix(start, 16), u64::from_str_radix(end, 16))
+                else {
+                    continue;
+                };
+                if status == ScopeStatus::Active {
+                    let pc = pc.expect("active status implies a frame address");
+                    assert!(
+                        start <= pc && pc < end,
+                        "{} active at line {} but pc {pc:#x} outside {id}",
+                        v.name,
+                        s.line
+                    );
+                }
+            }
+        }
+    }
+
+    // E: block-scoped `b` is absent before its block, Active while listed,
+    // and absent again after the block exits.
+    let first_b = t
+        .snapshots
+        .iter()
+        .position(|s| variable(s, "b").is_some())
+        .expect("b must be recorded inside its block");
+    assert!(
+        t.snapshots[..first_b]
+            .iter()
+            .all(|s| variable(s, "b").is_none()),
+        "b must not be listed before its block is active"
+    );
+    for s in t.snapshots.iter().skip(first_b) {
+        if let Some(b) = variable(s, "b") {
+            assert_eq!(b.scope_status, Some(ScopeStatus::Active));
+        }
+    }
+    let last_main = t
+        .snapshots
+        .iter()
+        .rev()
+        .find(|s| s.func == "main")
+        .expect("main frames recorded");
+    assert!(
+        variable(last_main, "b").is_none(),
+        "b is out of scope at exit"
+    );
+
+    // Scope status never implies initialization: main-body locals are listed
+    // (and Active) at the first stop, before their declaration lines have
+    // executed. Their value/byte validity stays recorded separately.
+    let entry = t.snapshots.iter().find(|s| s.func == "main").unwrap();
+    let before_decl = entry
+        .variables
+        .iter()
+        .filter(|v| v.declaration_line.is_some_and(|l| l > entry.line))
+        .count();
+    assert!(
+        before_decl > 0,
+        "expected function-body locals listed before their declaration lines"
+    );
+    for v in &entry.variables {
+        assert_eq!(v.scope_status, Some(ScopeStatus::Active));
+    }
+
+    // F: the two `x` declarations keep distinct identities; pointer
+    // resolution follows addresses and never selects the shadowed outer `x`.
+    let dual: Vec<&ExecutionSnapshot> = t
+        .snapshots
+        .iter()
+        .filter(|s| s.variables.iter().filter(|v| v.name == "x").count() == 2)
+        .collect();
+    assert!(!dual.is_empty(), "shadowed x pair must be recorded");
+    for s in &dual {
+        let xs: Vec<&VariableInfo> = s.variables.iter().filter(|v| v.name == "x").collect();
+        let ids: HashSet<&str> = xs.iter().filter_map(|v| v.identity.as_deref()).collect();
+        assert_eq!(ids.len(), 2, "shadowed x identities must differ");
+        let inner = xs
+            .iter()
+            .max_by_key(|v| v.declaration_line.unwrap_or(0))
+            .unwrap();
+        let outer = xs
+            .iter()
+            .min_by_key(|v| v.declaration_line.unwrap_or(0))
+            .unwrap();
+        assert_ne!(inner.lexical_scope_id, outer.lexical_scope_id);
+    }
+    let inner_of = |s: &ExecutionSnapshot| {
+        s.variables
+            .iter()
+            .filter(|v| v.name == "x")
+            .max_by_key(|v| v.declaration_line.unwrap_or(0))
+            .and_then(|v| v.identity.clone())
+            .unwrap()
+    };
+    let p_inner = t
+        .snapshots
+        .iter()
+        .find(|s| target(s, "p").is_some_and(|t| t.variable_identity == Some(inner_of(s))))
+        .expect("p must resolve to the inner x by address");
+    assert_eq!(
+        target(p_inner, "p").unwrap().variable_identity.as_deref(),
+        Some(inner_of(p_inner).as_str())
+    );
+    // Later `p = &b` resolves to `b`'s identity instead — no stale x.
+    let p_b = t
+        .snapshots
+        .iter()
+        .filter(|s| variable(s, "b").is_some())
+        .find(|s| {
+            target(s, "p").and_then(|t| t.variable_identity.as_deref())
+                == variable(s, "b").and_then(|v| v.identity.as_deref())
+        })
+        .expect("p must resolve to b after reassignment");
+    assert_ne!(
+        target(p_b, "p").unwrap().variable_identity.as_deref(),
+        Some(inner_of(p_b).as_str())
+    );
+
+    // G: recursive activations carry distinct activation ids, and each
+    // helper local's identity encodes its own activation.
+    let acts: HashSet<u64> = t
+        .snapshots
+        .iter()
+        .filter(|s| s.func == "helper")
+        .flat_map(|s| &s.variables)
+        .filter(|v| v.name == "local")
+        .filter_map(|v| v.activation_id)
+        .collect();
+    assert!(acts.len() >= 4, "distinct helper activations: {acts:?}");
+    for s in t.snapshots.iter().filter(|s| s.func == "helper") {
+        for v in &s.variables {
+            if let (Some(id), Some(act)) = (v.identity.as_deref(), v.activation_id) {
+                if v.name == "local" {
+                    assert!(
+                        id.starts_with(&format!("activation:{act}:")),
+                        "identity {id} does not encode activation {act}"
+                    );
+                }
+            }
+        }
+    }
+
+    // H: recursion reuses the same stack address across activations, but the
+    // recorded identity of the reused slot always belongs to the *current*
+    // activation; and a dangling pointer into a returned frame resolves to
+    // nothing (no stale identity, no invented match).
+    let mut by_address: HashMap<String, HashSet<u64>> = HashMap::new();
+    for s in t.snapshots.iter().filter(|s| s.func == "helper") {
+        if let Some(local) = variable(s, "local") {
+            if let (Some(addr), Some(act)) = (local.address.clone(), local.activation_id) {
+                by_address.entry(addr).or_default().insert(act);
+            }
+        }
+    }
+    assert!(
+        by_address.values().any(|acts| acts.len() >= 2),
+        "expected stack address reuse across helper activations: {by_address:?}"
+    );
+    for s in t.snapshots.iter().filter(|s| s.func == "main") {
+        if let Some(t) = target(s, "self") {
+            // Null before the call; dangling into a dead frame afterwards.
+            if t.kind == "null" {
+                assert_eq!(t.variable_identity, None);
+            } else {
+                assert_eq!(
+                    t.variable_identity, None,
+                    "dangling self must not acquire a variable identity"
+                );
+            }
+        }
+    }
+    assert!(
+        t.snapshots
+            .iter()
+            .filter(|s| s.func == "main")
+            .any(|s| target(s, "self").is_some_and(|t| t.kind == "stack")),
+        "expected self to observe its dead-frame stack region"
+    );
 }
