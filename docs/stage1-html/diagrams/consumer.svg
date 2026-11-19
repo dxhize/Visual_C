@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 902 235" role="img" aria-labelledby="t desc"><title id="t">TP-6 and TP-7 consumer path</title><desc id="desc">A single validated view holds the report and borrows the store; checkpoint summary and bounded pages provide trace-scoped references and qualified events without copying records.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="902" height="235" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">TP-6 and TP-7 consumer path</text>
+<rect x="22" y="57" width="194" height="118" rx="11" fill="#e8f6ee" stroke="#306451" stroke-width="1.5"/>
+<text x="36" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#306451">TraceStore</text>
+<text x="36" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Trace + indexes</text>
+<text x="36" y="127" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">same Arc identity</text>
+<path d="M 220 116 H 234" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="240" y="57" width="194" height="118" rx="11" fill="#e8f6ee" stroke="#306451" stroke-width="1.5"/>
+<text x="254" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#306451">validated_semantic</text>
+<text x="254" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">One deep pass</text>
+<text x="254" y="127" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">ValidationReport</text>
+<path d="M 438 116 H 452" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="458" y="57" width="194" height="118" rx="11" fill="#e8f6ee" stroke="#306451" stroke-width="1.5"/>
+<text x="472" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#306451">checkpoint_summary</text>
+<text x="472" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">One snapshot</text>
+<text x="472" y="127" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">coverage + diagnostics</text>
+<path d="M 656 116 H 670" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="676" y="57" width="194" height="118" rx="11" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="690" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#825329">Explicit pages ≤128</text>
+<text x="690" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Borrowed variables</text>
+<text x="690" y="127" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">tag/interval qualified</text>
+<text x="24" y="213" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Blue: engine  ·  Green: parser  ·  Amber: evidence  ·  Red: partial/unknown  ·  Purple: source</text></svg>

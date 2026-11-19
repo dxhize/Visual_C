@@ -1,0 +1,69 @@
+# TP-6 — Semantic evidence input layer (Stage 1)
+
+**Scope:** small, read-only, trace-scoped evidence API. It is **not** a C Semantic Engine, frontend, pointer graph, AST execution interpreter, journal reconstruction, or TP-7. Read alongside `trace-parser-v2.2-audit-tp4.md`, `trace-parser-v2.2-tp5.md`, `trace-parser.md`, and the engine V2.2 release-closure scope.
+
+## Public API and ownership
+
+`src/trace_parser/semantic.rs` adds `TraceStore::validated_semantic()` (also `SemanticInputView::validated()`). It performs **one** opt-in `validate_deep()` pass, keeps its `ValidationReport`, and borrows the immutable `TraceStore`; queries never validate the whole trace again. `TraceStore::from_trace` still checks **only schema version**, never semantic soundness. Callers inspect `view.report()` for structural, partial, unavailable and optional findings. Any structural corruption conservatively marks returned semantic confidence `Contradictory` (even if the finding concerns another record); raw canonical observations remain available for investigation, not trusted as verified joins.
+
+```rust
+use c_trace_engine::trace_parser::TraceStore;
+# let store = TraceStore::open("examples/v21_normal.json", Default::default())?;
+let view = store.validated_semantic();        // validate exactly once
+let checkpoint = view.checkpoint(0)?;         // borrowed source/stop context
+if let Some(_) = checkpoint.context.variables().first() {
+    let reference = checkpoint.context.variable_evidence(0)?;
+    let variable = view.variable(&reference)?; // trace-scoped, borrowed join
+    let _ = (variable.info.identity.as_deref(), variable.value_confidence,
+             variable.memory.valid_range.clone(), variable.pointer.as_ref());
+}
+# Ok::<(), Box<dyn std::error::Error>>(())
+```
+
+The validated view borrows the same `Arc<DebugSessionTrace>` and shared position-only TP-2 indexes as TP-1/2/3/5. `EvidenceRef` carries a weak **trace identity**: clones of a store resolve it, an independent load of equal JSON returns `ForeignTrace`. Snapshot index, GDB stop ID, attempted instruction position, retained event index, frame activation ID, trace-local DWARF/source identity, PID, heap allocation ID and process address remain **different domains**. A query never treats a numeric pointer address as a heap ID or matches Valgrind's independent execution to this trace. `heap_reference` rejects a foreign trace before reading its allocation ID; bare `heap(id)` and `source_expression(id)` are lookups **within this store**, not transferable references or proof that equal IDs across stores identify the same object.
+
+| Query | Returned relationship (borrowed unless indicated) |
+|---|---|
+| `variable(&EvidenceRef)` | Local/global/caller `VariableInfo`, trace-local `EvidenceRef` clone, optional DWARF type/declaration and AST declaration, observation/value confidence, `MemoryEvidenceView`, `PointerEvidence`; names do not merge shadowed activations. |
+| `variable_target(&VariableEvidence)` | Explicit on-demand identity resolution **within that snapshot**, scanning only its locals/globals/caller variables; unique active identity may be definite at that stop; duplicate IDs ambiguous, missing/unreadable targets unavailable. Re-resolves the reference first, including foreign-trace rejection. No cross-checkpoint graph. |
+| `heap(id)` / `heap_reference(&EvidenceRef)` | Canonical lifetime, final state, realloc predecessor and optional predecessor lifetime, historical memory bytes, and indexed `events()` iterator. Observed-PID completeness is required for definite recorded allocation identity; incomplete/legacy history is candidate and PID contradiction is rejected. An old ID is a relationship within this run, not address reuse proof. |
+| `source_expression(id)` | Optional AST expression and its referenced static declaration/fusion summary, indexed `call_sites()` / `ambiguous_call_sites()` returning event position plus borrowed heap event and expression. Even compatible same-line calls are **candidate/ambiguous**, never execution proof. |
+| `checkpoint(index)`, `execution()` | Borrowed source location, stop-local observation, attempted instruction position, source-checkpoint context; separately status, engine-declared coverage scope, retained count and gaps. Gaps refer to attempted positions, not fabricated events. |
+| `diagnostics()`, `valgrind_error(index)` | Compiler, stage, crash/sanitizer/Valgrind reports; borrowed Valgrind error with trace-local reference, source-site confidence and **no** primary allocation ID even when an imported legacy report contains related IDs. Missing report does not imply no fault. |
+| `process_coverage()` | TP-5 typed observed-only/unknown/unsupported scope and original history; `unobserved_descendants` is unavailable, or contradictory if validation rejects the trace. Scoped completeness is **not** a fork census. |
+
+The shared TP-2 metadata index in `indexes.rs` now holds only `u32` positions keyed by trace-local DWARF type/declaration IDs and AST declaration/expression IDs, plus candidate/ambiguity positions keyed by expression ID. It copies each key for lookup, **not** registry records or evidence. Deep validation now also rejects duplicate DWARF type/declaration/unit IDs before indexed references can be trusted; existing AST duplicate validation remains in force. No graph, address index or inferred link is cached. Construction is linear in the bounded registries; repeated metadata queries avoid scanning a registry per snapshot/expression (and thus avoid quadratic bulk joins). Original `source_declaration`/`source_expression` public queries retain the same borrowed outputs and errors. `estimated_bytes()` includes approximate new key/position costs, not an RSS guarantee.
+
+## Evidence-confidence and observation contracts
+
+`EvidenceConfidence` is `Definite`, `Candidate`, `Ambiguous`, `Unavailable`, or `Contradictory`, for a **specific relationship**. It is distinct from `ExecutionStatus`, `DataValidity`, lexical `ScopeStatus`, initialization, and process/heap coverage. `Definite` means an explicit observation or validated trace-local identity *in the stated time/process scope*—never a claim about everything the program did. `Candidate` preserves a plausible, unproven relationship; `Ambiguous` preserves multiple compatible interpretations; `Unavailable` includes absent legacy metadata, unreadable or unrecorded evidence; `Contradictory` requires a rejected structural relationship. The view exposes raw evidence to allow investigation, but consumers must check confidence before using any claimed identity.
+
+- **Pointers:** `address` is the recorded pointee address, `region` and `provenance_status` are raw target annotations; `address_candidate` is numeric containment only. `definitive_allocation` is **always `None`** under present V2.2 statuses. `address_only` and known freed address → candidate; reused address → ambiguous; history incomplete/unknown/unreadable → unavailable. A definite ID imported alongside uncertain status is contradictory after TP-5 validation, even if `from_trace()` succeeded. A recorded null *address* can be definite without establishing heap provenance. An explicit variable identity resolves only at the same stop; its source declaration is a separate static identity.
+- **Memory:** borrowed hex and `MemoryEvidence` retain requested/captured/extent/status/reason. `valid_range=0..captured_bytes` requires readable status and structurally consistent hex/counts; `unobserved_range=captured..requested` is **not** automatically unreadable (it can be a cap or an unattempted read). Partial/truncated bytes are candidate evidence; full valid bytes are definite **capture**, not proof of initialization. Heap-block bytes can be historical (see `observed_at_stop`), not live at the current checkpoint. No byte decoding or invented unwritten range occurs.
+- **Heap:** `heap(id).events()` yields only events indexed for that recorded identity; missing events are not synthesized. A complete observed-PID history can support a recorded lifetime/ID for its PID; a missing or partial history downgrades the relation. Realloc predecessor IDs are not inferred from equal addresses. An imported lifetime/event PID disagreement is contradictory. Independently produced Valgrind source-site candidates never become primary-run allocation identities.
+- **Source/execution:** a linked DWARF type or AST declaration is static metadata. A matching AST source expression, including a candidate heap call, does **not** establish that expression executed; `execution_confidence` stays unavailable. Candidate event/expression pairs are joined only by the existing explicitly recorded candidate/ambiguity records and remain candidate/ambiguous. A stopped source line is not an exact expression-to-event join.
+- **Coverage:** `heap_history.complete` covers observed event PIDs plus known followed inferior, conditional on transport, retention and ACK. `unobserved_descendants` remains unavailable for both parent-only and silent/observed-child traces. GDB snapshot coverage is for its followed inferior/scope, not all descendants. Missing metadata is unknown, not success or proof of absence.
+
+## Tests and compatibility
+
+Permanent `tests/trace_parser_semantic_tp6.rs` checks: shadowed same-name locals with different activation IDs, globals/caller frames and byte prefixes/unreadable tails; exact borrowed record pointer identity and foreign-trace rejection for both variable and allocation references; aliases, freed and reused-address candidates; malformed address-only+ID import; allocation lifetime/realloc and absent-event non-invention; partial/legacy history, observed PIDs versus unknown descendants and unsupported all-process claim; crash without optional crash report and attempted gap versus retained events; independent Valgrind source candidates including an imported legacy related ID; AST-on/off source-call candidates and ambiguity; live GCC/GDB AST-on/off, reuse, observed-child, silent-child and missing-child-ACK traces; and legacy V2.1 missing optional metadata. The six V2.1 fixtures and full parser suite remain the existing compatibility oracle; the four pre-V2.1 `examples/v2_*.json` with removed limit fields still do not deserialize (no compatibility expansion). Live tests skip only when required GCC/GDB is unavailable; positive Clang assertions run when Clang is available. A live type registry cloned with an injected duplicate ID is rejected by `validate_deep` and cannot produce definite checkpoint confidence. TP-5's adversarial and fork regressions remain in place.
+
+Focused tests: `/tmp/cte-tp6-focus-final.log` (7/7); prior TP-2/3/5 compatibility targets `/tmp/cte-tp6-compat.log` (15/15 + 19/19). No Trace Engine production behavior or serialization changed.
+
+## Release-profile performance
+
+Measured with the extended `examples/trace_parser_tp3_bench.rs` on the **same** TP-5/TP-4 corpus: AST-on 81,473 bytes / 7 snapshots / 22 events; heap reuse 424,971 bytes / 44 snapshots / 125 events; source-large 22,059,776 bytes / 1,000 snapshots / **0** retained instruction events. Three sequential release runs after the final validation/index edits `/tmp/cte-tp6-bench-final-{0,1,2}.log`, medians of runs. `tp6_context` includes one full validation and report construction, not parse or TP-2 indexing; allocator live deltas include context/report storage and measurement overhead, not a precise retained-report size. Each query benchmark reports **0 allocations**. Process RSS includes parse, indexes, benchmark buffers and runtime; it is *not* trace-independent retained memory.
+
+| Sample | TP-5 → TP-6 index build µs | TP-6 RSS after index KiB | TP-6 validation-once µs / allocations / allocator live delta bytes | TP-6 median coverage / checkpoint / variable / heap / source query ns |
+|---|---:|---:|---|---|
+| AST-on | 87.69 → 147.70 | 3,772 | 80.62 / 33 / 383 | 11.1 / 26.7 / 386.8 / 241.2 / 159.8 |
+| heap reuse | 127.81 → 155.16 | 5,108 | 80.26 / 55 / 467 | 12.5 / 27.7 / 333.6 / 477.4 / n/a |
+| source-large | 25.52 → 44.50 | 65,316 | 282.93 / 14 / 627 | 13.8 / 28.3 / 279.3 / n/a / n/a |
+
+TP-5 index figures and input sizes are from `docs/trace-parser-v2.2-tp5.md`. New metadata keys modestly increase index construction; measured RSS fluctuates by allocator/page granularity, so neither difference is an isolated index-memory measurement. The AST-on variable query includes lookup of recorded metadata IDs; host scheduling and allocator state affect microbenchmarks. Source-large has no instruction events and cannot establish large-instruction-index scaling. The report stores *findings*, not a duplicate trace. No performance win is claimed for Stage 2.
+
+## Verification and TP-7 handoff
+
+After the final code edits, all required commands passed: `cargo check --all-targets`, `cargo fmt --all -- --check`, `cargo clippy --all-targets -- -D warnings`, `cargo build --release`, and `cargo test --no-fail-fast -- --test-threads=1`: **368 passed, 0 failed, 0 ignored across 20 targets**, including one doctest. Logs: `/tmp/cte-tp6-{check,fmt,clippy,release}-final.log`, `/tmp/cte-tp6-tests-final2.log`; `git diff --check` passed. The initial strict-Clippy attempt flagged `iter_kv_map` in the new index-size estimate, fixed by iterating keys; its clean rerun and the final post-edit check both passed. No test failures were suppressed.
+
+Existing parser/load limits, schema v2, legacy V2.1 ingestion, output/journal distinctions, and `Arc` ownership are preserved. TP-6 does not sandbox untrusted code, guarantee whole-trace RAM from the engine export cap, prove complete multiprocess tracing, or implement a same-execution Valgrind allocation join. TP-7 may compose/paginate **qualified** evidence and citations without reinterpreting candidates as facts or collapsing confidence, execution status, memory readability and coverage into one boolean.

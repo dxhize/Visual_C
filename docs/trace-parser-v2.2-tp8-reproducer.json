@@ -1,0 +1,13 @@
+{
+  "base_trace": "/tmp/cte-tp8/small.json",
+  "fixture_source": "fixtures/c/phase8b_defined.c",
+  "engine_flags": "--trace-mode dual --max-steps 100 --clang-ast --no-pretty --sanitizer-trigger never --timeout 40",
+  "edit": {
+    "json_pointer": "/heap_state/0/realloc_from_id",
+    "value_from": "/heap_state/1/allocation_id"
+  },
+  "expected_raw_evidence": "heap_events[0].event_type=allocated, heap_events[0].old_allocation_id=null, heap_state[0].allocation_id=1, heap_state[1].allocation_id=2",
+  "observed_import": "validate_deep().is_structurally_sound()=true, validated_semantic().heap(1).old_id=Some(2), realloc_confidence=Definite",
+  "full_failing_import": "/tmp/cte-tp8/mutations/realloc-fabricated-existing.json",
+  "probe": "cargo run --release --example trace_parser_tp8_mutate"
+}
