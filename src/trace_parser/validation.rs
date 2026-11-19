@@ -290,6 +290,41 @@ fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
             ValidationLocation::Trace,
         );
     }
+    let units: HashMap<&str, &str> = registry
+        .translation_units
+        .iter()
+        .map(|unit| (unit.id.as_str(), unit.file.as_str()))
+        .collect();
+    let declaration_by_id: HashMap<&str, &crate::clang_ast::SourceDeclaration> = registry
+        .declarations
+        .iter()
+        .map(|decl| (decl.id.as_str(), decl))
+        .collect();
+    let expression_by_id: HashMap<&str, &crate::clang_ast::SourceExpression> = registry
+        .expressions
+        .iter()
+        .map(|expr| (expr.id.as_str(), expr))
+        .collect();
+    let dwarf_by_id: HashMap<&str, &crate::dwarf::Declaration> = trace
+        .type_registry
+        .as_ref()
+        .map(|r| {
+            r.declarations
+                .iter()
+                .map(|decl| (decl.id.as_str(), decl))
+                .collect()
+        })
+        .unwrap_or_default();
+    let dwarf_units: HashMap<&str, &crate::dwarf::UnitInfo> = trace
+        .type_registry
+        .as_ref()
+        .map(|r| {
+            r.units
+                .iter()
+                .map(|unit| (unit.id.as_str(), unit))
+                .collect()
+        })
+        .unwrap_or_default();
     let dwarf_ids: std::collections::HashSet<_> = trace
         .type_registry
         .as_ref()
@@ -313,6 +348,61 @@ fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
         })
         .unwrap_or_default();
     for decl in &registry.declarations {
+        if !source_unit_consistent(&decl.unit_id, &decl.span.file, &units)
+            || decl
+                .dwarf_declaration
+                .as_deref()
+                .and_then(|id| dwarf_by_id.get(id))
+                .is_some_and(|dwarf| {
+                    decl.name != dwarf.name.as_deref().unwrap_or(&decl.name)
+                        || dwarf
+                            .file
+                            .as_deref()
+                            .is_some_and(|file| !same_source_file(&decl.span.file, file))
+                        || (decl.span.provenance == "direct"
+                            && decl
+                                .name_line
+                                .zip(dwarf.line)
+                                .is_some_and(|(left, right)| left != right))
+                        || decl
+                            .function
+                            .as_deref()
+                            .zip(dwarf.function.as_deref())
+                            .is_some_and(|(left, right)| left != right)
+                        || dwarf_units
+                            .get(dwarf.unit_id.as_str())
+                            .zip(units.get(decl.unit_id.as_str()).copied())
+                            .is_some_and(|(unit, file)| !dwarf_unit_matches(unit, file))
+                })
+            || decl
+                .dwarf_declaration
+                .as_deref()
+                .and_then(|id| dwarf_by_id.get(id))
+                .is_some_and(|dwarf| {
+                    decl.kind != "FieldDecl"
+                        && decl
+                            .dwarf_type_ref
+                            .as_deref()
+                            .zip(dwarf.type_ref.as_deref())
+                            .is_some_and(|(left, right)| left != right)
+                })
+            || decl.dwarf_member.as_ref().is_some_and(|member| {
+                !member_parent_matches(decl.parent_type_spelling.as_deref(), member, &dwarf_types)
+                    || decl.name != member.name
+                    || decl
+                        .dwarf_type_ref
+                        .as_deref()
+                        .zip(member_type_ref(member, &dwarf_types))
+                        .is_some_and(|(left, right)| left != right)
+            })
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "AST_DECLARATION_RELATION_INVALID",
+                "source declaration contradicts its unit, DWARF identity or containing member type",
+                ValidationLocation::Trace,
+            );
+        }
         if decl
             .initializer
             .as_deref()
@@ -339,6 +429,60 @@ fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
         }
     }
     for expr in &registry.expressions {
+        let referenced = expr
+            .referenced_declaration
+            .as_deref()
+            .and_then(|id| declaration_by_id.get(id).copied());
+        if !source_unit_consistent(&expr.unit_id, &expr.span.file, &units)
+            || expr
+                .operand_ids
+                .iter()
+                .filter_map(|id| expression_by_id.get(id.as_str()))
+                .any(|operand| operand.unit_id != expr.unit_id)
+            || (expr.referenced_dwarf_declaration.is_some() && referenced.is_none())
+            || (expr.dwarf_type_evidence.as_deref() == Some("referenced_declaration_type")
+                && referenced.is_none())
+            || referenced.is_some_and(|decl| {
+                decl.unit_id != expr.unit_id
+                    || expr
+                        .referenced_dwarf_declaration
+                        .as_deref()
+                        .is_some_and(|id| decl.dwarf_declaration.as_deref() != Some(id))
+                    || expr.dwarf_type_evidence.as_deref() == Some("referenced_declaration_type")
+                        && expr.dwarf_type_ref.as_deref() != decl.dwarf_type_ref.as_deref()
+                    || expr
+                        .member_ref
+                        .as_ref()
+                        .zip(decl.dwarf_member.as_ref())
+                        .is_some_and(|(left, right)| left != right)
+            })
+            || expr.member_ref.as_ref().is_some_and(|member| {
+                expr.kind != "MemberExpr"
+                    || expr
+                        .member_name
+                        .as_deref()
+                        .is_some_and(|name| name != member.name)
+                    || !member_parent_matches(
+                        expr.base_type_spelling.as_deref(),
+                        member,
+                        &dwarf_types,
+                    )
+                    || expr.dwarf_type_evidence.as_deref()
+                        == Some("unique_parent_type_and_member_name")
+                        && expr
+                            .dwarf_type_ref
+                            .as_deref()
+                            .zip(member_type_ref(member, &dwarf_types))
+                            .is_some_and(|(left, right)| left != right)
+            })
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "AST_EXPRESSION_RELATION_INVALID",
+                "source expression contradicts its unit, declaration, member or type evidence",
+                ValidationLocation::Trace,
+            );
+        }
         if expr
             .operand_ids
             .iter()
@@ -369,6 +513,19 @@ fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
         }
     }
     for candidate in &registry.heap_call_candidates {
+        if trace
+            .heap_events
+            .get(candidate.event_index)
+            .zip(expression_by_id.get(candidate.expression_id.as_str()))
+            .is_some_and(|(event, expr)| !compatible_heap_call(event, expr))
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "AST_HEAP_CANDIDATE_RELATION_INVALID",
+                "heap-call candidate contradicts operation or resolved source site",
+                ValidationLocation::Trace,
+            );
+        }
         if candidate.event_index >= trace.heap_events.len()
             || !expressions.contains(candidate.expression_id.as_str())
         {
@@ -381,6 +538,21 @@ fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
         }
     }
     for ambiguity in &registry.heap_call_ambiguities {
+        if let Some(event) = trace.heap_events.get(ambiguity.event_index) {
+            if ambiguity
+                .expression_ids
+                .iter()
+                .filter_map(|id| expression_by_id.get(id.as_str()))
+                .any(|expr| !compatible_heap_call(event, expr))
+            {
+                builder.push(
+                    ValidationSeverity::StructuralCorruption,
+                    "AST_HEAP_AMBIGUITY_RELATION_INVALID",
+                    "heap-call ambiguity includes an incompatible call",
+                    ValidationLocation::Trace,
+                );
+            }
+        }
         if ambiguity.event_index >= trace.heap_events.len()
             || ambiguity.expression_ids.is_empty()
             || ambiguity
@@ -396,6 +568,102 @@ fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
             );
         }
     }
+}
+
+/// Compare only source locations that carry explicit file identity; never
+/// identify two files by basename. Missing optional metadata is not a fault.
+fn same_source_file(a: &str, b: &str) -> bool {
+    if a == b {
+        return true;
+    }
+    let left = std::path::Path::new(a);
+    let right = std::path::Path::new(b);
+    match (std::fs::canonicalize(left), std::fs::canonicalize(right)) {
+        (Ok(left), Ok(right)) => left == right,
+        // Absolute paths still give an explicit identity when the source is
+        // no longer on disk. A relative path without its base is ambiguous.
+        _ if left.is_absolute() && right.is_absolute() => left == right,
+        _ => true,
+    }
+}
+
+fn dwarf_unit_matches(unit: &crate::dwarf::UnitInfo, source: &str) -> bool {
+    let Some(name) = unit.name.as_deref().filter(|name| *name != "<artificial>") else {
+        return true;
+    };
+    let path = std::path::Path::new(name);
+    let resolved = if path.is_absolute() {
+        path.to_path_buf()
+    } else if let Some(dir) = unit.compilation_dir.as_deref() {
+        std::path::Path::new(dir).join(path)
+    } else {
+        // A basename with no compilation directory cannot prove a CU mismatch.
+        return true;
+    };
+    same_source_file(&resolved.to_string_lossy(), source)
+}
+
+fn source_unit_consistent(unit: &str, _span_file: &str, units: &HashMap<&str, &str>) -> bool {
+    // A header or macro span can legitimately differ from its TU main file;
+    // unit existence is still required when a TU registry is available.
+    units.contains_key(unit) || units.is_empty()
+}
+
+fn member_type_ref<'a>(
+    member: &crate::clang_ast::DwarfMemberRef,
+    types: &HashMap<&str, &'a crate::dwarf::TypeEntry>,
+) -> Option<&'a str> {
+    types
+        .get(member.type_ref.as_str())?
+        .members
+        .get(member.member_index)?
+        .type_ref
+        .as_deref()
+}
+
+fn member_parent_matches(
+    spelling: Option<&str>,
+    member: &crate::clang_ast::DwarfMemberRef,
+    types: &HashMap<&str, &crate::dwarf::TypeEntry>,
+) -> bool {
+    let (Some(spelling), Some(parent)) = (spelling, types.get(member.type_ref.as_str())) else {
+        return true;
+    };
+    let mut words = spelling.split_whitespace();
+    let Some(kind @ ("struct" | "union")) = words.next() else {
+        return true;
+    };
+    let Some(name) = words.next() else {
+        return true;
+    };
+    parent.kind == kind && parent.name.as_deref() == Some(name.trim_end_matches('*'))
+}
+
+fn compatible_heap_call(
+    event: &crate::models::HeapEvent,
+    expr: &crate::clang_ast::SourceExpression,
+) -> bool {
+    let operation_matches = matches!(
+        (expr.call_kind.as_deref(), &event.event_type),
+        (Some("malloc" | "calloc"), HeapEventType::Allocated)
+            | (Some("realloc"), HeapEventType::Reallocated)
+            | (Some("free"), HeapEventType::Freed)
+    );
+    operation_matches
+        && expr.kind == "CallExpr"
+        && event
+            .source_file
+            .as_deref()
+            .zip(event.source_line)
+            .is_none_or(|(file, line)| {
+                same_source_file(file, &expr.span.file)
+                    && line >= expr.span.start_line
+                    && line
+                        <= expr
+                            .span
+                            .end_line
+                            .min(expr.span.start_line.saturating_add(64))
+            })
 }
 
 fn valid_member_ref(

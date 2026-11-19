@@ -140,8 +140,12 @@ pub struct Cli {
     pub max_instruction_events: Option<usize>,
     #[arg(long)]
     pub max_gdb_commands: Option<u64>,
+    /// Maximum JSONL journal bytes, not final JSON size (default 128 MiB).
     #[arg(long)]
     pub max_trace_bytes: Option<usize>,
+    /// Maximum final UTF-8 JSON bytes per destination, including newline (default 128 MiB).
+    #[arg(long)]
+    pub max_json_export_bytes: Option<usize>,
     #[arg(long)]
     pub max_trace_memory_bytes: Option<usize>,
     #[arg(long)]
@@ -332,6 +336,9 @@ impl Cli {
         if let Some(v) = self.max_trace_bytes {
             limits.max_trace_bytes = v;
         }
+        if let Some(v) = self.max_json_export_bytes {
+            limits.max_json_export_bytes = v;
+        }
         if let Some(v) = self.max_trace_memory_bytes {
             limits.max_trace_memory_bytes = v;
         }
@@ -483,12 +490,15 @@ mod tests {
             "64",
             "--max-snapshots",
             "5",
+            "--max-json-export-bytes",
+            "4096",
         ])
         .unwrap();
         assert_eq!(cfg.limits.timeout_seconds, 3);
         assert_eq!(cfg.limits.max_steps, 17);
         assert_eq!(cfg.limits.max_memory_mb, 64);
         assert_eq!(cfg.limits.max_snapshot_count, 5);
+        assert_eq!(cfg.limits.max_json_export_bytes, 4096);
         assert_eq!(cfg.limits.max_output_bytes, 1024 * 1024); // untouched default
         let _ = std::fs::remove_dir_all(&dir);
     }
@@ -505,7 +515,7 @@ mod tests {
             r#"{
                 "source": "SHOULD_BE_OVERRIDDEN",
                 "defines": ["FROM_FILE=1"],
-                "limits": {"timeout_seconds": 7},
+                "limits": {"timeout_seconds": 7, "max_json_export_bytes": 16384},
                 "pretty": false
             }"#,
         )
@@ -519,16 +529,23 @@ mod tests {
             "FROM_CLI=2",
             "--timeout",
             "2",
+            "--max-json-export-bytes",
+            "32768",
         ])
         .unwrap();
         // CLI scalar beats file
         assert_eq!(cfg.limits.timeout_seconds, 2);
+        assert_eq!(cfg.limits.max_json_export_bytes, 32768);
         // CLI list appends to file list
         assert_eq!(cfg.build.defines, vec!["FROM_FILE=1", "FROM_CLI=2"]);
         // file-only scalar applies
         assert!(!cfg.pretty);
         // limits not mentioned in the file keep engine defaults
         assert_eq!(cfg.limits.max_steps, 1000);
+        let legacy: crate::resource_limits::ExecutionLimits =
+            serde_json::from_str(r#"{"max_trace_bytes":2048}"#).unwrap();
+        assert_eq!(legacy.max_trace_bytes, 2048);
+        assert_eq!(legacy.max_json_export_bytes, 128 * 1024 * 1024);
         let _ = std::fs::remove_dir_all(&dir);
     }
 }

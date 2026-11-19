@@ -19,7 +19,7 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use crate::error::{EngineError, Result};
-use crate::models::{ValgrindError, ValgrindFrame, ValgrindReport};
+use crate::models::{ValgrindError, ValgrindFrame, ValgrindReport, ValgrindSiteCandidate};
 
 /// Run Valgrind memcheck against the debug binary.
 ///
@@ -323,6 +323,7 @@ fn parse_error(node: roxmltree::Node) -> ValgrindError {
         leaked_bytes: 0,
         leaked_blocks: 0,
         related_allocation_ids: Vec::new(),
+        source_site_candidates: Vec::new(),
     };
 
     // Leak sizes live under <xwhat><leakedbytes>/<leakedblocks>.
@@ -372,47 +373,58 @@ fn parse_frame(node: roxmltree::Node) -> ValgrindFrame {
     }
 }
 
-/// Correlate Valgrind errors with allocation ids by matching (file, line)
-/// sites from the allocation timeline against error stack frames.
-///
-/// This is deliberately conservative: only reliable (file, line) matches are
-/// used; no fuzzy or address-based guessing.
+/// Legacy entry point: compare *source sites*, not allocation lifetimes.
+/// Valgrind is an independent execution. The third tuple element (primary-run
+/// allocation ID) is deliberately ignored: neither an equal numeric address
+/// nor a matching file/line proves that this Valgrind run saw that allocation.
+/// No caller currently has same-execution event identity evidence, so this
+/// API **never** creates definitive `related_allocation_ids`.
+/// An absolute file path from Valgrind's dir/file and an equal absolute
+/// allocation source path may yield a site-only candidate, without an ID.
 pub fn correlate_with_allocations(
     report: &mut ValgrindReport,
     allocation_sites: &[(String, u32, u64)],
 ) {
     for err in &mut report.detailed_errors {
-        let mut ids: Vec<u64> = Vec::new();
-        let mut stacks: Vec<&ValgrindFrame> = err.stack.iter().collect();
-        for aux in &err.aux_stacks {
-            stacks.extend(aux.iter());
-        }
-        for frame in stacks {
-            let Some(file) = frame.file.clone() else {
+        err.related_allocation_ids.clear();
+        let mut sites = Vec::<(String, u32)>::new();
+        for frame in err.stack.iter().chain(err.aux_stacks.iter().flatten()) {
+            let (Some(file), Some(line)) = (frame.file.as_deref(), frame.line) else {
                 continue;
             };
-            let Some(line) = frame.line else { continue };
-            for (a_file, a_line, id) in allocation_sites {
-                if *a_line == line && file_matches(&file, a_file) {
-                    ids.push(*id);
+            let xml_path = frame
+                .dir
+                .as_deref()
+                .map(|dir| Path::new(dir).join(file))
+                .unwrap_or_else(|| PathBuf::from(file));
+            if !xml_path.is_absolute() {
+                continue;
+            }
+            let xml_path = xml_path.canonicalize().unwrap_or(xml_path);
+            for (candidate, candidate_line, _) in allocation_sites {
+                let candidate_path = Path::new(candidate);
+                if !candidate_path.is_absolute() || *candidate_line != line {
+                    continue;
+                }
+                if candidate_path
+                    .canonicalize()
+                    .unwrap_or_else(|_| candidate_path.to_path_buf())
+                    == xml_path
+                {
+                    sites.push((xml_path.display().to_string(), line));
                 }
             }
         }
-        ids.sort_unstable();
-        ids.dedup();
-        err.related_allocation_ids = ids;
-    }
-}
-
-fn file_matches(xml_file: &str, alloc_file: &str) -> bool {
-    if alloc_file.ends_with(xml_file) || xml_file == alloc_file {
-        return true;
-    }
-    // Compare by basename as a last resort (valgrind may report only the
-    // basename while the timeline resolved an absolute path).
-    match (alloc_file.rsplit('/').next(), xml_file.rsplit('/').next()) {
-        (Some(a), Some(b)) => a == b,
-        _ => false,
+        sites.sort();
+        sites.dedup();
+        err.source_site_candidates = sites
+            .into_iter()
+            .map(|(file, line)| ValgrindSiteCandidate {
+                file,
+                line,
+                evidence: "same_source_site_independent_run_not_allocation_identity".into(),
+            })
+            .collect();
     }
 }
 
@@ -517,16 +529,71 @@ mod tests {
     }
 
     #[test]
+    fn independent_run_same_site_and_basename_collision_never_assert_identity() {
+        let mut r = parse_valgrind_xml(LEAK_XML).unwrap();
+        let sites = vec![
+            ("/tmp/opencode/probe/leaky.c".to_string(), 3, 7),
+            ("/tmp/opencode/probe/leaky.c".to_string(), 3, 8),
+            ("/other/leaky.c".to_string(), 3, 99),
+        ];
+        correlate_with_allocations(&mut r, &sites);
+        let error = r
+            .detailed_errors
+            .iter()
+            .find(|e| e.leaked_bytes == 40)
+            .unwrap();
+        assert!(
+            error.related_allocation_ids.is_empty(),
+            "independent-run site must not imply allocation lifetime"
+        );
+        assert_eq!(
+            error.source_site_candidates.len(),
+            1,
+            "foreign same-basename file must not match"
+        );
+        assert_eq!(
+            error.source_site_candidates[0].file,
+            "/tmp/opencode/probe/leaky.c"
+        );
+        assert_eq!(error.source_site_candidates[0].line, 3);
+    }
+
+    #[test]
+    fn missing_or_different_source_identity_has_no_candidate_or_exact_id() {
+        let mut report = parse_valgrind_xml(LEAK_XML).unwrap();
+        let sites = [
+            ("/different/leaky.c".into(), 3, 2),
+            ("/tmp/opencode/probe/leaky.c".into(), 999, 3),
+            ("leaky.c".into(), 3, 4),
+        ];
+        correlate_with_allocations(&mut report, &sites);
+        assert!(report
+            .detailed_errors
+            .iter()
+            .all(|e| e.related_allocation_ids.is_empty() && e.source_site_candidates.is_empty()));
+        // Old schema-2 diagnostics deserialize intact. Re-correlation cannot
+        // treat a legacy ID as verified same-run provenance.
+        let mut legacy = serde_json::to_value(&report).unwrap();
+        legacy["detailed_errors"][0]["related_allocation_ids"] = serde_json::json!([71]);
+        let mut decoded: ValgrindReport = serde_json::from_value(legacy).unwrap();
+        assert_eq!(decoded.detailed_errors[0].related_allocation_ids, vec![71]);
+        correlate_with_allocations(&mut decoded, &sites);
+        assert!(decoded.detailed_errors[0].related_allocation_ids.is_empty());
+    }
+
+    #[test]
     fn correlation_matches_by_file_line() {
         let mut r = parse_valgrind_xml(LEAK_XML).unwrap();
-        let sites = vec![("src/leaky.c".to_string(), 3u32, 7u64)];
+        let sites = vec![("/tmp/opencode/probe/leaky.c".to_string(), 3u32, 7u64)];
         correlate_with_allocations(&mut r, &sites);
         let leak = r
             .detailed_errors
             .iter()
             .find(|e| e.leaked_bytes == 40)
             .unwrap();
-        assert_eq!(leak.related_allocation_ids, vec![7]);
+        assert!(leak.related_allocation_ids.is_empty());
+        assert_eq!(leak.source_site_candidates.len(), 1);
+        assert_eq!(leak.source_site_candidates[0].line, 3);
     }
 
     #[test]

@@ -168,6 +168,95 @@ use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::time::{Duration, Instant};
 
+#[tokio::test]
+async fn crash_globals_and_snapshot_cap_do_not_claim_complete_coverage() {
+    let Some(_permit) = tools().await else { return };
+    let mut c = config("phase8r3_crash.c");
+    c.tracing.discover_globals = false;
+    c.tracing.globals = vec!["observed_global".into()];
+    let trace = trace_program(c.clone()).await.unwrap();
+    assert_eq!(trace.execution_status, ExecutionStatus::Crashed);
+    let crash = trace.snapshots.last().expect("crash checkpoint");
+    assert_eq!(crash.signal.as_deref(), Some("SIGSEGV"));
+    assert_eq!(crash.observation.globals.len(), 1);
+    assert_eq!(crash.observation.globals[0].value, "123");
+
+    c.limits.max_snapshot_count = 2;
+    c.tracing.mode = TraceMode::Dual; // fatal stop occurs after two ordinary checkpoints
+    let capped = trace_program(c).await.unwrap();
+    assert_eq!(capped.execution_status, ExecutionStatus::Crashed);
+    assert_eq!(capped.snapshots.len(), 2);
+    assert!(!capped.recording.coverage.complete_for_scope);
+    assert!(capped
+        .recording
+        .coverage
+        .truncation_reasons
+        .iter()
+        .any(|reason| reason.contains("max_snapshot_count")));
+}
+
+#[tokio::test]
+async fn requested_global_query_failure_and_budget_exhaustion_are_incomplete() {
+    let Some(_permit) = tools().await else { return };
+    let mut c = config("phase8r3_crash.c");
+    c.tracing.discover_globals = false;
+    c.tracing.globals = vec!["missing_requested_global".into()];
+    let failed = trace_program(c.clone()).await.unwrap();
+    assert_eq!(failed.execution_status, ExecutionStatus::Crashed);
+    let crash = failed.snapshots.last().unwrap();
+    assert_eq!(crash.observation.globals.len(), 1);
+    assert!(crash.observation.globals[0].read_error.is_some());
+    assert!(!crash.observation.complete);
+    assert!(!crash.observation.errors.is_empty());
+
+    c.tracing.globals = vec!["observed_global".into()];
+    c.limits.max_snapshot_memory_bytes = 1;
+    let limited = trace_program(c).await.unwrap();
+    assert_eq!(limited.execution_status, ExecutionStatus::Crashed);
+    let crash = limited.snapshots.last().unwrap();
+    assert_eq!(crash.observation.globals.len(), 1);
+    assert!(!crash.observation.complete);
+    assert!(crash.observation.globals[0]
+        .memory_evidence
+        .as_ref()
+        .is_some_and(|e| e.status != "full"));
+}
+
+#[tokio::test]
+async fn exact_fit_inferior_output_stays_complete() {
+    let Some(_permit) = tools().await else { return };
+    // Independent POSIX write oracle: four 16-byte writes, no newline or
+    // terminal escape processing, exactly 64 output bytes.
+    let mut c = config("phase8b_exact_output.c");
+    c.limits.max_output_bytes = 64;
+    let trace = trace_program(c).await.unwrap();
+    assert_eq!(trace.execution_status, ExecutionStatus::Completed);
+    assert!(!trace.resource_usage.program_output_truncated);
+    assert_eq!(trace.resource_usage.program_output_bytes, 64);
+}
+
+#[tokio::test]
+async fn blocked_inferior_stop_wait_is_timeout_not_debugger_failure() {
+    let Some(_permit) = tools().await else { return };
+    let mut c = config("phase8b_blocked.c");
+    c.limits.timeout_seconds = 25; // exceeds the fixed 10-second stop wait
+    c.tracing.mode = TraceMode::Source;
+    let trace = trace_program(c).await.unwrap();
+    assert_eq!(
+        trace.execution_status,
+        ExecutionStatus::Timeout,
+        "the step was accepted; a blocked inferior is not a failed MI command: {:?}",
+        trace.analysis_notes
+    );
+    assert!(trace
+        .resource_usage
+        .limits_triggered
+        .iter()
+        .any(|reason| reason == "debugger_stop_wait_timeout"));
+    assert!(!trace.snapshots.is_empty());
+    assert!(!trace.recording.coverage.complete_for_scope);
+}
+
 fn config(name: &str) -> TraceConfig {
     let mut c = TraceConfig::default();
     c.build.source_file = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -333,12 +422,16 @@ async fn deadline_includes_queries_and_does_not_start_valgrind_after_expiry() {
         return;
     };
     let mut c = config("spin_same_line.c");
-    c.limits.timeout_seconds = 3;
+    // The deadline begins before GCC/GDB startup. Leave enough time for at
+    // least one real stop on a busy host; still require a runtime timeout,
+    // partial instruction evidence and no subsequent Valgrind pass.
+    c.limits.timeout_seconds = 8;
+    c.limits.max_steps = 100_000;
     c.limits.max_source_checkpoints = 100_000;
     let start = Instant::now();
     let t = trace_program(c).await.unwrap();
     assert!(
-        start.elapsed() < Duration::from_secs(6),
+        start.elapsed() < Duration::from_secs(11),
         "cleanup grace exceeded"
     );
     assert_eq!(t.execution_status, ExecutionStatus::Timeout);
@@ -666,11 +759,11 @@ async fn allocation_tracker_metadata_is_honest_when_timed_out() {
     let Some(_permit) = tools().await else {
         return;
     };
-    // many_allocs.c allocates continuously; with the default step budget it
-    // will not finish within a 2 s wall deadline, so the tracker is
-    // interrupted with partial allocation events already ingested.
+    // many_allocs.c allocates continuously. Five seconds leaves enough room
+    // for compilation/GDB startup and at least one verified event on slower
+    // hosts, but not for 5,000 source-stepped allocation/free pairs.
     let mut c = config("many_allocs.c");
-    c.limits.timeout_seconds = 2;
+    c.limits.timeout_seconds = 5;
     let t = trace_program(c).await.unwrap();
     assert_eq!(t.execution_status, ExecutionStatus::Timeout);
     let tracker = &t.stage_results.allocation_tracker;

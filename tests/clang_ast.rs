@@ -188,6 +188,67 @@ async fn gcc_and_clang_apply_defines_undefines_includes_and_language_mode() {
 }
 
 #[tokio::test]
+async fn mixed_direct_and_macro_free_calls_are_not_claimed_unique() {
+    for tool in ["clang", "gcc", "gdb", "addr2line"] {
+        if c_trace_engine::compiler::probe_tool(tool, "--version")
+            .await
+            .is_err()
+        {
+            eprintln!("skipped: {tool} unavailable");
+            return;
+        }
+    }
+    let source = fixture("phase8b_macro.c");
+    // GCC preprocessing is an independent oracle for the two same-line
+    // frees; neither the AST nor a single return PC can prove which ran.
+    let preprocessed = std::process::Command::new("gcc")
+        .args(["-E", "-P"])
+        .arg(&source)
+        .output()
+        .unwrap();
+    assert!(preprocessed.status.success());
+    assert!(String::from_utf8_lossy(&preprocessed.stdout).contains("free(first); free(second);"));
+    let mut c = TraceConfig::default();
+    c.build.source_file = source;
+    c.clang_ast = true;
+    c.tracing.mode = TraceMode::Source;
+    c.sanitizer_trigger = SanitizerTrigger::Never;
+    c.limits.timeout_seconds = 35;
+    let trace = trace_program(c).await.unwrap();
+    let registry = trace.source_metadata.as_ref().unwrap();
+    let first_free = trace
+        .heap_events
+        .iter()
+        .position(|e| {
+            e.event_type == c_trace_engine::models::HeapEventType::Freed && e.source_line == Some(7)
+        })
+        .expect("first free resolves to line 7");
+    let ambiguous = registry
+        .heap_call_ambiguities
+        .iter()
+        .find(|entry| entry.event_index == first_free)
+        .expect("not uniquely attributable");
+    assert_eq!(
+        ambiguous.evidence,
+        "multiple_compatible_calls_on_resolved_line"
+    );
+    assert_eq!(ambiguous.expression_ids.len(), 2);
+    assert!(registry
+        .heap_call_candidates
+        .iter()
+        .all(|c| c.event_index != first_free));
+    let expressions: Vec<_> = registry
+        .expressions
+        .iter()
+        .filter(|e| ambiguous.expression_ids.contains(&e.id))
+        .collect();
+    assert!(expressions.iter().any(|e| e.span.provenance == "direct"));
+    assert!(expressions
+        .iter()
+        .any(|e| e.span.provenance == "macro_expansion"));
+}
+
+#[tokio::test]
 async fn real_clang_extracts_source_and_macro_evidence_without_header_flood() {
     if c_trace_engine::compiler::probe_tool("clang", "--version")
         .await
@@ -400,6 +461,10 @@ async fn missing_clang_records_failure_without_claiming_complete_ast() {
     assert_eq!(
         trace.source_metadata.as_ref().unwrap().translation_units[0].status,
         "unavailable"
+    );
+    assert!(
+        !trace.evidence_fusion.as_ref().unwrap().ast_available,
+        "all-failed Clang extraction cannot advertise AST evidence"
     );
 }
 

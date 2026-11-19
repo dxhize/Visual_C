@@ -85,8 +85,12 @@ pub struct ExecutionLimits {
     pub max_extra_memory_reads: usize,
     pub max_instruction_events: usize,
     pub max_source_checkpoints: usize,
+    /// Maximum JSONL journal bytes; does not bound final JSON export.
     pub max_trace_bytes: usize,
     pub max_trace_memory_bytes: usize,
+    /// Maximum UTF-8 bytes in each final JSON export, including formatting and newline.
+    #[serde(skip_serializing_if = "default_json_export_bytes")]
+    pub max_json_export_bytes: usize,
     pub max_gdb_commands: u64,
     pub max_globals: usize,
     pub compiler_timeout_seconds: u64,
@@ -94,6 +98,9 @@ pub struct ExecutionLimits {
     pub analysis_timeout_seconds: u64,
 }
 
+fn default_json_export_bytes(value: &usize) -> bool {
+    *value == 128 * 1024 * 1024
+}
 fn default_aggregate_bytes(value: &usize) -> bool {
     *value == 4096
 }
@@ -132,6 +139,7 @@ impl Default for ExecutionLimits {
             max_source_checkpoints: 1_000,
             max_trace_bytes: 128 * 1024 * 1024,
             max_trace_memory_bytes: 32 * 1024 * 1024,
+            max_json_export_bytes: 128 * 1024 * 1024,
             max_gdb_commands: 1_000_000,
             max_globals: 32,
             compiler_timeout_seconds: 30,
@@ -157,9 +165,10 @@ impl ExecutionLimits {
         if self.max_gdb_commands == 0
             || self.max_trace_bytes == 0
             || self.max_trace_memory_bytes == 0
+            || self.max_json_export_bytes == 0
         {
             return Err(EngineError::Config(
-                "debugger command and trace storage budgets must be positive".into(),
+                "debugger command, journal, resident trace and JSON export budgets must be positive".into(),
             ));
         }
         if self.max_steps == 0 {

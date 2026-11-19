@@ -703,6 +703,26 @@ mod tests {
     }
 
     #[test]
+    fn seeded_truncated_and_mutated_mi_records_never_panic() {
+        let original = b"42*stopped,reason=\"end-stepping-range\",frame={addr=\"0x400500\",func=\"main\",line=\"7\"}";
+        for prefix in 0..original.len() {
+            let candidate = std::str::from_utf8(&original[..prefix]).unwrap();
+            let _ = parse_line(candidate); // all truncation boundaries are bounded
+        }
+        let mut seed = 0x8b2026u64;
+        for iteration in 0..256 {
+            seed ^= seed << 13;
+            seed ^= seed >> 7;
+            seed ^= seed << 17;
+            let mut bytes = original.to_vec();
+            let index = (seed as usize) % bytes.len();
+            bytes[index] = b"\"\\{},\n0!"[iteration % 8];
+            let line = std::str::from_utf8(&bytes).unwrap();
+            let _ = parse_line(line);
+        }
+    }
+
+    #[test]
     fn simple_result_record() {
         let r = parse("6^done");
         match r {

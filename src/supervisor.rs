@@ -278,6 +278,18 @@ pub async fn output(cmd: &mut Command, end: Instant, cap: usize) -> Result<Proce
             }
         }
     }
+    // Termination can race with pipe-reader scheduling. Even after the child
+    // was reaped, its pre-cancellation bytes may remain buffered in the OS
+    // pipe. Give already-produced output a bounded chance to drain; do not
+    // wait indefinitely on an unrelated descendant holding a pipe open.
+    if was_cancelled || timed_out {
+        if !out_done {
+            let _ = tokio::time::timeout(Duration::from_millis(100), &mut stdout).await;
+        }
+        if !err_done {
+            let _ = tokio::time::timeout(Duration::from_millis(100), &mut stderr).await;
+        }
+    }
     drop(stdout);
     drop(stderr);
     reap_descendants(adopted, Instant::now() + Duration::from_secs(2)).await;
@@ -319,13 +331,25 @@ mod tests {
     #[tokio::test]
     async fn cancellation_wakes_stalled_process_wait_and_retains_partial_output() {
         let start = Instant::now();
+        let ready =
+            std::env::temp_dir().join(format!("cte-supervisor-ready-{}", std::process::id()));
+        let _ = std::fs::remove_file(&ready);
         let out = scope(30, async {
             let mut command = Command::new("sh");
-            command.args(["-c", "echo observed; sleep 20"]);
+            command
+                .args(["-c", "echo observed; : > \"$1\"; sleep 20", "sh"])
+                .arg(&ready);
             let (out, ()) = tokio::join!(
                 output(&mut command, Instant::now() + Duration::from_secs(20), 1024),
                 async {
-                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    let deadline = Instant::now() + Duration::from_secs(2);
+                    while !ready.exists() && Instant::now() < deadline {
+                        tokio::time::sleep(Duration::from_millis(5)).await;
+                    }
+                    assert!(
+                        ready.exists(),
+                        "child never wrote the independent readiness marker"
+                    );
                     request_cancel();
                 }
             );
@@ -336,6 +360,7 @@ mod tests {
         assert!(!out.timed_out);
         assert!(String::from_utf8_lossy(&out.stdout).contains("observed"));
         assert!(start.elapsed() < Duration::from_secs(2));
+        std::fs::remove_file(ready).unwrap();
     }
     #[tokio::test]
     async fn stalled_process_and_inherited_pipes_are_bounded() {

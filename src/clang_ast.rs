@@ -1016,38 +1016,38 @@ pub fn correlate_heap_calls(
                 compatible(expr, event).then(|| expr.id.clone())
             })
             .collect();
-        let (evidence, ids) = match direct_ids.as_slice() {
-            [only] => {
-                registry.heap_call_candidates.push(HeapCallCandidate {
-                    event_index: index,
-                    expression_id: only.clone(),
-                    evidence: "unique_direct_call_on_resolved_line_not_exact_execution".into(),
-                });
-                continue;
-            }
-            [] => {
-                let ids: Vec<String> = expanded
-                    .get(&key)
-                    .into_iter()
-                    .flatten()
-                    .filter_map(|&position| {
-                        let expr = &registry.expressions[position];
-                        compatible(expr, event).then(|| expr.id.clone())
-                    })
-                    .collect();
-                if ids.is_empty() {
-                    continue;
-                }
-                ("only_macro_expanded_calls_on_resolved_line", ids)
-            }
-            _ => ("multiple_compatible_calls_on_resolved_line", direct_ids),
+        let expanded_ids: Vec<String> = expanded
+            .get(&key)
+            .into_iter()
+            .flatten()
+            .filter_map(|&position| {
+                let expr = &registry.expressions[position];
+                compatible(expr, event).then(|| expr.id.clone())
+            })
+            .collect();
+        if direct_ids.len() == 1 && expanded_ids.is_empty() {
+            registry.heap_call_candidates.push(HeapCallCandidate {
+                event_index: index,
+                expression_id: direct_ids[0].clone(),
+                evidence: "unique_direct_call_on_resolved_line_not_exact_execution".into(),
+            });
+            continue;
+        }
+        if direct_ids.is_empty() && expanded_ids.is_empty() {
+            continue;
+        }
+        let evidence = if direct_ids.is_empty() {
+            "only_macro_expanded_calls_on_resolved_line"
+        } else {
+            "multiple_compatible_calls_on_resolved_line"
         };
+        let ids = direct_ids.into_iter().chain(expanded_ids);
         registry.heap_call_ambiguities.push(HeapCallAmbiguity {
             event_index: index,
             evidence: evidence.into(),
             // Output stays bounded; the record already states that the line
             // held more than one compatible call.
-            expression_ids: ids.into_iter().take(8).collect(),
+            expression_ids: ids.take(8).collect(),
         });
     }
     registry.heap_correlation_time_us = started.elapsed().as_micros() as u64;

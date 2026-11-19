@@ -5,6 +5,8 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+static int worker_iterations = 20;
+
 static void allocation_pair(void)
 {
     void *p = malloc(37);
@@ -16,18 +18,26 @@ static void allocation_pair(void)
 static void *worker(void *unused)
 {
     (void)unused;
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < worker_iterations; i++)
         allocation_pair();
     return NULL;
 }
 
 int main(int argc, char **argv)
 {
-    if (argc != 2)
+    if (argc < 2 || argc > 3)
         return 2;
+    int iterations = 1;
+    if (argc == 3) {
+        char *end = NULL;
+        unsigned long parsed = strtoul(argv[2], &end, 10);
+        if (!end || *end || parsed == 0 || parsed > 1000000)
+            return 8;
+        iterations = (int)parsed;
+    }
     if (strcmp(argv[1], "forks") == 0) {
         allocation_pair();
-        for (int i = 0; i < 3; i++) {
+        for (int i = 0; i < (argc == 3 ? iterations : 3); i++) {
             pid_t child = fork();
             if (child < 0)
                 return 3;
@@ -41,6 +51,8 @@ int main(int argc, char **argv)
         }
         allocation_pair();
     } else if (strcmp(argv[1], "threads") == 0) {
+        if (argc == 3)
+            worker_iterations = iterations;
         pthread_t threads[4];
         for (int i = 0; i < 4; i++)
             if (pthread_create(&threads[i], NULL, worker, NULL))
@@ -49,7 +61,8 @@ int main(int argc, char **argv)
             if (pthread_join(threads[i], NULL))
                 return 6;
     } else if (strcmp(argv[1], "normal") == 0) {
-        allocation_pair();
+        for (int i = 0; i < iterations; i++)
+            allocation_pair();
     } else {
         return 7;
     }

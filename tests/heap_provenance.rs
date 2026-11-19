@@ -54,6 +54,10 @@ fn terminal_event_status_rejects_missing_damaged_and_unacknowledged_pids() {
     let mut timeline = HeapTimeline::new(8);
     timeline.ingest(&parse_event_line("100 1 malloc 1 1000 8 0 0 401000 ok").unwrap());
     timeline.ingest(&parse_event_line("200 1 malloc 1 2000 8 0 0 401000 ok").unwrap());
+    assert!(
+        timeline.history_complete(),
+        "the event stream alone cannot reveal a failed final write"
+    );
     assert!(!verify_event_status(&path, &timeline, Some(100)).is_empty());
     for (input, expected) in [
         ("100 1 0\n", "200"),
@@ -66,8 +70,16 @@ fn terminal_event_status_rejects_missing_damaged_and_unacknowledged_pids() {
     ] {
         std::fs::write(&path, input).unwrap();
         let errors = verify_event_status(&path, &timeline, Some(100));
-        assert!(errors.iter().any(|error| error.contains(expected)), "{input:?}: {errors:?}");
+        assert!(
+            errors.iter().any(|error| error.contains(expected)),
+            "{input:?}: {errors:?}"
+        );
     }
+    std::fs::write(&path, "100 2 1\n200 1 0\n").unwrap();
+    let errors = verify_event_status(&path, &timeline, Some(100));
+    assert!(errors.iter().any(|error| error.contains("writer failure")));
+    timeline.mark_transport_incomplete();
+    assert!(!timeline.history_complete());
     std::fs::write(&path, "100 1 0\n200 1 0\n").unwrap();
     assert!(verify_event_status(&path, &timeline, Some(100)).is_empty());
     let empty_timeline = HeapTimeline::new(8);
@@ -88,13 +100,97 @@ async fn run(name: &str) -> DebugSessionTrace {
     assert_eq!(trace.resource_usage.inferior_exit_code, Some(0));
     let history = trace.recording.heap_history.as_ref().unwrap();
     assert!(history.complete, "{history:?}");
-    let json: DebugSessionTrace = serde_json::from_slice(&serde_json::to_vec(&trace).unwrap()).unwrap();
+    let json: DebugSessionTrace =
+        serde_json::from_slice(&serde_json::to_vec(&trace).unwrap()).unwrap();
     assert!(json.recording.heap_history.unwrap().complete);
     assert!(TraceStore::from_trace(trace.clone())
         .unwrap()
         .validate_deep()
         .is_structurally_sound());
     trace
+}
+
+#[tokio::test]
+async fn observed_forks_never_claim_complete_multiprocess_coverage() {
+    let Some(_permit) = tools().await else { return };
+    let mut c = config("phase8r2_basic.c");
+    c.program_args = vec!["forks".into()];
+    let trace = trace_program(c).await.unwrap();
+    assert_eq!(trace.execution_status, ExecutionStatus::Completed);
+    let history = serde_json::to_value(&trace.recording.heap_history).unwrap();
+    assert_eq!(history["process_scope"], "verified_observed_pids_only");
+    assert_eq!(history["unobserved_process_coverage"], "unknown");
+}
+
+#[tokio::test]
+async fn parent_observed_silent_repeated_and_incomplete_children_are_scoped() {
+    let Some(_permit) = tools().await else { return };
+    for (mode, observed_pids, complete) in [
+        ("parent", 1, true),
+        ("observed", 2, true),
+        ("repeated", 4, true),
+        ("silent", 1, true),
+        ("incomplete", 2, false),
+    ] {
+        let mut c = config("phase8dr_fork.c");
+        c.program_args = vec![mode.into()];
+        let trace = trace_program(c).await.unwrap();
+        assert_eq!(trace.execution_status, ExecutionStatus::Completed, "{mode}");
+        let coverage = trace.recording.heap_history.as_ref().unwrap();
+        assert_eq!(
+            coverage.process_scope.as_deref(),
+            Some("verified_observed_pids_only")
+        );
+        assert_eq!(
+            coverage.unobserved_process_coverage.as_deref(),
+            Some("unknown")
+        );
+        assert_eq!(
+            coverage.observed_event_pids.len(),
+            observed_pids,
+            "{mode}: {coverage:?}"
+        );
+        assert_eq!(coverage.complete, complete, "{mode}: {coverage:?}");
+        let followed = coverage.followed_inferior_pid.unwrap();
+        assert!(coverage.observed_event_pids.contains(&followed));
+        assert!(
+            trace
+                .heap_events
+                .iter()
+                .filter(|e| e.pid == followed)
+                .count()
+                >= 4
+        );
+        assert!(
+            trace
+                .snapshots
+                .iter()
+                .all(|s| s.observation.pid == Some(followed)),
+            "GDB snapshots belong to the followed inferior only: {mode}"
+        );
+        for pid in &coverage.observed_event_pids {
+            let events: Vec<_> = trace.heap_events.iter().filter(|e| e.pid == *pid).collect();
+            assert!(!events.is_empty());
+            assert_eq!(events[0].sequence, 1, "{mode} pid {pid}");
+            assert!(events.iter().all(|e| e.pid == *pid));
+        }
+        // A silent fork is intentionally indistinguishable from parent-only
+        // logs; neither case may claim complete *multiprocess* coverage.
+        if mode == "silent" {
+            assert_eq!(coverage.observed_event_pids, vec![followed]);
+        }
+        let loaded: DebugSessionTrace =
+            serde_json::from_slice(&serde_json::to_vec(&trace).unwrap()).unwrap();
+        assert_eq!(
+            loaded
+                .recording
+                .heap_history
+                .unwrap()
+                .observed_event_pids
+                .len(),
+            observed_pids
+        );
+    }
 }
 
 fn line_of(source: &str, needle: &str) -> u32 {

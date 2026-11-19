@@ -257,8 +257,12 @@ async fn step_limit_bounds_execution() {
     if !require(&["gcc", "gdb"]).await {
         return;
     }
+    // Deliberately separate the stop-count oracle from the whole-pipeline
+    // clock. With the generic five-second budget this test could time out
+    // during compilation/GDB setup before reaching 50 steps on a busy host.
     let config = config_for(&fixture("many_allocs.c"), |c| {
         bounded(c);
+        c.limits.timeout_seconds = 20;
         c.limits.max_steps = 50;
     });
     let trace = trace::trace_program(config).await.expect("trace");
@@ -285,7 +289,13 @@ async fn crash_is_reported_with_sanitizer_pass() {
     if !require(&["gcc", "gdb"]).await {
         return;
     }
-    let config = config_for(&fixture("null_deref.c"), bounded);
+    // A five-second whole-pipeline deadline can expire after GDB's crash
+    // before the independent sanitizer binary starts on a loaded host. The
+    // oracle here requires a sanitizer pass, so give that pass real budget.
+    let config = config_for(&fixture("null_deref.c"), |c| {
+        bounded(c);
+        c.limits.timeout_seconds = 15;
+    });
     let trace = trace::trace_program(config).await.expect("trace");
     assert_eq!(trace.execution_status, ExecutionStatus::Crashed);
     let crash = trace.crash_report.clone().expect("crash report");

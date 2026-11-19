@@ -31,6 +31,7 @@ pub mod dwarf;
 pub mod error;
 pub mod evidence;
 pub mod gdb_mi;
+pub mod json_export;
 pub mod memory;
 pub mod mi_parser;
 pub mod models;

@@ -27,7 +27,16 @@ cargo run -- fixtures/c/globals.c --memory-region '&global_value:4'
 `--timeout` is a **whole-pipeline monotonic deadline**, including builds and
 analyses. Expired sessions do not start new diagnostic passes. Process cleanup
 has a two-second grace allowance. Filesystem/export latency is not a real-time
-guarantee. Run `cargo run -- --help` for the full option list.
+guarantee. `--max-trace-bytes` (128 MiB default) bounds JSONL journal
+records, **not** final JSON. `--max-json-export-bytes` (independent 128 MiB
+default) bounds each UTF-8 final JSON document including indentation and its
+terminal newline; use a larger explicit value for larger traces. At the exact
+byte limit export succeeds; one byte over fails with exit 1 and no stdout
+from budget rejection. No trace fields are truncated. File export uses an
+atomically renamed sibling temp file; stdout write failures may still leave
+partial bytes and, if a file was already committed, that valid file. The
+limit bounds serialization/export, **not** memory used to construct the trace.
+Run `cargo run -- --help` for the full option list.
 
 New modules: `supervisor.rs` (deadlines/child ownership), `recorder.rs`
 (disassembly/register/event recording), `processor.rs` (validation/replay),
@@ -82,7 +91,7 @@ limitation and continues. See `docs/trace-engine-phase6.md`.
 |------|---------|
 | `0`  | A trace was produced (execution completed, crashed, timed out, hit a limit). |
 | `2`  | Compilation failed; a partial trace with the compiler diagnostics is still emitted. |
-| `1`  | Operational error (bad arguments, missing source file, missing required tool). No trace. |
+| `1`  | Operational/export error (including final JSON budget, write failure or cancellation). A stdout write failure can leave partial bytes; never treat nonzero exit as successful export. |
 
 ## Trace contents (abridged)
 
@@ -160,12 +169,17 @@ real document produced by `cargo run -- sample.c`.
    raw bytes), live heap block contents read through GDB within the
    per-snapshot memory budget, and the program output so far.
 3. **Heap reconstruction** (`allocation_tracker.rs`): the event file is
-   ingested into a timeline that reconstructs every allocation, its caller,
-   realloc chains and its final status; `addr2line` resolves caller PCs to
-   `file:line` in one batched call.
+   ingested into a PID-separated timeline of **observed** allocations, callers,
+   realloc chains and final status; `addr2line` resolves caller PCs to
+   `file:line` in one batched call. `heap_history.complete` covers only verified
+   observed PIDs and the followed inferior, **not** unobserved fork children.
+   `process_scope`, `observed_event_pids`, `followed_inferior_pid` and
+   `unobserved_process_coverage="unknown"` make this limit explicit. GDB
+   follows one inferior; child instruction/snapshot capture is not claimed.
 4. **Independent analyses**: Valgrind runs the program separately (its XML
-   parsed with `roxmltree`, findings correlated with allocation ids by
-   file/line). The sanitized binary runs as a diagnostic pass when the
+   parsed with `roxmltree`). Its findings remain independent; the optional
+   source-site helper only records exact-path/line *candidates*, never
+   primary-run allocation IDs from a separate execution. The sanitized binary runs as a diagnostic pass when the
    configured trigger fires — by default on a crash *or* when Valgrind
    reported memory errors (`--sanitizer-trigger`; V2.1). Native sanitizer
    findings are retained; a crash summary is attached only when source-site

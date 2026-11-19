@@ -40,7 +40,12 @@ pub fn fuse(trace: &mut DebugSessionTrace) {
     let cwd = working_directory(trace);
     let mut summary = EvidenceFusionSummary {
         dwarf_available: trace.type_registry.is_some(),
-        ast_available: trace.source_metadata.is_some(),
+        ast_available: trace.source_metadata.as_ref().is_some_and(|registry| {
+            registry
+                .translation_units
+                .iter()
+                .any(|unit| matches!(unit.status.as_str(), "complete" | "partial"))
+        }),
         ..Default::default()
     };
     let cross_provider_compatible = trace

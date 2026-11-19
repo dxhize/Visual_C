@@ -92,13 +92,11 @@ pub struct ProgramBuffer {
 
 impl ProgramBuffer {
     fn push(&mut self, bytes: &[u8], cap: usize) {
-        self.total_bytes += bytes.len() as u64;
-        if self.data.len() < cap {
-            let remaining = cap - self.data.len();
-            let take = bytes.len().min(remaining);
-            self.data.extend_from_slice(&bytes[..take]);
-        }
-        if self.data.len() >= cap {
+        self.total_bytes = self.total_bytes.saturating_add(bytes.len() as u64);
+        let remaining = cap.saturating_sub(self.data.len());
+        let take = bytes.len().min(remaining);
+        self.data.extend_from_slice(&bytes[..take]);
+        if bytes.len() > remaining {
             self.truncated = true;
         }
     }
@@ -3639,6 +3637,25 @@ mod tests {
         };
         assert!(cls.is_user_file(&header_frame));
         let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn exact_fit_output_is_not_truncated_until_one_more_byte_arrives() {
+        let mut buf = ProgramBuffer::default();
+        buf.push(b"ab", 3);
+        buf.push(b"c", 3);
+        assert_eq!(buf.text(), "abc");
+        assert_eq!(buf.total_bytes, 3);
+        assert!(!buf.truncated, "exact fit discards no output");
+        buf.push(b"d", 3);
+        assert_eq!(buf.text(), "abc");
+        assert_eq!(buf.total_bytes, 4);
+        assert!(buf.truncated);
+        let mut zero = ProgramBuffer::default();
+        zero.push(b"", 0);
+        assert!(!zero.truncated);
+        zero.push(b"x", 0);
+        assert!(zero.truncated);
     }
 
     #[test]

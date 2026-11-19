@@ -368,8 +368,20 @@ pub struct ValgrindError {
     /// For leak kinds.
     pub leaked_bytes: u64,
     pub leaked_blocks: u64,
-    /// Allocation ids whose (file, line) match this error's stack frames.
+    /// Legacy definite IDs; independent-run site/address matches never populate this.
+    #[serde(default)]
     pub related_allocation_ids: Vec<u64>,
+    /// Source-site candidates only: not proof of which allocation executed.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub source_site_candidates: Vec<ValgrindSiteCandidate>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Debug, Default)]
+pub struct ValgrindSiteCandidate {
+    pub file: String,
+    pub line: u32,
+    /// `same_source_site_independent_run_not_allocation_identity`.
+    pub evidence: String,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
@@ -745,7 +757,17 @@ pub struct RecordingData {
 #[derive(Serialize, Deserialize, Clone, Debug, Default)]
 pub struct HeapHistoryCoverage {
     /// False on known sequence gaps, parse errors, retention caps or abrupt end.
+    /// Scoped to verified observed PIDs (plus the followed inferior); not a
+    /// census or claim about all processes forked by the program.
     pub complete: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub process_scope: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub unobserved_process_coverage: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub followed_inferior_pid: Option<u32>,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub observed_event_pids: Vec<u32>,
     pub sequence_gaps: Vec<HeapSequenceGap>,
     pub missing_events: u64,
     pub duplicate_events: u64,

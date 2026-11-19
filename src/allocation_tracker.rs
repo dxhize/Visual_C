@@ -194,10 +194,7 @@ pub fn verify_event_status(
         Err(error) => return vec![format!("allocation event status file unavailable: {error}")],
     };
     let mut bytes = Vec::new();
-    if let Err(error) = file
-        .take(MAX_EVENT_READ_BYTES + 1)
-        .read_to_end(&mut bytes)
-    {
+    if let Err(error) = file.take(MAX_EVENT_READ_BYTES + 1).read_to_end(&mut bytes) {
         return vec![format!("allocation event status read failed: {error}")];
     }
     if bytes.len() as u64 > MAX_EVENT_READ_BYTES {
@@ -232,7 +229,9 @@ pub fn verify_event_status(
             return vec!["invalid allocation event status PID 0".into()];
         }
         if !seen.insert(pid) {
-            errors.push(format!("duplicate allocation event status ACK for PID {pid}"));
+            errors.push(format!(
+                "duplicate allocation event status ACK for PID {pid}"
+            ));
         }
         match expected.get(&pid) {
             Some(&observed) if seq != observed => errors.push(format!(
@@ -314,7 +313,11 @@ impl EventFileReader {
         if let Ok(metadata) = &metadata {
             use std::os::unix::fs::MetadataExt;
             let identity = (metadata.dev(), metadata.ino());
-            if self.offset != 0 && self.file_identity.is_some_and(|previous| previous != identity) {
+            if self.offset != 0
+                && self
+                    .file_identity
+                    .is_some_and(|previous| previous != identity)
+            {
                 self.input_truncated = true;
                 self.record_error("allocation log replaced after prior observations".into());
                 return events;
@@ -1125,6 +1128,93 @@ mod tests {
         assert!(parse_event_line("1 2 malloc 4 5 6 7 8 9 strange").is_err());
         assert!(parse_event_line("1 2 malloc 4 5 6 7 8 9 ok 2 4").is_err());
         assert!(parse_event_line("4294967296 1 malloc 4 5 6 7 8 9 ok").is_err());
+    }
+
+    /// Deterministic bounded state-machine oracle independent of the Rust
+    /// timeline: generated malloc/free actions reuse numeric addresses but
+    /// never alias two *live* lifetimes. Seed and operation index identify a
+    /// failure without an external fuzzing framework.
+    #[test]
+    fn seeded_reuse_sequences_match_independent_live_byte_accounting() {
+        for seed in 1u64..=32 {
+            let mut random = seed;
+            let mut next = || {
+                random ^= random << 13;
+                random ^= random >> 7;
+                random ^= random << 17;
+                random
+            };
+            let mut tracker = HeapTimeline::new(1024);
+            let mut active = [None::<(u64, u64)>; 16];
+            let mut expected_bytes = 0u64;
+            let mut next_id = 0u64;
+            for step in 0..128u64 {
+                let slot = (next() % 16) as usize;
+                let addr = 0x1000 + (slot as u64) * 0x100;
+                let event = if let Some((id, size)) = active[slot].take() {
+                    expected_bytes -= size;
+                    RawEvent {
+                        pid: 31,
+                        seq: step + 1,
+                        kind: RawKind::Free,
+                        id,
+                        addr,
+                        size,
+                        old_id: 0,
+                        old_addr: 0,
+                        caller: 0,
+                        status: RawStatus::Ok,
+                        calloc_count: None,
+                        calloc_element_size: None,
+                    }
+                } else {
+                    next_id += 1;
+                    let size = 1 + next() % 96;
+                    expected_bytes += size;
+                    active[slot] = Some((next_id, size));
+                    RawEvent {
+                        pid: 31,
+                        seq: step + 1,
+                        kind: RawKind::Malloc,
+                        id: next_id,
+                        addr,
+                        size,
+                        old_id: 0,
+                        old_addr: 0,
+                        caller: 0,
+                        status: RawStatus::Ok,
+                        calloc_count: None,
+                        calloc_element_size: None,
+                    }
+                };
+                tracker.ingest(&event);
+                assert!(tracker.history_complete(), "seed={seed} step={step}");
+                assert_eq!(
+                    tracker.events().last().unwrap().heap_usage_after,
+                    expected_bytes,
+                    "seed={seed} step={step}"
+                );
+                assert_eq!(
+                    tracker.alive_blocks(31).len(),
+                    active.iter().flatten().count(),
+                    "seed={seed} step={step}"
+                );
+                for (slot, current) in active.iter().enumerate() {
+                    let addr = 0x1000 + (slot as u64) * 0x100;
+                    let observed = tracker
+                        .alive_blocks(31)
+                        .into_iter()
+                        .find(|b| b.addr == addr);
+                    assert_eq!(
+                        observed.map(|b| (b.allocation_id, b.size)),
+                        *current,
+                        "seed={seed} step={step} slot={slot}"
+                    );
+                }
+            }
+            assert_eq!(tracker.event_count_total, 128);
+            assert_eq!(tracker.blocks().len() as u64, next_id);
+        }
     }
 
     #[test]

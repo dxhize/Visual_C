@@ -302,6 +302,9 @@ static void cte_init(void)
     const char *status = getenv("C_TRACE_EVENT_STATUS_FILE");
     if (status && *status)
         g_status_fd = open(status, O_WRONLY | O_CREAT | O_APPEND | O_CLOEXEC, 0600);
+#if defined(CTE_TESTING) && defined(CTE_TEST_DISABLE_FORK_RESET)
+    /* Regression-oracle build: retain the audited pre-repair behavior. */
+#else
     if (pthread_atfork(NULL, NULL, cte_after_fork_child) != 0) {
         close(g_fd);
         g_fd = -1;
@@ -310,6 +313,7 @@ static void cte_init(void)
             g_status_fd = -1;
         }
     }
+#endif
 }
 
 __attribute__((destructor(101)))

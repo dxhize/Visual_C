@@ -37,7 +37,7 @@ optional. Schema version remains `2`; every new field is optional with a
 | Pointer → allocation lifetime | `PointerTarget.allocation_id` / `address_match_allocation_id` / `provenance_status`; Phase 5 reuse rules | Preserved unchanged |
 | Caller-frame variable → activation | `FrameVariables.activation_id`, frame identity, caller variables | Preserved; source bridge added per observation only |
 | Heap state → checkpoint/event history | `observed_at_stop`, event intervals, block/lifetime identities | Preserved unchanged |
-| Valgrind/sanitizer → primary allocations | File/line `related_allocation_ids` only | Preserved; no cross-run identity merge |
+| Valgrind/sanitizer → primary allocations | Independent runs; source sites can match but numeric addresses, file/line and PID do not prove shared allocation identity | Phase 8D-R: public Valgrind helper now emits optional ID-free `source_site_candidates` only on exact absolute file/line; `related_allocation_ids` remains legacy data, never produced by that helper |
 | DWARF specification/abstract origin | One same-CU `UnitRef` hop; `DebugInfoRef` and chains counted unresolved | Fixed: absolute `DebugInfoRef` cross-CU resolution with unit cache, 4-hop bound, cycle detection |
 
 ## B. Integration architecture
@@ -375,7 +375,7 @@ Docs:
 | Initialization and definedness uncertainty | GDB | Intrinsic uncertainty | Unchanged | `initialization_status` | Semantic engine |
 | Pointer-origin ambiguity | GDB + heap | Intrinsic uncertainty | Unchanged | `provenance_status` | Semantic engine |
 | Partial heap instrumentation | Heap | Runtime | Unchanged | `heap_history` coverage | Instrumentation coverage |
-| Cross-run Valgrind/sanitizer correlation | Valgrind | Intrinsic uncertainty | Unchanged | `related_allocation_ids` only | Future semantic engine |
+| Cross-run Valgrind/sanitizer correlation | Valgrind | Intrinsic uncertainty | Phase 8D-R: site candidates only | `source_site_candidates`, no definitive IDs | Same-execution event identity would need independent proof |
 
 ## Q. Phase 8 handoff — verification checklist
 

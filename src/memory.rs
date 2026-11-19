@@ -204,6 +204,50 @@ pub fn enrich_snapshot(
     }
 }
 
+/// Reconcile only the *certainty* of observed heap targets after terminal
+/// transport verification. Never resolve a checkpoint pointer through the
+/// final timeline: a subsequent free/realloc/reuse cannot change what was
+/// observed while the inferior was stopped. Likewise preserve stack/code
+/// mapping evidence because the inferior's /proc maps may be gone now.
+pub fn refresh_heap_targets(snapshot: &mut ExecutionSnapshot, timeline: &HeapTimeline, pid: u32) {
+    let incomplete = !timeline.history_complete() || !timeline.is_pid_complete(pid);
+    for var in snapshot
+        .variables
+        .iter_mut()
+        .chain(
+            snapshot
+                .caller_frames
+                .iter_mut()
+                .flat_map(|frame| frame.variables.iter_mut()),
+        )
+        .chain(snapshot.observation.globals.iter_mut())
+    {
+        let Some(target) = var.target.as_mut().filter(|target| target.kind == "heap") else {
+            continue;
+        };
+        // At capture time a single-PID trace may use local IDs; later child
+        // events require widening serialized identities, without performing
+        // any new numeric address match against later heap lifetimes.
+        if timeline.needs_pid_widening() {
+            if let Some(id) = target.address_match_allocation_id.as_mut() {
+                if *id <= u32::MAX as u64 {
+                    *id = timeline.global_id(pid, *id);
+                }
+            }
+            if let Some(id) = target.allocation_id.as_mut() {
+                if *id <= u32::MAX as u64 {
+                    *id = timeline.global_id(pid, *id);
+                }
+            }
+        }
+        if incomplete {
+            target.active = None;
+            target.allocation_id = None;
+            target.provenance_status = Some("history_incomplete".into());
+        }
+    }
+}
+
 pub(crate) fn same_frame(a: &StackFrameInfo, b: &StackFrameInfo) -> bool {
     a.level == b.level
         && a.func == b.func
@@ -660,7 +704,7 @@ mod tests {
         ];
         vars[0].points_to = Some("0x0".into());
         vars[1].points_to = Some("0xdeadbeef".into());
-        enrich(&mut vars, &[], &HeapTimeline::new(10), Some(1));
+        enrich(&mut vars, &[], &HeapTimeline::new(10), None);
         let null_target = target_of(&vars, 0);
         assert_eq!(null_target.kind, "null");
         assert_eq!(null_target.variable_identity, None);
@@ -690,7 +734,7 @@ mod tests {
             ),
         ];
         vars[1].points_to = Some("0x1000".into());
-        enrich(&mut vars, &[], &HeapTimeline::new(10), Some(1));
+        enrich(&mut vars, &[], &HeapTimeline::new(10), None);
         let t = target_of(&vars, 1);
         assert_eq!(t.kind, "unknown");
         assert_eq!(t.variable_identity, None);

@@ -148,9 +148,33 @@ fn a_missing_providers_keep_fusion_optional() {
     evidence::fuse(&mut syntax_only);
     let summary = syntax_only.evidence_fusion.as_ref().unwrap();
     assert!(!summary.dwarf_available);
-    assert!(summary.ast_available);
+    // A default/empty registry has no usable translation unit; presence
+    // alone must not advertise Clang syntax to consumers.
+    assert!(!summary.ast_available);
     assert_eq!(summary.declaration_links, 0);
     assert_eq!(summary.rejected_links, 0);
+
+    let mut partial = DebugSessionTrace {
+        source_metadata: Some(SourceMetadataRegistry {
+            translation_units: vec![
+                clang_ast::AstUnit {
+                    status: "unavailable".into(),
+                    ..Default::default()
+                },
+                clang_ast::AstUnit {
+                    status: "partial".into(),
+                    ..Default::default()
+                },
+            ],
+            ..Default::default()
+        }),
+        ..Default::default()
+    };
+    evidence::fuse(&mut partial);
+    assert!(
+        partial.evidence_fusion.unwrap().ast_available,
+        "one usable partial TU is different from all failed TUs"
+    );
 }
 
 /// B/C. The real DWARF layer resolves a cross-CU abstract origin and retains
@@ -340,11 +364,23 @@ fn k_l_heap_candidates_and_ambiguities_are_explicit_and_bounded() {
     let mut macro_free = expression("tu0:e1", "CallExpr", file, 12);
     macro_free.call_kind = Some("free".into());
     macro_free.span.provenance = "macro_expansion".into();
+    let mut direct_free = expression("tu0:e4", "CallExpr", file, 12);
+    direct_free.call_kind = Some("free".into());
+    let mut macro_only = expression("tu0:e5", "CallExpr", file, 16);
+    macro_only.call_kind = Some("free".into());
+    macro_only.span.provenance = "macro_expansion".into();
     let mut free_a = expression("tu0:e2", "CallExpr", file, 14);
     free_a.call_kind = Some("free".into());
     let mut free_b = expression("tu0:e3", "CallExpr", file, 14);
     free_b.call_kind = Some("free".into());
-    let mut calls = vec![direct_malloc, macro_free, free_a, free_b];
+    let mut calls = vec![
+        direct_malloc,
+        macro_free,
+        direct_free,
+        macro_only,
+        free_a,
+        free_b,
+    ];
     for index in 0..12 {
         let mut extra = expression(&format!("tu0:x{index}"), "CallExpr", file, 20);
         extra.call_kind = Some("malloc".into());
@@ -358,6 +394,7 @@ fn k_l_heap_candidates_and_ambiguities_are_explicit_and_bounded() {
         heap_event(3, HeapEventType::Allocated, file, 20),
         // A different resolved line must not inherit the indexed calls.
         heap_event(4, HeapEventType::Allocated, file, 99),
+        heap_event(5, HeapEventType::Freed, file, 16),
     ];
     clang_ast::correlate_heap_calls(&mut registry, &events, std::path::Path::new("/tmp"));
 
@@ -378,11 +415,17 @@ fn k_l_heap_candidates_and_ambiguities_are_explicit_and_bounded() {
     };
     assert_eq!(
         ambiguity(1).evidence,
-        "only_macro_expanded_calls_on_resolved_line"
+        "multiple_compatible_calls_on_resolved_line"
     );
+    assert!(ambiguity(1).expression_ids.contains(&"tu0:e1".into()));
+    assert!(ambiguity(1).expression_ids.contains(&"tu0:e4".into()));
     assert_eq!(
         ambiguity(2).evidence,
         "multiple_compatible_calls_on_resolved_line"
+    );
+    assert_eq!(
+        ambiguity(5).evidence,
+        "only_macro_expanded_calls_on_resolved_line"
     );
     let many = ambiguity(3);
     assert_eq!(many.evidence, "multiple_compatible_calls_on_resolved_line");
@@ -581,6 +624,146 @@ fn p_q_legacy_and_invalid_references() {
     ] {
         assert!(codes.contains(&expected), "{expected} missing: {codes:?}");
     }
+}
+
+/// Valid IDs are not sufficient: each recorded cross-provider relationship
+/// must agree with its source unit, declaration, member parent and call site.
+#[test]
+fn phase8r3_existing_targets_with_contradictory_relationships() {
+    let file = "/tmp/phase8r3-links.c";
+    let mut source = SourceMetadataRegistry::default();
+    source.translation_units.push(clang_ast::AstUnit {
+        id: "tu0".into(),
+        file: file.into(),
+        status: "complete".into(),
+        ..Default::default()
+    });
+    source.translation_units.push(clang_ast::AstUnit {
+        id: "tu1".into(),
+        file: "/tmp/unrelated.c".into(),
+        status: "complete".into(),
+        ..Default::default()
+    });
+    let mut decl = declaration("d0", "VarDecl", "value", file, 4);
+    decl.dwarf_declaration = Some("dw0".into());
+    let mut other = declaration("d1", "VarDecl", "other", file, 5);
+    other.dwarf_declaration = Some("dw1".into());
+    let mut field = declaration("f0", "FieldDecl", "member", file, 6);
+    field.parent_type_spelling = Some("struct First".into());
+    field.dwarf_member = Some(DwarfMemberRef {
+        type_ref: "type0".into(),
+        member_index: 0,
+        name: "member".into(),
+        byte_offset: Some(0),
+    });
+    source.declarations = vec![decl, other, field];
+    let mut expr = expression("e0", "DeclRefExpr", file, 4);
+    expr.referenced_declaration = Some("d0".into());
+    expr.referenced_dwarf_declaration = Some("dw0".into());
+    let mut call = expression("call", "CallExpr", file, 8);
+    call.call_kind = Some("malloc".into());
+    source.expressions = vec![expr, call];
+    source.heap_call_candidates.push(HeapCallCandidate {
+        event_index: 0,
+        expression_id: "call".into(),
+        evidence: "unique_direct_call_on_resolved_line_not_exact_execution".into(),
+    });
+    let dwarf = dwarf::TypeRegistry {
+        units: vec![dwarf::UnitInfo {
+            id: "debug:u0".into(),
+            name: Some(file.into()),
+            compilation_dir: None,
+            dwarf_version: 5,
+            address_size: 8,
+        }],
+        declarations: vec![
+            dwarf_declaration("dw0", file),
+            dwarf::Declaration {
+                name: Some("other".into()),
+                line: Some(5),
+                ..dwarf_declaration("dw1", file)
+            },
+        ],
+        types: ["First", "Second"]
+            .iter()
+            .enumerate()
+            .map(|(i, name)| {
+                serde_json::from_value::<dwarf::TypeEntry>(serde_json::json!({
+                    "id":format!("type{i}"), "unit_id":"debug:u0", "die_offset":i,
+                    "kind":"struct", "name":name, "byte_size":4, "encoding":null,
+                    "referenced_type":null, "members":[{"name":"member", "type_ref":null,
+                    "byte_offset":0,"implicit_union_zero":false,"bit_size":null,
+                    "data_bit_offset":null,"legacy_bit_offset":null,"byte_size":4}],
+                    "dimensions":[],"enumerators":[],"declaration_only":false,
+                    "runtime_dependent":false
+                }))
+                .unwrap()
+            })
+            .collect(),
+        ..Default::default()
+    };
+    let trace = DebugSessionTrace {
+        source_metadata: Some(source),
+        type_registry: Some(dwarf),
+        heap_events: vec![heap_event(0, HeapEventType::Allocated, file, 8)],
+        ..Default::default()
+    };
+    let violations = |t: DebugSessionTrace| -> Vec<&'static str> {
+        TraceStore::from_trace(t)
+            .unwrap()
+            .validate_deep()
+            .findings()
+            .iter()
+            .filter(|f| {
+                f.severity == c_trace_engine::trace_parser::ValidationSeverity::StructuralCorruption
+            })
+            .map(|f| f.code)
+            .collect()
+    };
+    assert!(violations(trace.clone()).is_empty(), "valid relationships");
+    let mut bad = trace.clone();
+    bad.source_metadata.as_mut().unwrap().expressions[0].referenced_dwarf_declaration =
+        Some("dw1".into());
+    assert!(violations(bad).contains(&"AST_EXPRESSION_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.source_metadata.as_mut().unwrap().expressions[0].unit_id = "tu1".into();
+    assert!(violations(bad).contains(&"AST_EXPRESSION_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.source_metadata.as_mut().unwrap().declarations[0].dwarf_declaration = Some("dw1".into());
+    assert!(violations(bad).contains(&"AST_DECLARATION_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.type_registry
+        .as_mut()
+        .unwrap()
+        .units
+        .push(dwarf::UnitInfo {
+            id: "debug:u1".into(),
+            name: Some("/tmp/unrelated.c".into()),
+            compilation_dir: None,
+            dwarf_version: 5,
+            address_size: 8,
+        });
+    bad.type_registry.as_mut().unwrap().declarations[0].unit_id = "debug:u1".into();
+    assert!(violations(bad).contains(&"AST_DECLARATION_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.source_metadata.as_mut().unwrap().declarations[2]
+        .dwarf_member
+        .as_mut()
+        .unwrap()
+        .type_ref = "type1".into();
+    assert!(violations(bad).contains(&"AST_DECLARATION_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.source_metadata.as_mut().unwrap().heap_call_candidates[0].expression_id = "e0".into();
+    assert!(violations(bad).contains(&"AST_HEAP_CANDIDATE_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.source_metadata.as_mut().unwrap().expressions[1].call_kind = Some("free".into());
+    assert!(violations(bad).contains(&"AST_HEAP_CANDIDATE_RELATION_INVALID"));
+    let mut bad = trace.clone();
+    bad.heap_events[0].source_line = Some(100);
+    assert!(violations(bad).contains(&"AST_HEAP_CANDIDATE_RELATION_INVALID"));
+    let mut partial = trace;
+    partial.heap_events[0].source_file = None;
+    assert!(!violations(partial).contains(&"AST_HEAP_CANDIDATE_RELATION_INVALID"));
 }
 
 /// R/S. AST on/off preserves all runtime evidence while adding only the
@@ -875,6 +1058,25 @@ fn runtime_view(trace: &DebugSessionTrace) -> serde_json::Value {
             })
         })
         .collect();
+    let mut heap_history = serde_json::to_value(&trace.recording.heap_history).unwrap();
+    if let (Some(history), Some(object)) = (
+        trace.recording.heap_history.as_ref(),
+        heap_history.as_object_mut(),
+    ) {
+        object.remove("followed_inferior_pid");
+        object.remove("observed_event_pids");
+        object.insert(
+            "observed_pid_count".into(),
+            history.observed_event_pids.len().into(),
+        );
+        object.insert(
+            "followed_pid_observed".into(),
+            history
+                .followed_inferior_pid
+                .is_some_and(|pid| history.observed_event_pids.contains(&pid))
+                .into(),
+        );
+    }
     serde_json::json!({
         "execution": trace.execution,
         "compiled_successfully": trace.compiled_successfully,
@@ -884,7 +1086,7 @@ fn runtime_view(trace: &DebugSessionTrace) -> serde_json::Value {
         "source_checkpoints": trace.recording.source_checkpoints,
         "coverage": trace.recording.coverage,
         "instruction_count": trace.recording.instruction_count,
-        "heap_history": trace.recording.heap_history,
+        "heap_history": heap_history,
         "trace_gaps": trace.recording.trace_gaps.iter().map(|gap| serde_json::json!({
             "origin": gap.origin,
             "reason": gap.reason,

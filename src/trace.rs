@@ -353,10 +353,13 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     let mut dwarf_metrics = crate::dwarf::ExtractionMetrics::default();
     if Instant::now() < session_deadline && !crate::supervisor::cancelled() {
         match crate::dwarf::extract_excluding(&debug_build.binary_path, &tracker_source) {
-            Ok((registry, metrics)) => {
+            Ok((registry, metrics)) if registry_has_project_unit(&registry, &config.build) => {
                 trace.type_registry = Some(registry);
                 dwarf_metrics = metrics;
             }
+            Ok(_) => notes.push(
+                "DWARF metadata unavailable: no project compilation unit was retained".into(),
+            ),
             Err(reason) => notes.push(format!("DWARF metadata unavailable: {reason}")),
         }
     } else {
@@ -850,6 +853,16 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     let reconstruction_started = Instant::now();
     trace.snapshots = backfill_snapshots(&timeline, phase.snapshots, parent_pid);
     trace.heap_events = final_events(&timeline);
+    // The terminal read/reconstruction is the authoritative point for whether
+    // partial allocator evidence survived. A short whole-pipeline deadline can
+    // otherwise make the earlier stage snapshot say `false` even though final
+    // JSON contains verified prefix events.
+    if trace.stage_results.allocation_tracker.status != Some(StageStatus::Skipped) {
+        trace
+            .stage_results
+            .allocation_tracker
+            .partial_results_available = Some(!trace.heap_events.is_empty());
+    }
     if reader.parse_error_count != 0 || reader.incomplete_line() || !status_errors.is_empty() {
         for event in &mut trace.heap_events {
             event.heap_usage_complete = Some(false);
@@ -892,6 +905,12 @@ async fn trace_program_inner(config: TraceConfig) -> Result<DebugSessionTrace> {
     transport_errors.extend(status_errors);
     trace.recording.heap_history = Some(crate::models::HeapHistoryCoverage {
         complete: history_complete,
+        process_scope: Some("verified_observed_pids_only".into()),
+        // GDB follows one inferior and the event/ACK transport contains no
+        // fork census. A child with no log or ACK cannot be discovered.
+        unobserved_process_coverage: Some("unknown".into()),
+        followed_inferior_pid: phase.inferior_pid,
+        observed_event_pids: timeline.pids_seen(),
         sequence_gaps: timeline
             .history_gaps
             .iter()
@@ -1157,7 +1176,10 @@ pub async fn run_gdb_phase(
         // The inferior inherits GDB's environment; the C runtime reads
         // C_TRACE_EVENT_FILE to find its dedicated event trace file.
         env: vec![
-            ("C_TRACE_EVENT_FILE".into(), event_file.display().to_string()),
+            (
+                "C_TRACE_EVENT_FILE".into(),
+                event_file.display().to_string(),
+            ),
             (
                 "C_TRACE_EVENT_STATUS_FILE".into(),
                 event_status_file.display().to_string(),
@@ -1437,6 +1459,9 @@ pub async fn run_gdb_phase(
                         notes,
                     )
                     .await;
+                    if result.snapshots.len() == previous_count {
+                        recorder.truncate("max_snapshot_count: fatal stop snapshot omitted");
+                    }
                     if let Some(snapshot) = result.snapshots.get_mut(previous_count) {
                         for block in &mut snapshot.heap_blocks {
                             if block.raw_bytes_hex.is_some() {
@@ -1463,6 +1488,22 @@ pub async fn run_gdb_phase(
                             heap_event_count: timeline.events().len(),
                             ..Default::default()
                         };
+                        capture_requested_globals(
+                            snapshot,
+                            &mut session,
+                            &global_names,
+                            globals_capped,
+                            limits,
+                            &state,
+                            &mut reads,
+                            type_metadata.as_deref(),
+                            wall_deadline,
+                        )
+                        .await;
+                        if alias_epoch != session.module_epoch() {
+                            static_aliases.clear();
+                        }
+                        canonicalize_static_aliases(snapshot, &mut static_aliases);
                         let enrichment_started = Instant::now();
                         crate::memory::enrich_snapshot(snapshot, timeline, pid);
                         result.pointer_enrichment_time_us +=
@@ -1607,36 +1648,18 @@ pub async fn run_gdb_phase(
                     errors: state.errors.clone(),
                     heap_event_count: timeline.events().len(),
                 };
-                let mut global_budget = limits
-                    .max_snapshot_memory_bytes
-                    .saturating_sub(state.memory_used);
-                global_budget = global_budget.saturating_sub(
-                    snapshot
-                        .heap_blocks
-                        .iter()
-                        .filter_map(|b| b.raw_bytes_hex.as_ref())
-                        .map(|s| s.len() / 2)
-                        .sum(),
-                );
-                let mut budget = crate::recorder::MemoryBudget {
-                    remaining_bytes: global_budget,
-                    max_object_bytes: limits.max_memory_read_bytes,
-                    max_read_bytes: limits.max_memory_read_bytes,
-                    remaining_reads: None,
-                };
-                for name in &global_names {
-                    let global = crate::recorder::capture_global(
-                        &mut session,
-                        name,
-                        limits,
-                        &mut checkpoint_reads,
-                        &mut budget,
-                        type_metadata.as_deref(),
-                        &frame.func,
-                    )
-                    .await;
-                    snapshot.observation.globals.push(global);
-                }
+                capture_requested_globals(
+                    snapshot,
+                    &mut session,
+                    &global_names,
+                    globals_capped,
+                    limits,
+                    &state,
+                    &mut checkpoint_reads,
+                    type_metadata.as_deref(),
+                    wall_deadline,
+                )
+                .await;
                 if alias_epoch != session.module_epoch() {
                     static_aliases.clear();
                     alias_epoch = session.module_epoch();
@@ -1647,13 +1670,6 @@ pub async fn run_gdb_phase(
                 result.pointer_enrichment_time_us +=
                     enrichment_started.elapsed().as_micros() as u64;
                 finalize_memory_coverage(snapshot, &mut result.limits_triggered);
-                if globals_capped {
-                    snapshot.observation.complete = false;
-                    snapshot
-                        .observation
-                        .errors
-                        .push("max_globals: additional global symbols may be omitted".into());
-                }
                 if let Err(e) = recorder.checkpoint(snapshot) {
                     result.status = ExecutionStatus::StepLimitReached;
                     result.push_limit_once(&e.to_string());
@@ -1735,20 +1751,14 @@ pub async fn run_gdb_phase(
             };
             match stepped {
                 Ok(s) => s,
-                Err(EngineError::GdbCommandTimeout { .. }) => {
-                    // The inferior hung inside a step (blocking syscall, long
-                    // loop): preserve partials and report the timeout.
+                Err(EngineError::GdbCommandTimeout { command, .. }) => {
+                    // Acknowledged MI step followed by a missing *stopped is
+                    // an inferior stop-wait timeout, not debugger protocol
+                    // failure. A timeout waiting for the MI command reply is
+                    // still a debugger failure when the session has time.
                     debug_dump_console(&session, "exec-step timed out");
-                    result.status = if Instant::now() >= wall_deadline {
-                        ExecutionStatus::Timeout
-                    } else {
-                        ExecutionStatus::DebuggerFailure
-                    };
-                    result.push_limit_once(if Instant::now() >= wall_deadline {
-                        "session_or_debugger_deadline"
-                    } else {
-                        "debugger_stop_wait_timeout"
-                    });
+                    result.status = stop_wait_timeout_status(&command, wall_deadline);
+                    result.push_limit_once(timeout_reason(&command, wall_deadline));
                     if dual && is_user {
                         let _ = recorder.event(crate::models::InstructionEvent {
                             stop_id_before: stop_id,
@@ -1766,7 +1776,7 @@ pub async fn run_gdb_phase(
                             },
                             checkpoint_id: result.snapshots.last().map(|s| s.step_index),
                             outcome: "unknown".into(),
-                            stopped_reason: Some("debugger_stop_wait_timeout".into()),
+                            stopped_reason: Some(timeout_reason(&command, wall_deadline).into()),
                             signal: None,
                             registers: None,
                             memory: Vec::new(),
@@ -1827,18 +1837,10 @@ pub async fn run_gdb_phase(
                             }
                         }
                     }
-                    Err(EngineError::GdbCommandTimeout { .. }) => {
+                    Err(EngineError::GdbCommandTimeout { command, .. }) => {
                         debug_dump_console(&session, "exec-finish timed out");
-                        result.status = if Instant::now() >= wall_deadline {
-                            ExecutionStatus::Timeout
-                        } else {
-                            ExecutionStatus::DebuggerFailure
-                        };
-                        result.push_limit_once(if Instant::now() >= wall_deadline {
-                            "session_or_debugger_deadline"
-                        } else {
-                            "debugger_stop_wait_timeout"
-                        });
+                        result.status = stop_wait_timeout_status(&command, wall_deadline);
+                        result.push_limit_once(timeout_reason(&command, wall_deadline));
                         break;
                     }
                     Err(e) => {
@@ -2062,6 +2064,24 @@ fn observed_terminal(stop: &StoppedInfo) -> Option<ExecutionStatus> {
 
 fn remaining(deadline: Instant) -> Duration {
     deadline.saturating_duration_since(Instant::now())
+}
+
+fn timeout_reason(command: &str, wall_deadline: Instant) -> &'static str {
+    if Instant::now() >= wall_deadline {
+        "session_or_debugger_deadline"
+    } else if command == "waiting for *stopped" {
+        "debugger_stop_wait_timeout"
+    } else {
+        "gdb_command_reply_timeout"
+    }
+}
+
+fn stop_wait_timeout_status(command: &str, wall_deadline: Instant) -> ExecutionStatus {
+    if command == "waiting for *stopped" || Instant::now() >= wall_deadline {
+        ExecutionStatus::Timeout
+    } else {
+        ExecutionStatus::DebuggerFailure
+    }
 }
 
 fn step_timeout(wall_deadline: Instant) -> Duration {
@@ -2329,6 +2349,69 @@ fn canonicalize_static_aliases(
     }
 }
 
+/// Both ordinary and fatal stops account for every requested global. If the
+/// deadline expires, keep the observed prefix and explicitly mark the rest
+/// omitted; never interpret a missing row as an observed value.
+#[allow(clippy::too_many_arguments)]
+async fn capture_requested_globals(
+    snapshot: &mut ExecutionSnapshot,
+    session: &mut GdbSession,
+    names: &[String],
+    capped: bool,
+    limits: &ExecutionLimits,
+    state: &crate::gdb_mi::CapturedState,
+    reads: &mut crate::gdb_mi::CheckpointReads,
+    types: Option<&crate::dwarf::ObservationTypes>,
+    deadline: Instant,
+) {
+    let remaining = limits
+        .max_snapshot_memory_bytes
+        .saturating_sub(state.memory_used)
+        .saturating_sub(
+            snapshot
+                .heap_blocks
+                .iter()
+                .filter_map(|block| block.raw_bytes_hex.as_ref())
+                .map(|bytes| bytes.len() / 2)
+                .sum::<usize>(),
+        );
+    let mut budget = crate::recorder::MemoryBudget {
+        remaining_bytes: remaining,
+        max_object_bytes: limits.max_memory_read_bytes,
+        max_read_bytes: limits.max_memory_read_bytes,
+        remaining_reads: None,
+    };
+    for name in names {
+        if Instant::now() >= deadline || crate::supervisor::cancelled() {
+            snapshot.observation.complete = false;
+            snapshot.observation.errors.push(format!(
+                "global capture interrupted: {} of {} requested symbols observed",
+                snapshot.observation.globals.len(),
+                names.len()
+            ));
+            break;
+        }
+        let global = crate::recorder::capture_global(
+            session,
+            name,
+            limits,
+            reads,
+            &mut budget,
+            types,
+            &snapshot.func,
+        )
+        .await;
+        snapshot.observation.globals.push(global);
+    }
+    if capped {
+        snapshot.observation.complete = false;
+        snapshot
+            .observation
+            .errors
+            .push("max_globals: additional global symbols may be omitted".into());
+    }
+}
+
 fn finalize_memory_coverage(snapshot: &mut ExecutionSnapshot, limits_triggered: &mut Vec<String>) {
     let mut incomplete = 0;
     for var in snapshot
@@ -2497,8 +2580,19 @@ fn backfill_snapshots(
                     .realloc_from_id
                     .map(|id| timeline.global_id(parent_pid, id));
                 block.allocation_id = timeline.global_id(parent_pid, block.allocation_id);
+                block.lifetime_status = Some(
+                    if timeline.history_complete() && timeline.is_pid_complete(parent_pid) {
+                        "observed_active"
+                    } else {
+                        "unknown"
+                    }
+                    .into(),
+                );
             }
         }
+        // A terminal ACK may downgrade certainty, but later heap operations
+        // must never rewrite historical pointer observations at this stop.
+        crate::memory::refresh_heap_targets(snap, timeline, parent_pid);
     }
     snapshots
 }
@@ -2629,6 +2723,40 @@ fn make_session_dir() -> Result<PathBuf> {
     let dir = std::env::temp_dir().join(format!("c-trace-{}-{}", std::process::id(), nanos));
     std::fs::create_dir_all(&dir)?;
     Ok(dir)
+}
+
+/// Instrumentation dependencies can contribute their own packaged DWARF (for
+/// example glibc's `pthread_atfork` nonshared object) even when the user's C
+/// files were built with `-g0`. Such metadata is not project evidence.
+fn registry_has_project_unit(
+    registry: &crate::dwarf::TypeRegistry,
+    build: &crate::config::BuildConfig,
+) -> bool {
+    if !build.object_files.is_empty() {
+        // Prebuilt objects may name source files that are not present in the
+        // request, so their retained units remain eligible project evidence.
+        return !registry.units.is_empty();
+    }
+    let sources: Vec<_> = build
+        .user_sources()
+        .into_iter()
+        .map(|source| std::fs::canonicalize(&source).unwrap_or(source))
+        .collect();
+    registry.units.iter().any(|unit| {
+        let Some(name) = unit.name.as_deref() else {
+            return false;
+        };
+        let path = Path::new(name);
+        let path = if path.is_absolute() {
+            path.to_path_buf()
+        } else if let Some(directory) = unit.compilation_dir.as_deref() {
+            Path::new(directory).join(path)
+        } else {
+            path.to_path_buf()
+        };
+        let path = std::fs::canonicalize(&path).unwrap_or(path);
+        sources.iter().any(|source| source == &path)
+    })
 }
 
 // ---------------------------------------------------------------------------
@@ -2829,5 +2957,108 @@ mod tests {
         let events = final_events(&timeline);
         assert_eq!(events[0].allocation_id, (102772u64 << 32) | 1);
         assert_eq!(events[1].allocation_id, (102900u64 << 32) | 1);
+    }
+
+    #[test]
+    fn terminal_free_and_address_reuse_cannot_rewrite_checkpoint_pointer() {
+        let mut timeline = HeapTimeline::new(10);
+        timeline.ingest(&parse_event_line("42 1 malloc 1 1000 8 0 0 401000 ok").unwrap());
+        let mut snapshot = ExecutionSnapshot {
+            variables: vec![crate::models::VariableInfo {
+                name: "pointer".into(),
+                points_to: Some("0x1004".into()),
+                ..Default::default()
+            }],
+            observation: crate::models::SnapshotObservation {
+                heap_event_count: 1,
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        crate::memory::enrich_snapshot(&mut snapshot, &timeline, Some(42));
+        assert_eq!(
+            snapshot.variables[0].target.as_ref().unwrap().active,
+            Some(true)
+        );
+        timeline.ingest(&parse_event_line("42 2 free 1 1000 8 0 0 401000 ok").unwrap());
+        timeline.ingest(&parse_event_line("42 3 malloc 2 1000 16 0 0 401000 ok").unwrap());
+        let snapshots = backfill_snapshots(&timeline, vec![snapshot], Some(42));
+        let target = snapshots[0].variables[0].target.as_ref().unwrap();
+        assert_eq!(target.address_match_allocation_id, Some(1));
+        assert_eq!(target.active, Some(true));
+        assert_eq!(target.provenance_status.as_deref(), Some("address_only"));
+    }
+
+    #[test]
+    fn terminal_transport_failure_downgrades_snapshot_heap_evidence_in_json() {
+        let mut timeline = HeapTimeline::new(10);
+        timeline.ingest(&parse_event_line("42 1 malloc 1 1000 8 0 0 401000 ok").unwrap());
+        let mut snapshot = ExecutionSnapshot {
+            variables: vec![crate::models::VariableInfo {
+                name: "pointer".into(),
+                points_to: Some("0x1004".into()),
+                ..Default::default()
+            }],
+            heap_blocks: vec![HeapBlockInfo {
+                allocation_id: 1,
+                address: "0x1000".into(),
+                size_bytes: 8,
+                allocation_type: "malloc".into(),
+                lifetime_status: Some("observed_active".into()),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        crate::memory::enrich_snapshot(&mut snapshot, &timeline, Some(42));
+        let before = snapshot.variables[0].target.as_ref().unwrap();
+        assert_eq!(before.provenance_status.as_deref(), Some("address_only"));
+        assert_eq!(before.active, Some(true));
+
+        // Models a missing or failed terminal status ACK after the snapshot
+        // was captured. Observed bytes remain, but lifetime/provenance claims
+        // must become explicitly incomplete.
+        timeline.mark_transport_incomplete();
+        let snapshots = backfill_snapshots(&timeline, vec![snapshot], Some(42));
+        let target = snapshots[0].variables[0].target.as_ref().unwrap();
+        assert_eq!(
+            target.provenance_status.as_deref(),
+            Some("history_incomplete")
+        );
+        assert_eq!(target.active, None);
+        assert_eq!(
+            snapshots[0].heap_blocks[0].lifetime_status.as_deref(),
+            Some("unknown")
+        );
+
+        let trace = DebugSessionTrace {
+            snapshots,
+            recording: crate::models::RecordingData {
+                heap_history: Some(crate::models::HeapHistoryCoverage {
+                    complete: false,
+                    transport_errors: vec!["terminal writer ACK unavailable".into()],
+                    ..Default::default()
+                }),
+                ..Default::default()
+            },
+            ..Default::default()
+        };
+        let decoded: DebugSessionTrace =
+            serde_json::from_slice(&serde_json::to_vec(&trace).unwrap()).unwrap();
+        assert!(!decoded.recording.heap_history.unwrap().complete);
+        assert_eq!(
+            decoded.snapshots[0].variables[0]
+                .target
+                .as_ref()
+                .unwrap()
+                .provenance_status
+                .as_deref(),
+            Some("history_incomplete")
+        );
+        assert_eq!(
+            decoded.snapshots[0].heap_blocks[0]
+                .lifetime_status
+                .as_deref(),
+            Some("unknown")
+        );
     }
 }
