@@ -257,6 +257,7 @@ pub fn validate_deep(trace: &DebugSessionTrace) -> ValidationReport {
     validate_snapshots(trace, &mut builder);
     validate_source_checkpoints(trace, &mut builder);
     validate_heap(trace, &mut builder);
+    validate_dwarf_registry(trace, &mut builder);
     validate_ast_registry(trace, &mut builder);
     validate_source_links(trace, &mut builder);
     validate_gaps(trace, &mut builder);
@@ -264,6 +265,53 @@ pub fn validate_deep(trace: &DebugSessionTrace) -> ValidationReport {
     validate_diagnostics(trace, &mut builder);
 
     builder.finish()
+}
+
+fn validate_dwarf_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
+    let Some(registry) = &trace.type_registry else {
+        return;
+    };
+    for (label, ids, count) in [
+        (
+            "type",
+            registry
+                .types
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<HashSet<_>>()
+                .len(),
+            registry.types.len(),
+        ),
+        (
+            "declaration",
+            registry
+                .declarations
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<HashSet<_>>()
+                .len(),
+            registry.declarations.len(),
+        ),
+        (
+            "compilation unit",
+            registry
+                .units
+                .iter()
+                .map(|item| item.id.as_str())
+                .collect::<HashSet<_>>()
+                .len(),
+            registry.units.len(),
+        ),
+    ] {
+        if ids != count {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "DWARF_DUPLICATE_ID",
+                format!("duplicate trace-local DWARF {label} identity"),
+                ValidationLocation::Trace,
+            );
+        }
+    }
 }
 
 fn validate_ast_registry(trace: &DebugSessionTrace, builder: &mut Builder) {
@@ -1087,24 +1135,35 @@ fn validate_snapshots(trace: &DebugSessionTrace, builder: &mut Builder) {
 
 fn validate_caller_frames(snapshot: &ExecutionSnapshot, position: usize, builder: &mut Builder) {
     // No caller capture is normal in older traces or under capture limits.
-    // Never infer that absent evidence means absent activations.
-    if snapshot.caller_frames.is_empty() {
-        return;
-    }
-    let mut identities: HashMap<&str, Vec<&VariableInfo>> = HashMap::new();
-    for info in snapshot
+    // Still validate frame-0 locals and globals: their pointer evidence does
+    // not depend on whether any caller was retained.
+    let observed = snapshot
         .variables
         .iter()
         .chain(
             snapshot
                 .caller_frames
                 .iter()
-                .flat_map(|caller| &caller.variables),
+                .flat_map(|frame| &frame.variables),
         )
-        .chain(&snapshot.observation.globals)
-    {
-        if let Some(identity) = info.identity.as_deref() {
-            identities.entry(identity).or_default().push(info);
+        .chain(&snapshot.observation.globals);
+    if snapshot.caller_frames.is_empty() && observed.clone().all(|info| info.target.is_none()) {
+        return;
+    }
+    // Most snapshots do not carry a variable-identity pointer. Do not build
+    // a per-snapshot identity table just to check address-only heap evidence.
+    let needs_identities = observed.clone().any(|info| {
+        info.target
+            .as_ref()
+            .and_then(|target| target.variable_identity.as_ref())
+            .is_some()
+    });
+    let mut identities: HashMap<&str, Vec<&VariableInfo>> = HashMap::new();
+    if needs_identities {
+        for info in observed {
+            if let Some(identity) = info.identity.as_deref() {
+                identities.entry(identity).or_default().push(info);
+            }
         }
     }
     let mut levels = HashSet::new();
@@ -1251,15 +1310,24 @@ fn validate_pointer_reference(
     builder: &mut Builder,
 ) {
     let Some(target) = &info.target else { return };
-    if target.provenance_status.as_deref().is_some_and(|status| {
-        matches!(
-            status,
-            "ambiguous_reuse" | "history_incomplete" | "known_freed_address"
-        )
-    }) && target.allocation_id.is_some()
+    // Every recorded numeric-address match is a candidate, never evidence of
+    // pointer origin. A missing status is legitimate legacy metadata; do not
+    // manufacture a proven identity from it. Unknown future statuses cannot
+    // support an imported definite identity either.
+    if target.allocation_id.is_some() && target.provenance_status.is_none() && target.kind == "heap"
+    {
+        builder.push(
+            ValidationSeverity::UnavailableEvidence,
+            "POINTER_HEAP_PROVENANCE_UNRECORDED",
+            "legacy definite heap ID has no recorded origin-confidence status; do not infer provenance",
+            location.clone(),
+        );
+    }
+    if target.allocation_id.is_some()
+        && (target.provenance_status.is_some() || target.kind != "heap")
     {
         builder.push(ValidationSeverity::StructuralCorruption, "POINTER_HEAP_PROVENANCE_CONTRADICTORY",
-            "uncertain or freed-address evidence cannot claim a definite current allocation identity", location.clone());
+            "numeric-address, uncertain, freed, unknown-status or non-heap evidence cannot claim a definite heap identity", location.clone());
     }
     if let (Some(allocation), Some(candidate)) =
         (target.allocation_id, target.address_match_allocation_id)
@@ -1392,6 +1460,111 @@ fn validate_source_checkpoints(trace: &DebugSessionTrace, builder: &mut Builder)
 
 // -- heap ----------------------------------------------------------------------
 
+/// Confidence of an *explicitly recorded* predecessor, not of a numeric
+/// address match. The caller supplies only events indexed for this allocation
+/// ID and its predecessor; neither validation nor a semantic lookup scans
+/// the entire event log.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum ReallocLink {
+    Verified,
+    Unavailable,
+    Ambiguous,
+    Contradictory,
+}
+
+// glibc realloc(ptr, 0) may free the *existing* lifetime and return NULL.
+// The engine records a Reallocated event with the SAME ID, no address and
+// zero size. This is a terminal event, not a new lifetime/predecessor edge.
+fn terminal_zero_realloc(event: &crate::models::HeapEvent) -> bool {
+    event.event_type == HeapEventType::Reallocated
+        && event.old_allocation_id == Some(event.allocation_id)
+        && event.address.is_none()
+        && event.size_bytes == Some(0)
+}
+
+pub(crate) fn realloc_link<'a>(
+    block: &crate::models::HeapBlockInfo,
+    current: Option<&crate::models::AllocationLifetime>,
+    previous: Option<&crate::models::AllocationLifetime>,
+    events: impl Iterator<Item = &'a crate::models::HeapEvent>,
+    previous_events: impl Iterator<Item = &'a crate::models::HeapEvent>,
+) -> ReallocLink {
+    let Some(old_id) = block.realloc_from_id else {
+        return ReallocLink::Unavailable;
+    };
+    if old_id == block.allocation_id {
+        return ReallocLink::Contradictory;
+    }
+    if old_id == 0 {
+        return ReallocLink::Unavailable; // untracked, not a lifetime identity
+    }
+    let mut matches = 0usize;
+    let mut missing = false;
+    for event in events {
+        if terminal_zero_realloc(event) {
+            continue;
+        }
+        if event.event_type == HeapEventType::Allocated {
+            return ReallocLink::Contradictory;
+        }
+        if event.event_type != HeapEventType::Reallocated {
+            continue; // free or failed realloc cannot establish a new lifetime
+        }
+        match event.old_allocation_id {
+            Some(id) if id != old_id => return ReallocLink::Contradictory,
+            None => {
+                missing = true;
+                continue;
+            }
+            Some(_) => {}
+        }
+        if !block.allocation_type.is_empty() && block.allocation_type != "realloc" {
+            return ReallocLink::Contradictory;
+        }
+        if current.is_some_and(|l| {
+            l.pid != event.pid
+                || (l.allocation_sequence != 0 && l.allocation_sequence != event.sequence)
+                || l.free_sequence.is_some_and(|free| free < event.sequence)
+        }) || previous.is_some_and(|l| {
+            l.pid != event.pid
+                || (l.allocation_sequence != 0 && l.allocation_sequence >= event.sequence)
+                || l.free_sequence.is_some_and(|free| free != event.sequence)
+        }) {
+            return ReallocLink::Contradictory;
+        }
+        matches += 1;
+    }
+    let mut prior_creations = 0;
+    for prior in previous_events.filter(|e| {
+        matches!(
+            e.event_type,
+            HeapEventType::Allocated | HeapEventType::Reallocated
+        ) && !terminal_zero_realloc(e)
+    }) {
+        if previous.is_some_and(|l| {
+            l.pid != prior.pid
+                || (l.allocation_sequence != 0 && l.allocation_sequence != prior.sequence)
+        }) {
+            return ReallocLink::Contradictory;
+        }
+        prior_creations += 1;
+    }
+    if matches > 1 || prior_creations > 1 {
+        ReallocLink::Ambiguous
+    } else if matches == 0
+        || prior_creations == 0
+        || missing
+        || current.is_none()
+        || previous.is_none()
+        || current.is_some_and(|l| l.allocation_sequence == 0)
+        || previous.is_some_and(|l| l.allocation_sequence == 0 || l.free_sequence.is_none())
+    {
+        ReallocLink::Unavailable
+    } else {
+        ReallocLink::Verified
+    }
+}
+
 fn validate_heap(trace: &DebugSessionTrace, builder: &mut Builder) {
     // Identity uniqueness: one heap_state entry and one lifetime per
     // allocation id (guaranteed by the timeline reconstruction).
@@ -1429,11 +1602,54 @@ fn validate_heap(trace: &DebugSessionTrace, builder: &mut Builder) {
         .chain(lifetime_ids.iter())
         .copied()
         .collect();
+    let linked: HashSet<u64> = trace
+        .heap_state
+        .iter()
+        .filter(|block| block.realloc_from_id.is_some())
+        .map(|block| block.allocation_id)
+        .collect();
+    let related: HashSet<u64> = linked
+        .iter()
+        .copied()
+        .chain(trace.heap_state.iter().filter_map(|b| b.realloc_from_id))
+        .collect();
+    let lifetimes: HashMap<u64, &crate::models::AllocationLifetime> = trace
+        .recording
+        .allocation_lifetimes
+        .iter()
+        .map(|item| (item.allocation_id, item))
+        .collect();
+    let mut creations: HashMap<u64, Vec<&crate::models::HeapEvent>> = HashMap::new();
+    for event in &trace.heap_events {
+        if related.contains(&event.allocation_id)
+            && matches!(
+                event.event_type,
+                HeapEventType::Allocated | HeapEventType::Reallocated
+            )
+        {
+            creations
+                .entry(event.allocation_id)
+                .or_default()
+                .push(event);
+        }
+    }
     // Reallocation references must resolve somewhere in the recorded
     // identity space; when they do not, the relationship is unavailable
     // (caps or partial recording) — never silently reinterpreted.
     let unresolved = |id: u64| id != 0 && !known.contains(&id);
+    let mut last_sequence_by_pid = HashMap::new();
     for (position, event) in trace.heap_events.iter().enumerate() {
+        if last_sequence_by_pid
+            .insert(event.pid, event.sequence)
+            .is_some_and(|previous| event.sequence <= previous)
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "HEAP_EVENT_SEQUENCE_ORDER",
+                "retained heap events for one PID are not in strictly increasing sequence order",
+                ValidationLocation::HeapEvent(position),
+            );
+        }
         if let Some(attribution) = &event.attribution {
             if let Some(interval) = &attribution.checkpoint_interval {
                 if interval
@@ -1474,6 +1690,23 @@ fn validate_heap(trace: &DebugSessionTrace, builder: &mut Builder) {
             }
         }
         if let Some(origin) = event.old_allocation_id {
+            if event.event_type == HeapEventType::Reallocated
+                && origin != 0
+                && ((!terminal_zero_realloc(event) && origin == event.allocation_id)
+                    || lifetimes.get(&origin).is_some_and(|old| {
+                        old.pid != event.pid
+                            || (old.allocation_sequence != 0
+                                && old.allocation_sequence >= event.sequence)
+                            || old.free_sequence.is_some_and(|free| free != event.sequence)
+                    }))
+            {
+                builder.push(
+                    ValidationSeverity::StructuralCorruption,
+                    "REALLOC_EVENT_ORIGIN_CONTRADICTORY",
+                    "realloc event predecessor contradicts its PID or recorded lifetime direction/boundary",
+                    ValidationLocation::HeapEvent(position),
+                );
+            }
             if unresolved(origin) {
                 builder.push(
                     ValidationSeverity::UnavailableEvidence,
@@ -1498,6 +1731,7 @@ fn validate_heap(trace: &DebugSessionTrace, builder: &mut Builder) {
         }
     }
     if let Some(history) = &trace.recording.heap_history {
+        validate_heap_process_coverage(trace, history, builder);
         for gap in &history.sequence_gaps {
             if gap.expected_sequence >= gap.observed_sequence {
                 builder.push(
@@ -1541,6 +1775,156 @@ fn validate_heap(trace: &DebugSessionTrace, builder: &mut Builder) {
                     ValidationLocation::HeapState(position),
                 );
             }
+            match realloc_link(block, lifetimes.get(&block.allocation_id).copied(),
+                lifetimes.get(&origin).copied(),
+                creations.get(&block.allocation_id).into_iter().flatten().copied(),
+                creations.get(&origin).into_iter().flatten().copied()) {
+                ReallocLink::Contradictory => builder.push(
+                    ValidationSeverity::StructuralCorruption,
+                    "REALLOC_LINK_CONTRADICTORY",
+                    "recorded realloc predecessor contradicts allocation type, event or PID/sequence/lifetime evidence",
+                    ValidationLocation::HeapState(position),
+                ),
+                ReallocLink::Ambiguous | ReallocLink::Unavailable => builder.push(
+                    ValidationSeverity::UnavailableEvidence,
+                    "REALLOC_LINK_UNVERIFIED",
+                    "recorded predecessor lacks unique corroborating event and lifetime evidence",
+                    ValidationLocation::HeapState(position),
+                ),
+                ReallocLink::Verified => {},
+            }
+        }
+    }
+    // A cycle is impossible even when events/lifetimes are absent (legacy or
+    // partial imports). Visit each recorded block at most once.
+    let blocks: HashMap<u64, (usize, &crate::models::HeapBlockInfo)> = trace
+        .heap_state
+        .iter()
+        .enumerate()
+        .filter(|(_, b)| b.realloc_from_id.is_some())
+        .map(|(i, b)| (b.allocation_id, (i, b)))
+        .collect();
+    let mut visited = HashSet::new();
+    for &id in blocks.keys() {
+        if visited.contains(&id) {
+            continue;
+        }
+        let mut path = Vec::new();
+        let mut in_path = HashSet::new();
+        let mut next = Some(id);
+        while let Some(current) = next {
+            if visited.contains(&current) || !in_path.insert(current) {
+                if in_path.contains(&current) && !visited.contains(&current) {
+                    builder.push(
+                        ValidationSeverity::StructuralCorruption,
+                        "REALLOC_LINK_CYCLE",
+                        "reallocation predecessor chain contains a cycle",
+                        ValidationLocation::HeapState(blocks[&current].0),
+                    );
+                }
+                break;
+            }
+            path.push(current);
+            next = blocks
+                .get(&current)
+                .and_then(|(_, b)| b.realloc_from_id)
+                .filter(|old| blocks.contains_key(old));
+        }
+        visited.extend(path);
+    }
+}
+
+/// Only the observed event PIDs plus a known followed inferior can be
+/// verified. No event/ACK transport provides a census of silent fork children.
+fn validate_heap_process_coverage(
+    trace: &DebugSessionTrace,
+    history: &crate::models::HeapHistoryCoverage,
+    builder: &mut Builder,
+) {
+    use super::views::HeapProcessScope;
+    match HeapProcessScope::from_history(Some(history)) {
+        HeapProcessScope::Unsupported(value) => builder.push(
+            ValidationSeverity::StructuralCorruption,
+            "HEAP_PROCESS_SCOPE_UNSUPPORTED",
+            format!("unsupported heap process scope `{value}`"),
+            ValidationLocation::Trace,
+        ),
+        HeapProcessScope::Unknown => {
+            // Legacy missing metadata cannot certify descendant coverage.
+            if history.unobserved_process_coverage.is_some() {
+                builder.push(
+                    ValidationSeverity::UnavailableEvidence,
+                    "HEAP_PROCESS_SCOPE_UNRECORDED",
+                    "unobserved-process annotation has no recorded process scope",
+                    ValidationLocation::Trace,
+                );
+            }
+        }
+        HeapProcessScope::VerifiedObservedPidsOnly { .. } => {
+            if history.unobserved_process_coverage.is_none() {
+                builder.push(
+                    ValidationSeverity::UnavailableEvidence,
+                    "HEAP_UNOBSERVED_PROCESS_COVERAGE_UNRECORDED",
+                    "observed-PID coverage cannot establish coverage of unobserved processes",
+                    ValidationLocation::Trace,
+                );
+            }
+        }
+    }
+    if history
+        .unobserved_process_coverage
+        .as_deref()
+        .is_some_and(|value| value != "unknown")
+    {
+        builder.push(
+            ValidationSeverity::StructuralCorruption,
+            "HEAP_PROCESS_COVERAGE_UNSUPPORTED",
+            "unobserved child processes cannot be certified from event/ACK records",
+            ValidationLocation::Trace,
+        );
+    }
+    if history.process_scope.is_some() {
+        let mut seen = HashSet::new();
+        if history
+            .observed_event_pids
+            .iter()
+            .any(|pid| *pid == 0 || !seen.insert(*pid))
+            || history.followed_inferior_pid == Some(0)
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "HEAP_OBSERVED_PID_INVALID",
+                "observed event PIDs must be unique and nonzero; followed inferior PID must be nonzero",
+                ValidationLocation::Trace,
+            );
+        }
+        if trace
+            .heap_events
+            .iter()
+            .any(|event| !seen.contains(&event.pid))
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "HEAP_EVENT_PID_UNOBSERVED",
+                "a retained heap event PID is absent from the observed-event PID list",
+                ValidationLocation::Trace,
+            );
+        }
+        if history.complete
+            && (!history.sequence_gaps.is_empty()
+                || history.missing_events != 0
+                || history.malformed_lines != 0
+                || !history.transport_errors.is_empty()
+                || history.events_truncated
+                || history.blocks_truncated
+                || history.id_widening_overflow)
+        {
+            builder.push(
+                ValidationSeverity::StructuralCorruption,
+                "HEAP_OBSERVED_COVERAGE_CONTRADICTORY",
+                "observed-PID history marked complete despite known transport or retention losses",
+                ValidationLocation::Trace,
+            );
         }
     }
 }

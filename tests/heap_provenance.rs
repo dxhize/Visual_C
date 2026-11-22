@@ -103,10 +103,15 @@ async fn run(name: &str) -> DebugSessionTrace {
     let json: DebugSessionTrace =
         serde_json::from_slice(&serde_json::to_vec(&trace).unwrap()).unwrap();
     assert!(json.recording.heap_history.unwrap().complete);
-    assert!(TraceStore::from_trace(trace.clone())
+    let report = TraceStore::from_trace(trace.clone())
         .unwrap()
-        .validate_deep()
-        .is_structurally_sound());
+        .validate_deep();
+    assert!(
+        report.is_structurally_sound(),
+        "{report:#?} heap_events={:#?} lifetimes={:#?}",
+        trace.heap_events,
+        trace.recording.allocation_lifetimes
+    );
     trace
 }
 

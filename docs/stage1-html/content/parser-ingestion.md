@@ -1,4 +1,17 @@
-# TP-1 · Loading traces without inventing data
+# 41 · TP-1 · Loading traces without inventing data
+
+> **In one sentence:** Opening a trace is like opening a notebook: check that it is the right kind of notebook before relying on what its pages claim.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Schema** | The agreed JSON field format. Stage 1 uses schema version 2 for supported V2.1 and V2.2 recordings. |
+| **JSONL** | One JSON object per line. The runtime journal is not the final trace document and cannot reconstruct missing reports. |
+
+> **Example.** `TraceStore::open` can read a well-formed `old_id=7`. That still does not prove allocation 7 is the right predecessor; only deeper validation can examine the supporting events.
+>
+> **What not to assume:** An unsupported older example or malformed input fails import. A supported but incomplete trace may load and remain incomplete.
 
 ## Level 1 · Intuition
 
@@ -8,13 +21,13 @@ The Trace Parser reads the engine's finished JSON exactly once and makes a singl
 
 ## Level 2 · Architecture and compatibility
 
-`TraceStore::open(path, options)` checks file size and reads at most `max_bytes + 1`, then content-detects a JSON document or journal. `from_reader` and `from_json_bytes` support byte inputs; `from_trace` adopts an already decoded model and applies **only the schema-version gate**. `TraceLoadOptions` defaults to a 512 MiB input cap and 2,000,000 JSONL records, rejecting larger inputs rather than silently truncating them. The loader does not retain original JSON text. `TraceStore::assemble` builds one `Arc<DebugSessionTrace>` and one `Arc<TraceIndexes>`; cheap clones share both.
+`TraceStore::open(path, options)` first checks how many bytes it is allowed to read. It reads one byte past the configured maximum only to tell the difference between an exactly fitting file and an oversized one. Next it distinguishes a complete JSON trace from a JSONL journal. `from_reader` and `from_json_bytes` accept input supplied by Rust code instead of a file. `from_trace` accepts a trace that Rust has already decoded, but checks **only its schema version**, not the truth of its relationships. Default import limits are 512 MiB of input and 2,000,000 JSONL records; oversized input is rejected, not quietly cut off. After loading, `TraceStore` keeps a shared `Arc` for the one original trace and another for its position indexes. Cloning the store shares these rather than duplicating every snapshot.
 
-The wire schema version is `2`; the supported V2.1 examples (normal, loop, heap, crash, dual, bounded infinite) load, including optional missing metadata. A missing schema marker defaults to 2 per Serde model. The four older pre-V2.1 `examples/v2_*.json` files with removed `max_register_snapshot_bytes` **do not** deserialize; do not advertise support for all historical schema-2 payloads. Wrong schema, invalid UTF-8, malformed JSON and over-limit input produce typed errors. Crash/timeout/step-limit are *valid trace outcomes*, not parser failures.
+The supported format uses `schema_version=2`. The six supported V2.1 examples still load, even when newer optional fields were never recorded. In this model, a missing schema marker is interpreted as version 2. That does **not** mean every older file works: four pre-V2.1 `examples/v2_*.json` files use a removed limit field and cannot be decoded. Wrong schema, bad text encoding, broken JSON and oversized input each produce a specific error. By contrast, a C program crashing, timing out or reaching its step limit can produce a **valid but partial trace**; those outcomes are not reasons to pretend the JSON is malformed.
 
 ### JSONL is not a TraceStore
 
-`parse_journal`, `parse_journal_bytes` and `parse_journal_reader` decode ordered typed records (`configuration`, `checkpoint`, `allocation`, `gap`, `disassembly`, `instruction`, `finalized`) with per-kind counts and torn-tail/finalization status. An incomplete final line can be recognized, but a complete malformed line fails. Final heap state, reports and other session-end fields are **not** in JSONL; `TraceStore::open` refuses to reconstruct a full trace from it. See [storage and caps](engine-limits.html).
+The `parse_journal` family can read each JSONL line as a configuration, checkpoint, allocation, gap, instruction or other recorded item. It also says whether the last line was torn off and whether the journal was finalized. A partially written last line can be identified as partial; a completely written but malformed line is an error. **Why not just open the journal as a trace?** The final heap state, crash reports and other end-of-session results may never have been written to it. `TraceStore::open` therefore refuses to guess a complete trace from journal lines. See [storage and limits](engine-limits.html).
 
 ## Level 3 · Implementation and API
 

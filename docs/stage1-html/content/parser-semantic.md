@@ -1,4 +1,17 @@
-# TP-6 · Validated semantic evidence
+# 45 · TP-6 · Validated semantic evidence
+
+> **In one sentence:** A confidence label always describes a *particular claim*. 'I read these bytes' and 'these bytes were initialized' are not the same claim.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Definite** | The named observation or relationship is supported under its stated limits; it does not mean the whole execution was complete. |
+| **Candidate** | Evidence fits one explanation, but does not prove it. An address inside a heap block is a candidate for a match, not pointer origin. |
+
+> **Example.** GDB might definitely have captured four bytes of a pointer. The pointer's allocation origin can still be unavailable, especially if its address was reused.
+>
+> **What not to assume:** Never promote an AST source call to an executed call, or Valgrind's separate-run address to a primary-run allocation ID.
 
 ## Level 1 · Intuition
 
@@ -8,15 +21,15 @@
 
 ## Level 2 · The confidence model
 
-Call `TraceStore::validated_semantic()` once per analysis session; it holds one `ValidationReport` and borrows the immutable store. `EvidenceConfidence` has five states: `Definite` (verified observation/relationship in stated scope), `Candidate` (plausible but unproved), `Ambiguous` (multiple compatible readings), `Unavailable` (no sufficient evidence), and `Contradictory` (a rejected structural relationship). An unsound report conservatively makes semantic query confidence contradictory globally; raw evidence is still inspectable. This model is **separate** from `ExecutionStatus`, scope liveness, byte readability, initialization and process coverage.
+Call `TraceStore::validated_semantic()` once before asking for evidence-level answers. It borrows the unchanged trace and holds the validation report. Each answer has a confidence label. **Definite** means *this specific claim* has the required support in its stated scope; **Candidate** means plausible but unproved; **Ambiguous** means more than one reading fits; **Unavailable** means the needed evidence is missing; and **Contradictory** means recorded facts conflict. A structurally unsound import prevents the semantic layer from calling its relationships definite, but you can still inspect the raw fields to investigate. These labels do not say whether the C program finished, a variable was in scope, its bytes were initialized, or every child was observed: those are different questions.
 
 ### Pointer and memory confidence
 
-`variable(&EvidenceRef)` borrows local/global/caller `VariableInfo`, optional static metadata, value confidence and `MemoryEvidenceView`. A `PointerEvidence.address_candidate` is a numeric containment candidate, **not** provenance; `definitive_allocation` is **always `None` under present V2.2 statuses**. `address_only`, known freed, reused/ambiguous and incomplete history remain candidate, ambiguous or unavailable as appropriate. `variable_target(&VariableEvidence)` resolves a *recorded variable identity* only within the same stop (and rejects foreign refs); duplicate identities remain ambiguous. Readable `valid_range` certifies captured bytes in one historical observation, never C initialization or a future heap block's contents.
+Ask `variable(&EvidenceRef)` for the **exact** local, global or caller variable you want. It points to the saved `VariableInfo` and any available type information. A pointer's `address_candidate` means “the number in this pointer could fit in this block's address range.” It does **not** say the pointer came from that allocation; under the current V2.2 contract, `definitive_allocation` stays `None`. If an address was reused or its block already freed, the question can be ambiguous or unavailable. `variable_target` can find another **recorded variable identity at this same stop**; it will not search a later stop or a foreign trace, and duplicate identities stay ambiguous. `valid_range` is merely the number of bytes read at this historical stop. It does not prove those bytes were initialized or still have the same contents later.
 
 ### Identity and source relationships
 
-`heap(id)` borrows block, lifetime, old ID, old lifetime and event iterator. Identity confidence can be definite only in a verified complete **observed-PID** history; corroborated realloc confidence additionally requires exact event/lifetime predecessor agreement. Incomplete/legacy scope downgrades a supported link to candidate. `source_expression(id)` borrows optional AST and recorded heap-call candidates; `execution_confidence` remains unavailable. A compatible source line is not a dynamic execution link.
+`heap(id)` brings together the block, its recorded lifetime and events, plus any *claimed* older realloc ID. The ID's confidence can be definite only for a verified, complete history of the **processes actually observed**. A realloc relationship needs more: the old and new creation events, PID, order and lifetime boundaries must agree. If an older trace lacks scope details, even a plausible link stays a candidate. `source_expression(id)` points to an optional Clang description of code that was written, and may show possible heap-call matches. It keeps `execution_confidence` unavailable: the same source line appearing in an event does not establish which expression ran.
 
 ### Independent diagnostics
 

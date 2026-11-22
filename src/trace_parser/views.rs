@@ -4,12 +4,42 @@
 use std::ops::Deref;
 
 use crate::models::{
-    Coverage, ExecutionSnapshot, FrameVariables, HeapBlockInfo, HeapEvent, InstructionEvent,
-    StackFrameInfo, VariableInfo,
+    Coverage, ExecutionSnapshot, FrameVariables, HeapBlockInfo, HeapEvent, HeapHistoryCoverage,
+    InstructionEvent, StackFrameInfo, VariableInfo,
 };
 
 use super::evidence::{Evidence, EvidenceLocation, EvidenceRef};
 use super::{QueryError, QueryResult, TraceStore};
+
+/// Scope of recorded heap-history completeness, never a descendant census.
+/// Missing legacy metadata is Unknown, even if `heap_history.complete` is true.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HeapProcessScope<'a> {
+    Unknown,
+    VerifiedObservedPidsOnly {
+        observed_event_pids: &'a [u32],
+        followed_inferior_pid: Option<u32>,
+        observed_history_complete: bool,
+    },
+    Unsupported(&'a str),
+}
+
+impl<'a> HeapProcessScope<'a> {
+    pub(crate) fn from_history(history: Option<&'a HeapHistoryCoverage>) -> Self {
+        let Some(history) = history else {
+            return Self::Unknown;
+        };
+        match history.process_scope.as_deref() {
+            None => Self::Unknown,
+            Some("verified_observed_pids_only") => Self::VerifiedObservedPidsOnly {
+                observed_event_pids: &history.observed_event_pids,
+                followed_inferior_pid: history.followed_inferior_pid,
+                observed_history_complete: history.complete,
+            },
+            Some(other) => Self::Unsupported(other),
+        }
+    }
+}
 
 /// General-purpose read-only raw trace access. `Deref<Target = TraceStore>`
 /// exposes existing TP-1/TP-2 metadata, bounded ranges, source/disassembly,
@@ -31,9 +61,8 @@ impl<'a> RawTraceView<'a> {
         self.store.trace().source_metadata.as_ref()
     }
 
-    /// Look up a source declaration by its recorded identity. This is a
-    /// bounded linear lookup (the registry retains at most 2048 records); it
-    /// deliberately adds no duplicate index to TP-2.
+    /// Look up a source declaration by trace-local recorded identity.
+    /// The shared index retains positions only, never declaration records.
     pub fn source_declaration(
         self,
         id: &str,
@@ -313,20 +342,69 @@ impl<'a> CheckpointContext<'a> {
 }
 
 impl TraceStore {
-    /// Bounded source-registry lookup by recorded identity. No new TP-2 index
-    /// is built: the registry itself is capped at 2048 declarations.
+    /// Borrow original process-transport evidence, without converting its
+    /// observed-PID completeness into a claim about undiscovered children.
+    pub fn heap_history(&self) -> Option<&HeapHistoryCoverage> {
+        self.trace.recording.heap_history.as_ref()
+    }
+
+    /// Typed *recorded* scope. Run `validate_deep` before trusting the
+    /// annotation; `Unsupported` means an imported value is not V2.2 scope.
+    pub fn heap_process_scope(&self) -> HeapProcessScope<'_> {
+        HeapProcessScope::from_history(self.heap_history())
+    }
+
+    /// Borrow bounded DWARF registry entries and source/evidence relationships
+    /// without copying them or assigning execution semantics to source calls.
+    pub fn type_registry(&self) -> Option<&crate::dwarf::TypeRegistry> {
+        self.trace.type_registry.as_ref()
+    }
+
+    pub fn evidence_fusion(&self) -> Option<&crate::models::EvidenceFusionSummary> {
+        self.trace.evidence_fusion.as_ref()
+    }
+
+    /// Lookup by trace-local recorded identity in the position-only metadata
+    /// index. No source declaration or type record is copied.
+    pub fn type_entry(&self, id: &str) -> Option<&crate::dwarf::TypeEntry> {
+        self.indexes().metadata.types.get(id).and_then(|position| {
+            self.trace
+                .type_registry
+                .as_ref()?
+                .types
+                .get(*position as usize)
+        })
+    }
+
+    pub fn dwarf_declaration(&self, id: &str) -> Option<&crate::dwarf::Declaration> {
+        self.indexes()
+            .metadata
+            .declarations
+            .get(id)
+            .and_then(|position| {
+                self.trace
+                    .type_registry
+                    .as_ref()?
+                    .declarations
+                    .get(*position as usize)
+            })
+    }
+
+    /// Trace-local AST identity lookup; still only static source evidence.
     pub fn source_declaration(
         &self,
         id: &str,
     ) -> QueryResult<&crate::clang_ast::SourceDeclaration> {
-        self.trace
-            .source_metadata
-            .as_ref()
-            .and_then(|registry| {
-                registry
+        self.indexes()
+            .metadata
+            .source_declarations
+            .get(id)
+            .and_then(|position| {
+                self.trace
+                    .source_metadata
+                    .as_ref()?
                     .declarations
-                    .iter()
-                    .find(|declaration| declaration.id == id)
+                    .get(*position as usize)
             })
             .ok_or(QueryError::Unavailable {
                 what: "a source declaration with that identity",
@@ -334,14 +412,16 @@ impl TraceStore {
     }
 
     pub fn source_expression(&self, id: &str) -> QueryResult<&crate::clang_ast::SourceExpression> {
-        self.trace
-            .source_metadata
-            .as_ref()
-            .and_then(|registry| {
-                registry
+        self.indexes()
+            .metadata
+            .source_expressions
+            .get(id)
+            .and_then(|position| {
+                self.trace
+                    .source_metadata
+                    .as_ref()?
                     .expressions
-                    .iter()
-                    .find(|expression| expression.id == id)
+                    .get(*position as usize)
             })
             .ok_or(QueryError::Unavailable {
                 what: "a source expression with that identity",

@@ -1,4 +1,17 @@
-# TP-3 · Borrowed views and EvidenceRef
+# 43 · TP-3 · Borrowed views and EvidenceRef
+
+> **In one sentence:** A view is a convenient way to look at the trace you already loaded. It does not own a second independent history.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Arc** | Rust's shared-ownership handle: several readers can refer to the same underlying saved trace without copying all its records. |
+| **EvidenceRef** | A citation to one original record, tied to the trace it came from. |
+
+> **Example.** Two readers cloned from one `TraceStore` can resolve the same citation. If you independently load the same JSON again, its references belong to a different trace owner and are rejected as foreign.
+>
+> **What not to assume:** A borrowed view cannot recreate a value the engine never captured.
 
 ## Level 1 · Intuition
 
@@ -8,9 +21,9 @@ One large immutable trace should have many lightweight readers, not many copies.
 
 ## Level 2 · Ownership and lifecycle
 
-`TraceStore` owns `Arc<DebugSessionTrace>` and `Arc<TraceIndexes>`; cloning the store cheaply shares both. `raw()` exposes recorded evidence, while `semantic_input()` builds `CheckpointContext` from a snapshot index or a `source_checkpoints` position and offers borrowed stack, locals, caller frames, globals, live heap and metadata. A context's `events_at_checkpoint()` finds explicit checkpoint tags; `heap_events_in_snapshot_interval()` uses adjacent retained cumulative counters. A missing stop/source association returns `Unavailable` rather than creating a fake stop.
+`TraceStore` holds two shared Rust `Arc` values: the original `DebugSessionTrace` and the small `TraceIndexes`. You can clone the store without copying the trace. `raw()` offers recorded items directly. `semantic_input()` opens a **borrowed** `CheckpointContext` for a saved snapshot, so callers can inspect its current frame, optional callers, globals and observed heap without taking ownership of their bytes. `events_at_checkpoint()` uses recorded checkpoint tags, while a heap-event interval uses counts from neighboring *saved* snapshots. If the trace has no supported stop or source association, the query says `Unavailable`; it does not add a stop to make an answer look complete.
 
-`EvidenceLocation` names a collection and position, e.g. `Snapshot(3)`, `SnapshotVariable { snapshot:3, variable:1 }`, `HeapEvent(7)`, `AllocationLifetime(2)`, `CrashReport`, or `ValgrindError(0)`. `EvidenceRef` also carries a weak `Arc` trace identity. `resolve_evidence` checks identity first: a cloned store resolves the reference; an independent reload of equal JSON rejects it as `ForeignTrace`. The reference is not a portable serialized ID or a cached ownership graph.
+`EvidenceLocation` is like a precise address *inside the notebook*: “snapshot 3, variable 1,” or “heap event at array position 7.” `EvidenceRef` adds a weak link to **which loaded notebook** it came from. When you resolve the reference, the parser checks that owner first. A cloned `TraceStore` points to the same trace and accepts it; opening the same JSON independently creates a new owner and returns `ForeignTrace`. This prevents accidentally linking events from two separate loads just because their numbers happen to match. An `EvidenceRef` is not a portable ID you can serialize and use against another trace.
 
 ### Worked citation
 

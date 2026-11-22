@@ -428,7 +428,11 @@ async fn optional_ast_does_not_change_runtime_or_break_trace_parser() {
     let store = TraceStore::from_trace(enriched).unwrap();
     assert!(store.raw().source_metadata().is_some());
     assert!(store.semantic_input().source_metadata().is_some());
-    assert!(store.validate_deep().is_structurally_sound());
+    assert!(
+        store.validate_deep().is_structurally_sound(),
+        "{:#?}",
+        store.validate_deep()
+    );
 }
 
 #[tokio::test]

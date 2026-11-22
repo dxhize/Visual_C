@@ -1,4 +1,17 @@
-# Stage 2 handoff · guarantees, limits and glossary
+# 65 · Stage 2 handoff · guarantees, limits and glossary
+
+> **In one sentence:** Stage 1 hands later code evidence, not unquestionable conclusions. This page says exactly where that handoff ends.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Freeze contract** | The agreed, tested behavior and limits downstream code must preserve rather than silently broaden. |
+| **Qualified evidence** | A recorded fact together with its scope, confidence, source and missing-data conditions. |
+
+> **Example.** Stage 2 may draw a variable's observed bytes and label their capture status. It must not infer that a pointer owns the heap block whose current address matches it.
+>
+> **What not to assume:** Stage 1 is not a sandbox, a whole-process-tree recorder, an initialized-memory oracle or a guarantee of assembled-trace RAM.
 
 ## Level 1 · Intuition
 
@@ -26,7 +39,7 @@ let stop = view.checkpoint_summary(snapshot_index)?;
 let _ = (scope.unobserved_descendants, stop.reference.location());
 ```
 
-This is a **body excerpt** using public APIs from `src/trace_parser/{semantic,consumer,evidence}.rs`; follow the [complete runnable example](usage.html#level-3-load-and-validate). The [API tables](api.html#level-3-signatures-and-contracts) list query signatures; [validation](parser-validation.html#realloc-link-verification) covers adversarial realloc imports. **Stage 2 is future work**: no new execution interpreter, provenance graph, byte initialization detector, GUI or data model is provided by this site.
+This is a **body excerpt** using public APIs from `src/trace_parser/{semantic,consumer,evidence}.rs`; follow the [complete runnable example](usage.html#level-3-load-and-validate). The [API tables](api.html#level-3-signatures-and-contracts) list query signatures; [validation](parser-validation.html#realloc-link-verification) covers adversarial realloc imports. Stage 2 implementation is **outside the scope of this site**; this public boundary does not provide an execution interpreter, provenance graph or GUI.
 
 ### Performance (not a guarantee)
 

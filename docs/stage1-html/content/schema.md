@@ -1,4 +1,17 @@
-# Schema v2 and identity reference
+# 64 · Schema v2 and identity reference
+
+> **In one sentence:** The schema lists the JSON fields that save a recording. The most important reading habit is to ask what each number identifies.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Schema version** | The format version. The supported V2.1 and V2.2 traces here use version 2; not every older example file can be imported. |
+| **Nullable** | A field can say 'no value recorded.' That is not the same as 'the value was zero' or 'nothing happened.' |
+
+> **Example.** An event can have `allocation_id=2`, while its `address` is `0x705010`. A later block can also live at `0x705010` with a different ID. Keep the ID and address separate.
+>
+> **What not to assume:** Short JSON projections show selected fields for study, not full documents to paste into the parser.
 
 ## Level 1 · Intuition
 
@@ -8,7 +21,7 @@ A source line, stopped PC, snapshot position, instruction attempt, allocation li
 
 ## Level 2 · Top-level JSON
 
-The Rust type is `src/models.rs::DebugSessionTrace`; `RecordingData` is `#[serde(flatten)]` into JSON. Typical top-level fields: `schema_version=2`, `compiled_successfully`, `compile_errors`, `snapshots`, `heap_events`, `heap_state`, `allocation_lifetimes`, `execution`, `execution_status`, `disassembly_table`, `instruction_events`, `source_checkpoints`, `trace_gaps`, `instruction_count`, `coverage`, `storage`, `heap_history`, `stage_results`, `resource_usage`, `execution_limits`, `tracing_configuration`, optional `type_registry`, `source_metadata`, `evidence_fusion`, `crash_report`, `valgrind_report`, and `sanitizer_report`. `Option`/null and missing optional/defaulted fields are not evidence of successful capture. `schema_version=2` covers supported V2.1/V2.2; the four older pre-V2.1 example documents with removed limit keys are not supported on import. Deprecated per-instruction register observations are parse-only: new output omits them.
+The complete JSON trace is represented in Rust by `DebugSessionTrace` in `src/models.rs`. Its `RecordingData` fields are **flattened**: instead of appearing under a `recording` object, items such as `snapshots` appear at the top level. Think of the fields in groups. `compiled_successfully` and `compile_errors` describe the build; `snapshots`, `instruction_events`, `source_checkpoints`, `trace_gaps` and `coverage` describe the debugger recording; `heap_events`, `heap_state`, `allocation_lifetimes` and `heap_history` describe observed allocator activity. `stage_results`, `execution_status`, `resource_usage`, `execution_limits` and `storage` describe outcomes and limits. `type_registry`, `source_metadata`, `evidence_fusion` and crash or memory-error reports may be optional. **Null or missing optional data does not mean the check succeeded.** `schema_version=2` works for supported V2.1/V2.2 files, not every older schema-2 example: four pre-V2.1 files contain a removed limit key and do not import. Older register fields may be parsed for compatibility but are no longer exported for each instruction.
 
 ### Identity domains
 

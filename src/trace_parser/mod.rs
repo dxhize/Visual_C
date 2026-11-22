@@ -1,6 +1,8 @@
 //! TP-1: ingestion, structural validation and canonical store.
 //! TP-2: compact indexes, cross-record resolution and raw execution queries.
 //! TP-3: borrowed raw and semantic-input views with trace-local evidence.
+//! TP-6: opt-in, once-validated, scope-aware evidence relationships (no Semantic Engine).
+//! TP-7: bounded checkpoint composition over TP-6; no second evidence model.
 //!
 //! This module is the **Trace Parser** foundation: it receives Stage 1
 //! (`c-trace-engine`) trace inputs, identifies the input format, deserializes
@@ -22,10 +24,10 @@
 //! identities (`allocation_id`).
 //!
 //! It intentionally does **not**: execute programs, invoke tools, infer
-//! object identities or pointer graphs, reconstruct missing events, or
-//! expose GUI/Tauri shapes. Recorded evidence is preserved verbatim; deriving
-//! C-language meaning from it is the future Semantic Engine's job. TP-3's
-//! consumer views organize recorded evidence but never infer C semantics.
+//! pointer origins or speculative global object graphs, reconstruct missing
+//! events, or expose GUI/Tauri shapes. TP-6 qualifies explicitly recorded
+//! relationships after one deep validation; interpreting C-language behavior
+//! remains the future Semantic Engine's job.
 //!
 //! # Supported inputs
 //!
@@ -76,10 +78,12 @@ use crate::models::{
 };
 use crate::resource_limits::ExecutionLimits;
 
+pub mod consumer;
 pub mod error;
 pub mod evidence;
 pub mod indexes;
 pub mod journal;
+pub mod semantic;
 pub mod validation;
 pub mod views;
 
@@ -93,11 +97,13 @@ pub use evidence::{Evidence, EvidenceLocation, EvidenceRef};
 /// errors (`QueryError`) distinct from ingestion errors
 /// ([`TraceParseError`]).
 pub type QueryResult<T> = std::result::Result<T, QueryError>;
+pub use consumer::{CheckpointSummary, VariableScope, MAX_CONSUMER_PAGE};
 pub use indexes::{
     AllocEvents, AllocationIndex, Executions, ExecutionsIndex, OrderingFacts, SourceEvents,
     SourceIndex, SourceKey, SourceKeys, TraceIndexes,
 };
 pub use journal::{JournalCounts, JournalRecord, JournalTrace};
+pub use semantic::{EvidenceConfidence, ValidatedSemanticView};
 pub use validation::{
     validate_deep, ValidationFinding, ValidationLocation, ValidationReport, ValidationSeverity,
 };

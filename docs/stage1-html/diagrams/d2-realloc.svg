@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1070 420" role="img" aria-labelledby="t desc"><title id="t">Realloc outcomes and lifetime links</title><desc id="desc">A failed realloc keeps its old block alive. Same-address success can retain a lifetime; moved success closes predecessor and creates successor with explicit old ID. Terminal realloc(ptr,0) may free without creating a successor.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1070" height="420" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Realloc outcomes and lifetime links</text>
+<path d="M 212 185 L 245 185" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 433 145 L 467 130" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 220 L 465 230" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 203 L 675 247" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 164 L 675 111" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 655 245 L 875 200" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 864 225 L 876 220" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 859 130 L 881 140" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="22" y="145" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="32" y="171" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Old live allocation</text>
+<rect x="245" y="145" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="255" y="171" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">__wrap_realloc</text>
+<rect x="465" y="50" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="475" y="76" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Failure: old alive</text>
+<rect x="465" y="225" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="475" y="251" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Same addr: updated</text>
+<rect x="675" y="225" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="685" y="251" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Moved successor ID</text>
+<rect x="675" y="50" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="685" y="76" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Zero terminal free</text>
+<rect x="875" y="140" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="166" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Lifetime history</text>
+<text x="24" y="400" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

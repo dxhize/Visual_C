@@ -132,6 +132,30 @@ fn main() {
                 .trace()
                 .schema_version as usize
         });
+        // TP-5 metadata probes: borrowed canonical slices, no new index.
+        bench("heap process scope typed", 20_000, |_| {
+            black_box(store.heap_process_scope());
+            store.heap_history().is_some() as usize
+        });
+        bench("type registry borrowed", 20_000, |_| {
+            store
+                .type_registry()
+                .map_or(0, |registry| black_box(registry.types.len()))
+        });
+        bench("evidence fusion borrowed", 20_000, |_| {
+            store.evidence_fusion().is_some() as usize
+        });
+        if let Some(id) = store
+            .trace()
+            .source_metadata
+            .as_ref()
+            .and_then(|registry| registry.expressions.first())
+            .map(|expression| expression.id.as_str())
+        {
+            bench("source expression by ID", 20_000, |_| {
+                black_box(store.source_expression(id).unwrap()).id.len()
+            });
+        }
         let snapshot_len = store.trace().snapshots.len();
         if snapshot_len != 0 {
             bench("checkpoint_context varied", 20_000, |i| {
@@ -222,5 +246,207 @@ fn main() {
             LIVE.load(Ordering::Relaxed) - persistent,
             persistent
         );
+        // TP-6 opt-in validation happens ONCE. Query loops use only borrowed
+        // canonical evidence; measured allocations must remain zero.
+        let before_live = LIVE.load(Ordering::Relaxed);
+        let before_allocs = ALLOCS.load(Ordering::Relaxed);
+        let start = Instant::now();
+        let validated = store.validated_semantic();
+        println!(
+            "tp6_context={:?} findings={} allocs={} live_delta={} bytes rss_after={} KiB",
+            start.elapsed(),
+            validated.report().findings().len(),
+            ALLOCS.load(Ordering::Relaxed) - before_allocs,
+            LIVE.load(Ordering::Relaxed) - before_live,
+            rss_kib(),
+        );
+        bench("tp6 process coverage", 20_000, |_| {
+            black_box(validated.process_coverage()).history.is_some() as usize
+        });
+        if snapshot_len != 0 {
+            bench("tp6 checkpoint varied", 20_000, |i| {
+                black_box(validated.checkpoint(i % snapshot_len).unwrap())
+                    .context
+                    .snapshot_index()
+            });
+        }
+        if let Some((snapshot, variable)) = store
+            .trace()
+            .snapshots
+            .iter()
+            .enumerate()
+            .find_map(|(index, s)| (!s.variables.is_empty()).then_some((index, 0)))
+        {
+            let reference = store
+                .evidence_ref(EvidenceLocation::SnapshotVariable { snapshot, variable })
+                .unwrap();
+            bench("tp6 variable join", 20_000, |_| {
+                black_box(validated.variable(&reference).unwrap())
+                    .info
+                    .name
+                    .len()
+            });
+        }
+        if let Some(lifetime) = store.allocation_lifetimes().first() {
+            bench("tp6 heap identity", 20_000, |_| {
+                black_box(validated.heap(lifetime.allocation_id))
+                    .events()
+                    .count()
+            });
+        }
+        if let Some(id) = store
+            .trace()
+            .source_metadata
+            .as_ref()
+            .and_then(|r| r.expressions.first())
+            .map(|e| e.id.as_str())
+        {
+            bench("tp6 source expression", 20_000, |_| {
+                black_box(validated.source_expression(id))
+                    .heap_call_candidates()
+                    .count()
+            });
+        }
+        if snapshot_len != 0 {
+            let live_before = LIVE.load(Ordering::Relaxed);
+            let alloc_before = ALLOCS.load(Ordering::Relaxed);
+            let summary = validated.checkpoint_summary(0).unwrap();
+            println!(
+                "tp7_summary_live_delta={} bytes allocs={} rss_after={} KiB",
+                LIVE.load(Ordering::Relaxed) - live_before,
+                ALLOCS.load(Ordering::Relaxed) - alloc_before,
+                rss_kib()
+            );
+            black_box(&summary);
+            bench("tp7 summary varied", 20_000, |i| {
+                black_box(validated.checkpoint_summary(i % snapshot_len).unwrap()).snapshot_index()
+            });
+            let first_with_locals = store
+                .trace()
+                .snapshots
+                .iter()
+                .position(|s| !s.variables.is_empty());
+            if let Some(index) = first_with_locals {
+                let summary = validated.checkpoint_summary(index).unwrap();
+                let page_len = summary.checkpoint.context.variables().len().min(16);
+                bench("tp7 local page <=16", 5_000, |_| {
+                    summary
+                        .variables_page(
+                            c_trace_engine::trace_parser::VariableScope::Local,
+                            0..page_len,
+                        )
+                        .unwrap()
+                        .map(|item| item.unwrap().info.name.len())
+                        .sum()
+                });
+            }
+            let page_len = summary
+                .checkpoint
+                .context
+                .events_at_checkpoint()
+                .unwrap()
+                .len()
+                .min(16);
+            bench("tp7 checkpoint event page", 5_000, |_| {
+                summary
+                    .instruction_events_page(0..page_len)
+                    .unwrap()
+                    .map(|item| item.unwrap().position)
+                    .fold(0usize, usize::wrapping_add)
+            });
+            if let Some((index, expression_count)) = store
+                .trace()
+                .snapshots
+                .iter()
+                .enumerate()
+                .find_map(|(index, snapshot)| {
+                    let file = snapshot
+                        .call_stack
+                        .first()
+                        .and_then(|f| f.full_file.as_deref())
+                        .unwrap_or(&snapshot.file);
+                    let count = store
+                        .trace()
+                        .source_metadata
+                        .as_ref()?
+                        .expressions
+                        .iter()
+                        .filter(|expr| {
+                            expr.span.file == file
+                                && expr.span.start_line <= snapshot.line
+                                && snapshot.line <= expr.span.end_line
+                        })
+                        .count();
+                    (count != 0).then_some((index, count))
+                })
+            {
+                let source = validated.checkpoint_summary(index).unwrap();
+                bench("tp7 static source page", 2_000, |_| {
+                    source
+                        .source_expressions_page(0..expression_count.min(16))
+                        .unwrap()
+                        .count()
+                });
+            }
+        }
     }
+    // Bounded large-result oracle, independent of the real 1000-snapshot
+    // source trace (which has very few variables per checkpoint).
+    let mut trace = DebugSessionTrace::default();
+    trace
+        .snapshots
+        .push(c_trace_engine::models::ExecutionSnapshot {
+            observation: c_trace_engine::models::SnapshotObservation {
+                stop_id: 1,
+                ..Default::default()
+            },
+            variables: (0..1024)
+                .map(|i| c_trace_engine::models::VariableInfo {
+                    name: format!("v{i}"),
+                    read_status: c_trace_engine::models::DataValidity::Valid,
+                    ..Default::default()
+                })
+                .collect(),
+            ..Default::default()
+        });
+    let store = TraceStore::from_trace(trace).unwrap();
+    let validated = store.validated_semantic();
+    let summary = validated.checkpoint_summary(0).unwrap();
+    println!(
+        "TP7_LARGE_PAGE vars=1024 max_page={} rss={} KiB",
+        c_trace_engine::trace_parser::MAX_CONSUMER_PAGE,
+        rss_kib()
+    );
+    bench("tp7 128-variable page", 300, |i| {
+        let start = (i % 8) * 128;
+        summary
+            .variables_page(
+                c_trace_engine::trace_parser::VariableScope::Local,
+                start..start + 128,
+            )
+            .unwrap()
+            .map(|item| item.unwrap().info.name.len())
+            .sum()
+    });
+    bench("tp7 eight bounded pages", 40, |_| {
+        (0..8)
+            .map(|page| {
+                summary
+                    .variables_page(
+                        c_trace_engine::trace_parser::VariableScope::Local,
+                        page * 128..(page + 1) * 128,
+                    )
+                    .unwrap()
+                    .map(|item| item.unwrap().info.name.len())
+                    .sum::<usize>()
+            })
+            .sum()
+    });
+    bench("tp7 oversized page rejected", 5_000, |_| {
+        usize::from(
+            summary
+                .variables_page(c_trace_engine::trace_parser::VariableScope::Local, 0..129)
+                .is_err(),
+        )
+    });
 }

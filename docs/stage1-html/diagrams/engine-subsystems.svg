@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 560" role="img" aria-labelledby="t desc"><title id="t">Trace Engine production subsystem groups</title><desc id="desc">Configuration and supervision control compilation and GDB recording. C wrapper events and metadata flow to the trace; independent diagnostic passes contribute separate reports before JSON export.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1080" height="560" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Trace Engine production subsystem groups</text>
+<path d="M 215 118 L 245 118" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 118 L 465 118" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 655 118 L 680 118" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 560 158 L 560 255" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 655 295 L 680 295" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 819 255 L 926 158" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 870 118 L 875 118" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 532 158 L 368 390" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 430 L 680 430" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 800 390 L 945 158" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 970 255 L 970 158" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="25" y="78" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="35" y="104" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">main / cli / config</text>
+<rect x="245" y="78" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="255" y="104" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">trace + supervisor</text>
+<rect x="465" y="78" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="475" y="104" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">compiler / GCC</text>
+<rect x="680" y="78" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="690" y="104" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">gdb_mi / recorder</text>
+<rect x="875" y="78" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="104" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">models / export</text>
+<rect x="465" y="255" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="475" y="281" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">C allocator wrapper</text>
+<rect x="680" y="255" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="690" y="281" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">allocation_tracker</text>
+<rect x="245" y="390" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="255" y="416" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">dwarf / clang_ast</text>
+<rect x="680" y="390" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="690" y="416" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">evidence fusion</text>
+<rect x="875" y="255" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="885" y="281" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Valgrind / sanitizer</text>
+<text x="24" y="540" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

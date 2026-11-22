@@ -1,0 +1,539 @@
+{
+  "d4-1": {
+    "title": "Walkthrough 1: complete normal execution",
+    "alt": "CLI config, GCC build, DWARF, GDB stop loop, trace assembly, JSON export, parser load/index, deep validation and consumer summary form one continuous pipeline.",
+    "caption": "Solid arrows are observed/control/data handoffs. The parser starts only after the JSON document is written; it does not rerun the engine.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "main / cli / config",
+        "kind": "source",
+        "lines": [
+          "Request and effective limits"
+        ]
+      },
+      {
+        "label": "GCC + DWARF",
+        "kind": "engine",
+        "lines": [
+          "Wrapped debug binary and metadata"
+        ]
+      },
+      {
+        "label": "GDB stop loop",
+        "kind": "engine",
+        "lines": [
+          "Snapshots, attempts, heap rows"
+        ]
+      },
+      {
+        "label": "Trace assembly",
+        "kind": "evidence",
+        "lines": [
+          "Coverage, fusion, stage results"
+        ]
+      },
+      {
+        "label": "JSON export",
+        "kind": "risk",
+        "lines": [
+          "Per-document byte cap"
+        ]
+      },
+      {
+        "label": "TraceStore + indexes",
+        "kind": "parser",
+        "lines": [
+          "Canonical Arc, positions"
+        ]
+      },
+      {
+        "label": "Validate + summary",
+        "kind": "parser",
+        "lines": [
+          "Explicit report, bounded pages"
+        ]
+      }
+    ]
+  },
+  "d4-2": {
+    "title": "Walkthrough 2: recursion and activations",
+    "alt": "GDB reports nested recurse frames. The engine assigns activation IDs, captures caller frames with a configured depth, and the parser exposes frame-scoped variables without merging recursive activations.",
+    "caption": "Same function name and same variable name do not merge distinct activations; observed caller activity is not inferred variable lifetime.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "recursive C source",
+        "kind": "source",
+        "lines": [
+          "recurse(3) calls recurse(2)..."
+        ]
+      },
+      {
+        "label": "GDB frame chain",
+        "kind": "engine",
+        "lines": [
+          "level, func, PC, caller"
+        ]
+      },
+      {
+        "label": "Activation path",
+        "kind": "engine",
+        "lines": [
+          "Oldest-to-youngest IDs"
+        ]
+      },
+      {
+        "label": "Snapshot + caller_frames",
+        "kind": "evidence",
+        "lines": [
+          "Separate activation identities"
+        ]
+      },
+      {
+        "label": "Parser frame query",
+        "kind": "parser",
+        "lines": [
+          "FrameActivation at one checkpoint"
+        ]
+      }
+    ]
+  },
+  "d4-3": {
+    "title": "Walkthrough 3: malloc to lifetime",
+    "alt": "Linked --wrap_malloc calls the real allocator, updates a PID-local table, appends a sequenced event row, Rust reads complete rows, HeapTimeline ingests a verified prefix and final assembly records a lifetime.",
+    "caption": "The C wrapper writes a file; Rust does not call the C allocator directly. An event is observed telemetry, not an exact instruction timestamp.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "__wrap_malloc",
+        "kind": "source",
+        "lines": [
+          "Caller PC, size, real pointer"
+        ]
+      },
+      {
+        "label": "PID-local table + event",
+        "kind": "engine",
+        "lines": [
+          "ID, sequence, address"
+        ]
+      },
+      {
+        "label": "Event file",
+        "kind": "risk",
+        "lines": [
+          "Complete line or loss"
+        ]
+      },
+      {
+        "label": "EventFileReader / HeapTimeline",
+        "kind": "engine",
+        "lines": [
+          "Verified prefix, block state"
+        ]
+      },
+      {
+        "label": "allocation_lifetimes",
+        "kind": "evidence",
+        "lines": [
+          "Parser indexes by ID"
+        ]
+      }
+    ]
+  },
+  "d4-4": {
+    "title": "Walkthrough 4: free, reuse and realloc",
+    "alt": "Free closes a lifetime; a later allocation at the same address receives a new ID; realloc can be in-place, moved, failed or terminal-free. TP8-F01 requires recorded corroboration for predecessor links.",
+    "caption": "Address equality never proves object identity. A forged old ID without compatible events becomes unavailable or contradictory.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Old live allocation",
+        "kind": "evidence",
+        "lines": [
+          "ID, PID, sequence"
+        ]
+      },
+      {
+        "label": "free / malloc / realloc",
+        "kind": "source",
+        "lines": [
+          "Status-specific wrapper rows"
+        ]
+      },
+      {
+        "label": "HeapTimeline",
+        "kind": "engine",
+        "lines": [
+          "Close, reuse, link or fail"
+        ]
+      },
+      {
+        "label": "realloc_link",
+        "kind": "risk",
+        "lines": [
+          "Creation + lifetime corroboration"
+        ]
+      },
+      {
+        "label": "TP-6 confidence",
+        "kind": "parser",
+        "lines": [
+          "Definite only when supported"
+        ]
+      }
+    ]
+  },
+  "d4-5": {
+    "title": "Walkthrough 5: pointer observation and provenance",
+    "alt": "GDB records a pointer variable and its numeric target. Heap containment yields an address candidate; provenance status and recorded identity decide whether any allocation relationship is definite.",
+    "caption": "A pointer value is observed. An address match is not allocation origin; ambiguous reuse remains ambiguous.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Pointer variable",
+        "kind": "source",
+        "lines": [
+          "Value, address, extent"
+        ]
+      },
+      {
+        "label": "Observed maps / heap",
+        "kind": "engine",
+        "lines": [
+          "Numeric containment"
+        ]
+      },
+      {
+        "label": "PointerTarget",
+        "kind": "risk",
+        "lines": [
+          "Address candidate or identity"
+        ]
+      },
+      {
+        "label": "Validation",
+        "kind": "engine",
+        "lines": [
+          "Status and extent checks"
+        ]
+      },
+      {
+        "label": "PointerEvidence",
+        "kind": "evidence",
+        "lines": [
+          "Candidate vs definite"
+        ]
+      }
+    ]
+  },
+  "d4-6": {
+    "title": "Walkthrough 6: DWARF type information",
+    "alt": "GCC emits DWARF; the extractor indexes CU/DIE type and declaration records; runtime variables reference trace-local IDs; the parser exposes type/declaration metadata without decoding Stage 2 typed memory.",
+    "caption": "DWARF supplies static type/declaration metadata. It does not prove that a member was initialized or that a source expression executed.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "GCC debug ELF",
+        "kind": "source",
+        "lines": [
+          "CU, DIE, type/member refs"
+        ]
+      },
+      {
+        "label": "dwarf::extract",
+        "kind": "engine",
+        "lines": [
+          "TypeRegistry, declarations"
+        ]
+      },
+      {
+        "label": "associate",
+        "kind": "engine",
+        "lines": [
+          "Runtime variable -> DIE"
+        ]
+      },
+      {
+        "label": "Trace metadata",
+        "kind": "evidence",
+        "lines": [
+          "Type/declaration IDs"
+        ]
+      },
+      {
+        "label": "Parser type_entry",
+        "kind": "parser",
+        "lines": [
+          "Borrowed static record"
+        ]
+      }
+    ]
+  },
+  "d4-7": {
+    "title": "Walkthrough 7: Clang AST and fusion",
+    "alt": "Optional Clang extracts declarations and source spans. Fusion correlates DWARF and AST declarations and forms heap-call source candidates; ambiguity is explicit and never proves execution.",
+    "caption": "Static source metadata and runtime observations remain separate. A same-line call is a candidate, not a dynamic call proof.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Clang JSON AST",
+        "kind": "source",
+        "lines": [
+          "Declarations, expressions, spans"
+        ]
+      },
+      {
+        "label": "DWARF registry",
+        "kind": "source",
+        "lines": [
+          "CU-scoped declarations/types"
+        ]
+      },
+      {
+        "label": "evidence::fuse",
+        "kind": "risk",
+        "lines": [
+          "Unique candidate matches"
+        ]
+      },
+      {
+        "label": "Trace cross-references",
+        "kind": "evidence",
+        "lines": [
+          "Additive links and ambiguities"
+        ]
+      },
+      {
+        "label": "Parser source_expression",
+        "kind": "parser",
+        "lines": [
+          "Static candidate exposure"
+        ]
+      }
+    ]
+  },
+  "d4-8": {
+    "title": "Walkthrough 8: crash and partial evidence",
+    "alt": "GDB observes a fatal signal; the engine captures a partial snapshot and crash report, optional diagnostics remain separate, and the parser preserves partial coverage without inventing observations.",
+    "caption": "A crash is a recorded execution outcome. Missing observations stay missing; tool reports do not become primary-run identities.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Fatal signal stop",
+        "kind": "engine",
+        "lines": [
+          "Partial frame/state"
+        ]
+      },
+      {
+        "label": "Crash report",
+        "kind": "evidence",
+        "lines": [
+          "Signal and site"
+        ]
+      },
+      {
+        "label": "Optional diagnostics",
+        "kind": "risk",
+        "lines": [
+          "Separate sanitizer/Valgrind"
+        ]
+      },
+      {
+        "label": "Partial trace",
+        "kind": "evidence",
+        "lines": [
+          "Coverage incomplete"
+        ]
+      },
+      {
+        "label": "Parser validation",
+        "kind": "parser",
+        "lines": [
+          "Partial/unavailable findings"
+        ]
+      }
+    ]
+  },
+  "d4-9": {
+    "title": "Walkthrough 9: infinite loop and limits",
+    "alt": "A bounded loop reaches a step or wall limit. The engine retains attempted positions, events, snapshots and gaps, then exports a partial trace; the parser distinguishes attempts from retained events.",
+    "caption": "A step limit is not a proof of nontermination. Attempted instruction counts and retained event counts are different.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Loop fixture",
+        "kind": "source",
+        "lines": [
+          "Volatile counter"
+        ]
+      },
+      {
+        "label": "Supervisor / stop loop",
+        "kind": "risk",
+        "lines": [
+          "Step and wall caps"
+        ]
+      },
+      {
+        "label": "Gap + partial events",
+        "kind": "engine",
+        "lines": [
+          "Attempted positions retained"
+        ]
+      },
+      {
+        "label": "Partial JSON",
+        "kind": "evidence",
+        "lines": [
+          "StepLimitReached / Timeout"
+        ]
+      },
+      {
+        "label": "Parser partial view",
+        "kind": "parser",
+        "lines": [
+          "No invented completion"
+        ]
+      }
+    ]
+  },
+  "d4-10": {
+    "title": "Walkthrough 10: fork and heap coverage",
+    "alt": "Fork resets child allocator state; parent and logged child append PID-local events and ACKs. The parser verifies observed PIDs and followed inferior, while silent descendants remain unknown.",
+    "caption": "Complete observed-PID history is not a descendant census. Missing ACKs or silent children are not reconstructed.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "fork + atfork child",
+        "kind": "source",
+        "lines": [
+          "Reset lock/counters/IDs"
+        ]
+      },
+      {
+        "label": "PID-local event files",
+        "kind": "engine",
+        "lines": [
+          "Parent and observed child"
+        ]
+      },
+      {
+        "label": "ACK verification",
+        "kind": "risk",
+        "lines": [
+          "Observed PIDs + inferior"
+        ]
+      },
+      {
+        "label": "Heap history",
+        "kind": "evidence",
+        "lines": [
+          "Complete for scope only"
+        ]
+      },
+      {
+        "label": "HeapProcessScope",
+        "kind": "parser",
+        "lines": [
+          "Unknown descendants stay unknown"
+        ]
+      }
+    ]
+  },
+  "d4-11": {
+    "title": "Walkthrough 11: parser from the inside",
+    "alt": "JSON loading builds a canonical Arc store and position indexes. Borrowed views resolve evidence, deep validation creates a report, TP-6 qualifies relationships and TP-7 composes bounded pages.",
+    "caption": "Loading is not validation. Queries borrow original records and never clone the canonical trace.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "TraceStore::open",
+        "kind": "parser",
+        "lines": [
+          "Bytes, schema, Arc assembly"
+        ]
+      },
+      {
+        "label": "TraceIndexes",
+        "kind": "engine",
+        "lines": [
+          "Positions, ordering facts"
+        ]
+      },
+      {
+        "label": "Raw / semantic views",
+        "kind": "parser",
+        "lines": [
+          "Borrowed records"
+        ]
+      },
+      {
+        "label": "validate_deep",
+        "kind": "risk",
+        "lines": [
+          "Explicit report"
+        ]
+      },
+      {
+        "label": "validated_semantic",
+        "kind": "parser",
+        "lines": [
+          "Relationship confidence"
+        ]
+      },
+      {
+        "label": "checkpoint_summary",
+        "kind": "evidence",
+        "lines": [
+          "Bounded consumer pages"
+        ]
+      }
+    ]
+  },
+  "d4-12": {
+    "title": "Walkthrough 12: corrupted imported evidence",
+    "alt": "Schema-compatible mutations can forge pointer identity, process completeness or realloc predecessors. Deep validation emits structural findings and TP-6 downgrades confidence; raw records remain available.",
+    "caption": "Deserialization success is not evidence trustworthiness. Contradictory relationships are never promoted to definite.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Mutated JSON",
+        "kind": "source",
+        "lines": [
+          "Schema-compatible field"
+        ]
+      },
+      {
+        "label": "TraceStore + indexes",
+        "kind": "parser",
+        "lines": [
+          "Load succeeds"
+        ]
+      },
+      {
+        "label": "validate_deep",
+        "kind": "engine",
+        "lines": [
+          "Pointer/process/realloc checks"
+        ]
+      },
+      {
+        "label": "ValidationReport",
+        "kind": "risk",
+        "lines": [
+          "Structural corruption"
+        ]
+      },
+      {
+        "label": "Semantic confidence",
+        "kind": "evidence",
+        "lines": [
+          "Contradictory, not definite"
+        ]
+      }
+    ]
+  }
+}

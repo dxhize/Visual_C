@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 610" role="img" aria-labelledby="t desc"><title id="t">Allocation event and ACK transport</title><desc id="desc">C wrappers append PID/sequence-tagged event lines to a dedicated file; Rust tails only complete lines and checks per-observed-PID terminal ACKs from a separate status file. Missing or corrupt transport reduces completeness.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="780" height="610" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Allocation event and ACK transport</text>
+<rect x="55" y="50" width="666" height="70" rx="11" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="69" y="79" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#555a85">C wrapper event write</text>
+<text x="69" y="103" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">PID, seq, kind, ID, address, size</text>
+<path d="M 388 121 V 139" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="148" width="666" height="70" rx="11" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="69" y="177" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#185a97">EventFileReader::read_new</text>
+<text x="69" y="201" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Bounded tail; complete lines only</text>
+<path d="M 388 219 V 237" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="246" width="666" height="70" rx="11" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="69" y="275" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#185a97">HeapTimeline::ingest</text>
+<text x="69" y="299" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Verified prefix per PID</text>
+<path d="M 388 317 V 335" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="344" width="666" height="70" rx="11" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="69" y="373" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#555a85">Destructor status ACK</text>
+<text x="69" y="397" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Last sequence and write failures</text>
+<path d="M 388 415 V 433" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="442" width="666" height="70" rx="11" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="69" y="471" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#8b4146">verify_event_status</text>
+<text x="69" y="495" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Observed PIDs + followed inferior only</text>
+<text x="24" y="588" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Blue: engine  ·  Green: parser  ·  Amber: evidence  ·  Red: partial/unknown  ·  Purple: source</text></svg>

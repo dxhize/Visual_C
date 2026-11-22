@@ -1,9 +1,10 @@
 //! TP-2: compact indexes over the canonical [`DebugSessionTrace`].
 //!
 //! The indexes hold **positions only** — never copies of events, snapshots,
-//! disassembly records, heap events, or their strings (source paths are
-//! interned once per distinct recorded path; everything else is a `u32`
-//! position into a canonical array). Lookups that are already constant-time
+//! disassembly records or heap events. Source paths are interned once per
+//! path; TP-6 also retains trace-local DWARF/AST identity keys once per
+//! registry entry and only `u32` positions into canonical metadata arrays.
+//! Lookups that are already constant-time
 //! vector accesses (`event_id` → `instruction_events`, `instruction_id` →
 //! `disassembly_table`, snapshot index → `snapshots`,
 //! `source_checkpoints[pos]` → snapshot index) deliberately get **no index**
@@ -54,9 +55,8 @@ use super::error::QueryError;
 /// The compact index set built once per [`TraceStore`](super::TraceStore) and
 /// shared by every clone of it (two `Arc`s, zero rebuilds).
 ///
-/// Everything here references canonical data by position; the only strings
-/// retained are the interned source paths in [`SourceIndex::files`], one
-/// `Arc<str>` per *distinct* recorded path (never per event).
+/// Everything here references canonical records by position; interned paths
+/// and metadata identity keys are index keys only, never copies of records.
 #[derive(Debug, Clone)]
 pub struct TraceIndexes {
     /// Reverse index from a disassembly entry to the event positions that
@@ -68,6 +68,9 @@ pub struct TraceIndexes {
     pub sources: SourceIndex,
     /// Heap lookup by allocation identity (never by address).
     pub allocations: AllocationIndex,
+    /// Trace-local metadata identities and source-call candidate *positions*;
+    /// keys are copied once, never registry records or execution proofs.
+    pub metadata: MetadataIndex,
     /// Ordering preconditions verified at build time; consumed by the
     /// zero-memory stop/checkpoint lookups on `TraceStore`.
     pub ordering: OrderingFacts,
@@ -78,8 +81,8 @@ impl TraceIndexes {
     ///
     /// Complexity: one linear pass each over `instruction_events`,
     /// `disassembly_table`, `heap_events`, `heap_state`,
-    /// `allocation_lifetimes`, `snapshots`, and `trace_gaps` (plus a
-    /// transient interning pass over the same events). No canonical array
+    /// `allocation_lifetimes`, `snapshots`, `trace_gaps`, and optional bounded
+    /// DWARF/AST registries (plus transient source interning). No canonical array
     /// is sorted or copied; index memory is a few bytes per record —
     /// see [`TraceIndexes::estimated_bytes`] and the performance findings
     /// in the Trace Parser documentation for measured numbers.
@@ -103,6 +106,7 @@ impl TraceIndexes {
                 &trace.heap_state,
                 &trace.recording.allocation_lifetimes,
             ),
+            metadata: MetadataIndex::build(trace),
             ordering: OrderingFacts::build(
                 &trace.snapshots,
                 &trace.recording.instruction_events,
@@ -148,7 +152,107 @@ impl TraceIndexes {
             let lifetime = self.allocations.lifetime_by_id.len() * 56;
             positions + state + lifetime
         };
-        executions + sources + allocations + std::mem::size_of::<OrderingFacts>()
+        executions
+            + sources
+            + allocations
+            + self.metadata.estimated_bytes()
+            + std::mem::size_of::<OrderingFacts>()
+    }
+}
+
+/// Positions in the optional bounded DWARF/AST registries. Source-call
+/// associations are candidates only; an index never upgrades their status.
+/// Duplicate imported IDs retain the first position; deep validation reports
+/// their structural contradiction before trusted semantic queries are used.
+#[derive(Debug, Clone, Default)]
+pub struct MetadataIndex {
+    pub types: HashMap<Arc<str>, u32>,
+    pub declarations: HashMap<Arc<str>, u32>,
+    pub source_declarations: HashMap<Arc<str>, u32>,
+    pub source_expressions: HashMap<Arc<str>, u32>,
+    pub call_candidates: HashMap<Arc<str>, Vec<u32>>,
+    pub call_ambiguities: HashMap<Arc<str>, Vec<u32>>,
+}
+
+impl MetadataIndex {
+    fn build(trace: &DebugSessionTrace) -> Self {
+        let mut index = Self::default();
+        if let Some(types) = &trace.type_registry {
+            for (position, entry) in types.types.iter().enumerate() {
+                index
+                    .types
+                    .entry(Arc::from(entry.id.as_str()))
+                    .or_insert(position as u32);
+            }
+            for (position, entry) in types.declarations.iter().enumerate() {
+                index
+                    .declarations
+                    .entry(Arc::from(entry.id.as_str()))
+                    .or_insert(position as u32);
+            }
+        }
+        if let Some(source) = &trace.source_metadata {
+            for (position, entry) in source.declarations.iter().enumerate() {
+                index
+                    .source_declarations
+                    .entry(Arc::from(entry.id.as_str()))
+                    .or_insert(position as u32);
+            }
+            for (position, entry) in source.expressions.iter().enumerate() {
+                index
+                    .source_expressions
+                    .entry(Arc::from(entry.id.as_str()))
+                    .or_insert(position as u32);
+            }
+            for (position, entry) in source.heap_call_candidates.iter().enumerate() {
+                index
+                    .call_candidates
+                    .entry(Arc::from(entry.expression_id.as_str()))
+                    .or_default()
+                    .push(position as u32);
+            }
+            for (position, entry) in source.heap_call_ambiguities.iter().enumerate() {
+                for id in &entry.expression_ids {
+                    index
+                        .call_ambiguities
+                        .entry(Arc::from(id.as_str()))
+                        .or_default()
+                        .push(position as u32);
+                }
+            }
+        }
+        index
+    }
+
+    pub fn candidate_positions(&self, id: &str) -> &[u32] {
+        self.call_candidates.get(id).map_or(&[], Vec::as_slice)
+    }
+
+    pub fn ambiguity_positions(&self, id: &str) -> &[u32] {
+        self.call_ambiguities.get(id).map_or(&[], Vec::as_slice)
+    }
+
+    fn estimated_bytes(&self) -> usize {
+        let ids = [
+            &self.types,
+            &self.declarations,
+            &self.source_declarations,
+            &self.source_expressions,
+        ];
+        let direct = ids
+            .iter()
+            .map(|map| map.keys().map(|id| 40 + id.len()).sum::<usize>())
+            .sum::<usize>();
+        let candidates = [&self.call_candidates, &self.call_ambiguities];
+        direct
+            + candidates
+                .iter()
+                .map(|map| {
+                    map.iter()
+                        .map(|(id, positions)| 40 + id.len() + positions.capacity() * 4)
+                        .sum::<usize>()
+                })
+                .sum::<usize>()
     }
 }
 

@@ -1,4 +1,17 @@
-# TP-7 · Checkpoint composition and bounded pages
+# 46 · TP-7 · Checkpoint composition and bounded pages
+
+> **In one sentence:** A checkpoint summary groups related questions about one recorded stop so callers do not have to hunt through unrelated arrays.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Consumer** | Code such as a UI or analysis example that asks the parser questions about a trace. |
+| **Page** | An explicitly requested slice of results. This API returns at most 128 entries in one request; ask for the next slice if there are more. |
+
+> **Example.** For a stop with 300 variable records, request positions 0–127, then 128–255, then 256–299. Returning just the first page without saying so would hide evidence.
+>
+> **What not to assume:** Grouping nearby events is a navigation convenience, not proof that a particular source expression caused one.
 
 ## Level 1 · Intuition
 
@@ -8,9 +21,9 @@ A user-facing query often wants several related things at one stop: variables, i
 
 ## Level 2 · What a summary means
 
-`checkpoint_summary(index)` borrows one `CheckpointEvidence`, its trace-scoped snapshot `EvidenceRef`, and the validated view. `snapshot_index`, `stop_id`, `attempted_instruction_position`, recorded PID and source line are **distinct**, not convertible integers. `variables_page(Local | Global | Caller(position), range)` returns qualified TP-6 variable views. `caller_frame(position)` and `frame_activation(id)` use the recorded activation within that same stop. `instruction_events_page(range)` returns events explicitly tagged with this checkpoint ID; the tag is definite, **not exact same-stop causality**. `heap_interval_page(range)` groups events by adjacent retained snapshots' cumulative heap counts, with only `Candidate` interval timing. `gaps_in_attempted_window(range)` cites attempted-position windows, not causal attribution to one stop. `source_expressions_page(range)` scans optional AST by **exact recorded file/span** and returns static candidates, not execution proof.
+Start with `checkpoint_summary(index)` when you know a saved snapshot's position. It keeps a citation to that snapshot and uses the same validated trace. The snapshot position, GDB stop number, instruction-attempt count, PID and source line are **different labels**; do not substitute one for another. `variables_page` reads a chosen page of current-frame, global or recorded caller variables with TP-6 confidence. `caller_frame` and `frame_activation` describe one actual saved stop, not a lifetime guessed from a function name. `instruction_events_page` finds events the recording tagged with this checkpoint; that tag helps navigation, but does not prove an expression on the line caused the event. `heap_interval_page` shows events between two **retained** snapshots, so the timing is a candidate interval, not an exact stop. Gaps describe attempted-position windows. Optional AST source expressions are only descriptions of written code.
 
-Session-wide `coverage()`, `session_diagnostics()`, `session_report_refs()`, `valgrind_errors_page()` and `first_location_findings()` stay separate from event cause. A report recorded in a session need not have happened at this checkpoint; “first validation finding here” is not a certificate of local completeness. `heap_events_page(&allocation_ref, range)` rejects foreign trace references **before** using numeric IDs. `HeapIntervalEvidence::allocation(&validated)` inherits TP-6 realloc confidence.
+Some information belongs to the **whole session**, not to one stop: overall coverage, compiler and diagnostic reports, Valgrind findings and validation notes. A report first displayed near checkpoint 4 did not necessarily happen *because of* checkpoint 4. `heap_events_page` first checks that your allocation citation belongs to this trace, then looks up its numeric ID. When you follow an interval's allocation link, it keeps TP-6's existing realloc confidence rather than quietly changing a candidate into a certainty.
 
 ## Level 3 · Real signatures and bounded traversal
 

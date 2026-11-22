@@ -1,27 +1,83 @@
-# DWARF, Clang AST and evidence fusion
+# 17 · DWARF, Clang AST and evidence fusion
+
+> **In one sentence:** Type information comes from the built program and optional syntax information from the source. Neither replaces reading runtime memory.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| **DWARF** | Compiler-written debug info describing compiled types, declarations and source locations. |
+| **AST** | Clang's tree of *written* C syntax. It can show a call appears in the source without showing the program took that branch. |
+| **Fusion** | One cautious pass that links existing records from different providers. It never supplies new values or invents writes. |
+
+> **Example.** Three tools answer three different questions:
+>
+> | Tool | Question it answers |
+> |---|---|
+> | DWARF | Where is `struct Pair.y` located inside the compiled struct? |
+> | GDB | What bytes were there at this stop? |
+> | Clang | Is there a written `malloc` call in the source? |
+>
+> A **same-line** source match is only a *candidate*, especially if macros or several calls share that line.
 
 ## Level 1 · Intuition
 
-Static metadata helps explain what a stopped value *might be*: DWARF identifies the compiler's types and declarations; optional Clang AST identifies syntax and source spans. GDB supplies dynamic runtime values. None of these static sources alone proves that a C expression executed. Fusion supplies carefully qualified links between existing records, never replacement values or invented writes.
+Static metadata helps explain what a stopped value *might be*: DWARF identifies the compiler's types and declarations, and optional Clang AST identifies syntax and source spans. GDB supplies the dynamic runtime values. **None** of the static sources proves a C expression executed.
 
 {{diagram:metadata}}
 
 ## Level 2 · The three evidence streams
 
-`dwarf::extract_excluding` scans the **actual GCC-built debug artifact**, excluding the injected tracker source, and builds a bounded `TypeRegistry` of units, type entries and declarations. `dwarf::associate` attaches uniquely correlated type/declaration IDs to runtime variables, preserving GDB-observed addresses and sizes. Clang is **opt-in** (`--clang-ast`): `clang_ast::analyze` parses source syntax into a `SourceMetadataRegistry`; a missing tool/partial translation unit is recorded, not silently treated as an empty program. Clang's view of preprocessing/type layout may differ from GCC's; cross-provider correlation may be unavailable.
+### Stream 1: DWARF
 
-After runtime capture and heap reconstruction, `evidence::fuse` runs **once**. `src/evidence/declarations.rs` links eligible static declarations/members, `source_links.rs` considers runtime/declaration references, `heap.rs` records heap-call **candidates/ambiguities**, and `validation.rs` rejects unsafe links. `EvidenceFusionSummary` counts only serialized links and rejected links. No GDB command is issued during fusion, no registry is copied per snapshot, and absence of both providers leaves fusion absent. The parser's TP-2 metadata index maps string IDs to positions, not cloned declarations.
+| Step | What happens |
+|---|---|
+| `dwarf::extract_excluding` | Reads debug info from the **program GCC actually built**, leaves out the injected allocator logger, and saves bounded lists of compiled types and declarations in `TypeRegistry` |
+| `dwarf::associate` *(later)* | Links a stopped GDB variable to a type or declaration **only when it finds a unique match**; keeps the observed size and address exactly as GDB reported them |
+
+### Stream 2: Clang AST (optional, `--clang-ast`)
+
+- Clang separately reads the C source into `SourceMetadataRegistry`.
+- A missing Clang tool or partly parsed source is marked **missing or partial**, not mistaken for an empty program.
+- GCC and Clang can use different compilation settings, so a link between their descriptions isn't always justified.
+
+### Stream 3: Fusion
+
+After the engine finishes capturing runtime and reconstructing the heap, `evidence::fuse` makes **one** cautious linking pass:
+
+| File | Handles |
+|---|---|
+| `declarations.rs` | Compiled declarations and members |
+| `source_links.rs` | Links to observed variables |
+| `heap.rs` | Marks *possible* source locations for allocator calls |
+| `validation.rs` | Removes links that can't be supported |
+
+The summary counts links kept and rejected.
+
+| Fusion **does** | Fusion **does not** |
+|---|---|
+| Link existing records, cautiously | Ask GDB for new values |
+| Count kept and rejected links | Copy the type registry for every pause |
+| | Turn a possible source call into an executed call |
+
+The parser later stores **positions** for these metadata IDs instead of cloning their records.
 
 ### Worked ambiguity
 
-Two heap-call expressions on one source line—or a macro expanding to one—can share a line with a recorded allocation event. The relationship can be a candidate or ambiguous; a same-line match is never a dynamic expression-to-event identity. TP-6 `source_expression(id).execution_confidence` remains `Unavailable` even if `heap_call_candidates` exist. This is important when writing [future Stage 2 explanations](handoff.html#level-2-the-freeze-contract).
+Two heap-call expressions on one source line, or a macro expanding to one, can share a line with a recorded allocation event. The relationship can be a **candidate** or **ambiguous**. A same-line match is never a dynamic expression-to-event identity.
+
+So TP-6 `source_expression(id).execution_confidence` stays `Unavailable` even when `heap_call_candidates` exist. This matters when writing [future Stage 2 explanations](handoff.html#level-2-the-freeze-contract).
 
 ## Level 3 · Files and API
 
-- `src/dwarf.rs::{TypeRegistry, extract_excluding, associate}` reads ELF/DWARF, matches unique declarations and reports missing/ambiguous data.
-- `src/clang_ast.rs::{SourceMetadataRegistry, analyze, correlate_heap_calls}` produces optional static syntax.
-- `src/evidence/mod.rs::fuse` and `src/evidence/{declarations,source_links,heap,validation}.rs` perform bounded reconciliation; `src/models.rs::EvidenceFusionSummary` serializes counts.
-- `TraceStore::type_entry(id)`, `dwarf_declaration(id)`, `source_declaration(id)`, `source_expression(id)` return borrowed indexed metadata; `ValidatedSemanticView::source_expression(id)` adds confidence and indexed candidate/ambiguity event positions.
+| File / function | Role |
+|---|---|
+| `src/dwarf.rs::{TypeRegistry, extract_excluding, associate}` | Reads ELF/DWARF, matches unique declarations, reports missing or ambiguous data |
+| `src/clang_ast.rs::{SourceMetadataRegistry, analyze, correlate_heap_calls}` | Produces optional static syntax |
+| `src/evidence/mod.rs::fuse` and `src/evidence/{declarations,source_links,heap,validation}.rs` | Bounded reconciliation |
+| `src/models.rs::EvidenceFusionSummary` | Serializes the counts |
+| `TraceStore::type_entry(id)`, `dwarf_declaration(id)`, `source_declaration(id)`, `source_expression(id)` | Return borrowed, indexed metadata |
+| `ValidatedSemanticView::source_expression(id)` | Adds confidence plus indexed candidate/ambiguity event positions |
 
 ```rust
 // Real TP-6 API; expression IDs belong to this trace, not to other runs.
@@ -33,6 +89,6 @@ for candidate in expression.call_sites() {
 }
 ```
 
-The snippet assumes `validated` and `expression_id` are already defined; run the complete [parser walkthrough](usage.html#level-3-load-and-validate) first. See the [public API reference](api.html#level-3-signatures-and-contracts) for signatures.
+The snippet assumes `validated` and `expression_id` are already defined. Run the complete [parser walkthrough](usage.html#level-3-load-and-validate) first. Signatures are in the [public API reference](api.html#level-3-signatures-and-contracts).
 
-> WARNING: “source line observed” ≠ “specific AST expression executed.” Never use an AST call candidate to grant pointer provenance or to allocate a new runtime lifetime.
+> **Warning:** "source line observed" is **not** "specific AST expression executed." Never use an AST call candidate to grant pointer provenance or to allocate a new runtime lifetime.

@@ -1,0 +1,1790 @@
+{
+  "d3-pipeline": {
+    "title": "Trace Parser pipeline",
+    "alt": "Bytes pass ingestion and schema gating, then one TraceStore owns a canonical Arc trace and position indexes. Raw and semantic input views borrow it; explicit deep validation produces a report; TP-6 qualifies evidence; TP-7 composes bounded consumer pages.",
+    "caption": "Loading does not run deep validation. The parser never reconstructs a journal into a full trace.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Serialized trace / reader",
+        "kind": "source",
+        "lines": [
+          "JSON bytes or existing model"
+        ]
+      },
+      {
+        "label": "TP-1 gates + schema",
+        "kind": "engine",
+        "lines": [
+          "Size, UTF-8, schema 2"
+        ]
+      },
+      {
+        "label": "TraceStore canonical Arc",
+        "kind": "evidence",
+        "lines": [
+          "Trace + indexes, no record clone"
+        ]
+      },
+      {
+        "label": "TP-2 indexes + TP-3 views",
+        "kind": "engine",
+        "lines": [
+          "Positions, borrowed records"
+        ]
+      },
+      {
+        "label": "Explicit deep validation",
+        "kind": "risk",
+        "lines": [
+          "Report: corruption/partial/unavailable"
+        ]
+      },
+      {
+        "label": "TP-6 validated evidence",
+        "kind": "parser",
+        "lines": [
+          "Relationship confidence"
+        ]
+      },
+      {
+        "label": "TP-7 bounded pages",
+        "kind": "evidence",
+        "lines": [
+          "<=128 items, no truncation"
+        ]
+      }
+    ]
+  },
+  "d3-ingest-json": {
+    "title": "JSON ingestion sequence",
+    "alt": "open or from_reader checks byte size, read_trace_bytes rejects empty/non-UTF-8, load_trace_document selects JSON and rejects journals, decode_document deserializes and validates schema, then assemble builds indexes and Arc ownership.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "open / from_reader / bytes",
+        "kind": "source",
+        "lines": [
+          "Input and TraceLoadOptions"
+        ]
+      },
+      {
+        "label": "read_trace_bytes / gates",
+        "kind": "engine",
+        "lines": [
+          "Byte cap, empty, UTF-8"
+        ]
+      },
+      {
+        "label": "load_trace_document",
+        "kind": "engine",
+        "lines": [
+          "JSON vs journal rejection"
+        ]
+      },
+      {
+        "label": "decode_document",
+        "kind": "engine",
+        "lines": [
+          "serde + schema 2"
+        ]
+      },
+      {
+        "label": "assemble",
+        "kind": "evidence",
+        "lines": [
+          "Arc trace + Arc indexes"
+        ]
+      }
+    ]
+  },
+  "d3-schema-gate": {
+    "title": "Schema gate after deserialization",
+    "alt": "serde checks the model shape first, then validate_schema_version accepts only version 2. A malformed model is a syntax error; a valid model with another version is a schema error.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "JSON text",
+        "kind": "source",
+        "lines": [
+          "UTF-8 document"
+        ]
+      },
+      {
+        "label": "serde model",
+        "kind": "engine",
+        "lines": [
+          "Shape and field types"
+        ]
+      },
+      {
+        "label": "schema version",
+        "kind": "risk",
+        "lines": [
+          "found / supported"
+        ]
+      },
+      {
+        "label": "TraceStore",
+        "kind": "evidence",
+        "lines": [
+          "Only after both checks"
+        ]
+      }
+    ]
+  },
+  "d3-journal": {
+    "title": "Journal record lifecycle",
+    "alt": "The reader buffers one bounded line, decodes UTF-8 JSON object with kind/data, pushes typed records with configuration first and a record cap, preserves a torn final line as a flag, and never reconstructs a full trace.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "JSONL line",
+        "kind": "source",
+        "lines": [
+          "kind + data envelope"
+        ]
+      },
+      {
+        "label": "decode_line",
+        "kind": "engine",
+        "lines": [
+          "UTF-8, object, typed payload"
+        ]
+      },
+      {
+        "label": "push_record",
+        "kind": "risk",
+        "lines": [
+          "Record cap, configuration first"
+        ]
+      },
+      {
+        "label": "JournalTrace",
+        "kind": "evidence",
+        "lines": [
+          "Ordered records + counts"
+        ]
+      },
+      {
+        "label": "No DebugSessionTrace",
+        "kind": "risk",
+        "lines": [
+          "Final reports never journaled"
+        ]
+      }
+    ]
+  },
+  "d3-errors": {
+    "title": "Ingestion and query error classes",
+    "alt": "TraceParseError covers input and schema failures. QueryError covers range, reference, foreign owner, unavailable evidence, page limit and ordering. Partial execution is recorded data, not ingestion failure.",
+    "layout": "graph",
+    "width": 1060,
+    "height": 420,
+    "nodes": [
+      {
+        "id": "input",
+        "x": 20,
+        "y": 90,
+        "label": "Input bytes",
+        "kind": "source"
+      },
+      {
+        "id": "parse",
+        "x": 230,
+        "y": 90,
+        "label": "TP-1 parse",
+        "kind": "engine"
+      },
+      {
+        "id": "perr",
+        "x": 445,
+        "y": 55,
+        "label": "TraceParseError",
+        "kind": "risk"
+      },
+      {
+        "id": "store",
+        "x": 445,
+        "y": 245,
+        "label": "TraceStore",
+        "kind": "evidence"
+      },
+      {
+        "id": "query",
+        "x": 665,
+        "y": 245,
+        "label": "TP-2/6/7 query",
+        "kind": "engine"
+      },
+      {
+        "id": "qerr",
+        "x": 870,
+        "y": 245,
+        "label": "QueryError",
+        "kind": "risk"
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "parse"
+      },
+      {
+        "from": "parse",
+        "to": "perr"
+      },
+      {
+        "from": "parse",
+        "to": "store"
+      },
+      {
+        "from": "store",
+        "to": "query"
+      },
+      {
+        "from": "query",
+        "to": "qerr"
+      }
+    ]
+  },
+  "d3-ownership": {
+    "title": "Canonical trace ownership",
+    "alt": "One TraceStore owns Arc DebugSessionTrace and Arc TraceIndexes. Clones share both Arcs. EvidenceRef holds a weak trace identity plus a position; independent loads of equal JSON have different owners.",
+    "layout": "graph",
+    "width": 1070,
+    "height": 450,
+    "nodes": [
+      {
+        "id": "store",
+        "x": 20,
+        "y": 150,
+        "label": "TraceStore",
+        "kind": "evidence"
+      },
+      {
+        "id": "trace",
+        "x": 245,
+        "y": 60,
+        "label": "Arc<DebugSessionTrace>",
+        "kind": "evidence"
+      },
+      {
+        "id": "idx",
+        "x": 245,
+        "y": 250,
+        "label": "Arc<TraceIndexes>",
+        "kind": "engine"
+      },
+      {
+        "id": "alias",
+        "x": 465,
+        "y": 150,
+        "label": "store.clone()",
+        "kind": "parser"
+      },
+      {
+        "id": "view",
+        "x": 680,
+        "y": 150,
+        "label": "Borrowed view",
+        "kind": "parser"
+      },
+      {
+        "id": "ref",
+        "x": 875,
+        "y": 150,
+        "label": "EvidenceRef",
+        "kind": "risk"
+      },
+      {
+        "id": "other",
+        "x": 680,
+        "y": 330,
+        "label": "Independent load",
+        "kind": "risk"
+      }
+    ],
+    "edges": [
+      {
+        "from": "store",
+        "to": "trace"
+      },
+      {
+        "from": "store",
+        "to": "idx"
+      },
+      {
+        "from": "store",
+        "to": "alias"
+      },
+      {
+        "from": "alias",
+        "to": "view"
+      },
+      {
+        "from": "view",
+        "to": "ref"
+      },
+      {
+        "from": "other",
+        "to": "ref",
+        "kind": "candidate"
+      }
+    ]
+  },
+  "d3-lifetimes": {
+    "title": "Borrowed view lifetimes",
+    "alt": "Views borrow the store; checkpoint contexts borrow one snapshot; evidence values borrow canonical records; the validated view owns a report and borrows the store. The compiler prevents a view from outliving its owner.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "TraceStore owner",
+        "kind": "evidence",
+        "lines": [
+          "Arc trace + indexes"
+        ]
+      },
+      {
+        "label": "RawTraceView / SemanticInputView",
+        "kind": "parser",
+        "lines": [
+          "One store reference"
+        ]
+      },
+      {
+        "label": "CheckpointContext",
+        "kind": "parser",
+        "lines": [
+          "Snapshot + store borrow"
+        ]
+      },
+      {
+        "label": "VariableEvidence / HeapEvidence",
+        "kind": "evidence",
+        "lines": [
+          "Borrowed records + confidence"
+        ]
+      },
+      {
+        "label": "ValidatedSemanticView",
+        "kind": "risk",
+        "lines": [
+          "Owns report, borrows store"
+        ]
+      }
+    ]
+  },
+  "d3-evidence-ref": {
+    "title": "Evidence reference creation and resolution",
+    "alt": "evidence_ref validates a location then binds a weak trace identity. resolve_evidence checks Weak ptr_eq before resolving the location. Equal positions in independent stores are foreign; optional reports are unavailable.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "EvidenceLocation",
+        "kind": "source",
+        "lines": [
+          "Collection + position"
+        ]
+      },
+      {
+        "label": "evidence_ref",
+        "kind": "engine",
+        "lines": [
+          "Validate position"
+        ]
+      },
+      {
+        "label": "Weak trace identity",
+        "kind": "risk",
+        "lines": [
+          "Owner binding"
+        ]
+      },
+      {
+        "label": "resolve_evidence",
+        "kind": "engine",
+        "lines": [
+          "Weak::ptr_eq then get"
+        ]
+      },
+      {
+        "label": "Borrowed Evidence",
+        "kind": "evidence",
+        "lines": [
+          "Original record, no copy"
+        ]
+      }
+    ]
+  },
+  "d3-index-build": {
+    "title": "Index construction pipeline",
+    "alt": "TraceIndexes builds execution, source, allocation, metadata and ordering structures by borrowing canonical vectors. CSR arrays store u32 positions; hash maps store IDs to positions.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "DebugSessionTrace",
+        "kind": "source",
+        "lines": [
+          "Canonical vectors"
+        ]
+      },
+      {
+        "label": "TraceIndexes::build",
+        "kind": "engine",
+        "lines": [
+          "One pass per structure"
+        ]
+      },
+      {
+        "label": "CSR + hash indexes",
+        "kind": "engine",
+        "lines": [
+          "u32 positions, interned keys"
+        ]
+      },
+      {
+        "label": "OrderingFacts",
+        "kind": "risk",
+        "lines": [
+          "Binary-search preconditions"
+        ]
+      },
+      {
+        "label": "Shared Arc indexes",
+        "kind": "evidence",
+        "lines": [
+          "No canonical clone"
+        ]
+      }
+    ]
+  },
+  "d3-index-lookup": {
+    "title": "Position-to-record resolution",
+    "alt": "A query checks a key and ordering, retrieves a stored position from an index, indexes the canonical vector and returns a borrowed record. Missing or invalid references become QueryError, not a guessed match.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Key / EvidenceRef",
+        "kind": "source",
+        "lines": [
+          "Instruction ID, allocation ID, position"
+        ]
+      },
+      {
+        "label": "Index lookup",
+        "kind": "engine",
+        "lines": [
+          "CSR slice or hash map"
+        ]
+      },
+      {
+        "label": "Ordering check",
+        "kind": "risk",
+        "lines": [
+          "OrderingViolation on broken order"
+        ]
+      },
+      {
+        "label": "Canonical vector get",
+        "kind": "engine",
+        "lines": [
+          "u32 position -> record"
+        ]
+      },
+      {
+        "label": "Borrowed record",
+        "kind": "evidence",
+        "lines": [
+          "Original payload"
+        ]
+      }
+    ]
+  },
+  "d3-identity-domains": {
+    "title": "Parser identity domains",
+    "alt": "Vector position, event ID, attempted position, GDB stop, snapshot index, allocation ID, activation ID and static metadata IDs are distinct. EvidenceRef adds owner identity; address equality is not allocation identity.",
+    "layout": "graph",
+    "width": 1080,
+    "height": 520,
+    "nodes": [
+      {
+        "id": "pos",
+        "x": 20,
+        "y": 70,
+        "label": "Vector position",
+        "kind": "source"
+      },
+      {
+        "id": "event",
+        "x": 220,
+        "y": 70,
+        "label": "Event ID",
+        "kind": "evidence"
+      },
+      {
+        "id": "attempt",
+        "x": 420,
+        "y": 70,
+        "label": "Attempted position",
+        "kind": "engine"
+      },
+      {
+        "id": "stop",
+        "x": 620,
+        "y": 70,
+        "label": "GDB stop ID",
+        "kind": "engine"
+      },
+      {
+        "id": "snap",
+        "x": 820,
+        "y": 70,
+        "label": "Snapshot index",
+        "kind": "evidence"
+      },
+      {
+        "id": "alloc",
+        "x": 20,
+        "y": 250,
+        "label": "Allocation ID",
+        "kind": "evidence"
+      },
+      {
+        "id": "activation",
+        "x": 220,
+        "y": 250,
+        "label": "Activation ID",
+        "kind": "engine"
+      },
+      {
+        "id": "dwarf",
+        "x": 420,
+        "y": 250,
+        "label": "DWARF ID",
+        "kind": "source"
+      },
+      {
+        "id": "ast",
+        "x": 620,
+        "y": 250,
+        "label": "AST ID",
+        "kind": "source"
+      },
+      {
+        "id": "owner",
+        "x": 820,
+        "y": 250,
+        "label": "Trace owner",
+        "kind": "risk"
+      }
+    ],
+    "edges": [
+      {
+        "from": "pos",
+        "to": "event"
+      },
+      {
+        "from": "attempt",
+        "to": "stop",
+        "kind": "conceptual"
+      },
+      {
+        "from": "stop",
+        "to": "snap",
+        "kind": "conceptual"
+      },
+      {
+        "from": "alloc",
+        "to": "activation",
+        "kind": "conceptual"
+      },
+      {
+        "from": "dwarf",
+        "to": "ast",
+        "kind": "candidate"
+      },
+      {
+        "from": "owner",
+        "to": "pos"
+      }
+    ]
+  },
+  "d3-validation-flow": {
+    "title": "Deep-validation control flow",
+    "alt": "validate_deep runs the engine validator then instruction, snapshot, checkpoint, heap, DWARF, AST, source-link, gap, coverage and diagnostic passes. Builder aggregates findings by severity and code.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "validate_deep",
+        "kind": "engine",
+        "lines": [
+          "One explicit pass"
+        ]
+      },
+      {
+        "label": "Engine + record passes",
+        "kind": "engine",
+        "lines": [
+          "Instruction/snapshot/checkpoint"
+        ]
+      },
+      {
+        "label": "Heap + metadata passes",
+        "kind": "engine",
+        "lines": [
+          "Realloc/process/DWARF/AST"
+        ]
+      },
+      {
+        "label": "Coverage + diagnostics",
+        "kind": "risk",
+        "lines": [
+          "Partial/unavailable/optional"
+        ]
+      },
+      {
+        "label": "Builder + ValidationReport",
+        "kind": "evidence",
+        "lines": [
+          "Aggregated, severity ordered"
+        ]
+      }
+    ]
+  },
+  "d3-findings": {
+    "title": "Finding classification",
+    "alt": "Structural corruption, partial coverage, unavailable evidence and optional absence are distinct. is_structurally_sound ignores partial/unavailable/optional; is_partial is separate.",
+    "layout": "graph",
+    "width": 1060,
+    "height": 410,
+    "nodes": [
+      {
+        "id": "input",
+        "x": 20,
+        "y": 150,
+        "label": "Validation finding",
+        "kind": "source"
+      },
+      {
+        "id": "structural",
+        "x": 245,
+        "y": 45,
+        "label": "Structural corruption",
+        "kind": "risk"
+      },
+      {
+        "id": "partial",
+        "x": 245,
+        "y": 160,
+        "label": "Partial coverage",
+        "kind": "engine"
+      },
+      {
+        "id": "unavailable",
+        "x": 245,
+        "y": 275,
+        "label": "Unavailable evidence",
+        "kind": "risk"
+      },
+      {
+        "id": "optional",
+        "x": 465,
+        "y": 275,
+        "label": "Optional absence",
+        "kind": "source"
+      },
+      {
+        "id": "sound",
+        "x": 680,
+        "y": 100,
+        "label": "is_structurally_sound",
+        "kind": "evidence"
+      },
+      {
+        "id": "report",
+        "x": 875,
+        "y": 160,
+        "label": "ValidationReport",
+        "kind": "evidence"
+      }
+    ],
+    "edges": [
+      {
+        "from": "input",
+        "to": "structural"
+      },
+      {
+        "from": "input",
+        "to": "partial"
+      },
+      {
+        "from": "input",
+        "to": "unavailable"
+      },
+      {
+        "from": "input",
+        "to": "optional"
+      },
+      {
+        "from": "structural",
+        "to": "sound",
+        "kind": "conceptual"
+      },
+      {
+        "from": "partial",
+        "to": "report"
+      },
+      {
+        "from": "unavailable",
+        "to": "report"
+      },
+      {
+        "from": "optional",
+        "to": "report"
+      }
+    ]
+  },
+  "d3-realloc-valid": {
+    "title": "Valid realloc predecessor chain",
+    "alt": "A successor block names an old ID; exactly one compatible reallocated creation event and one predecessor creation exist; PID, sequence and free boundaries agree; realloc_link returns Verified.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Old allocation lifetime",
+        "kind": "source",
+        "lines": [
+          "ID, PID, sequence, free"
+        ]
+      },
+      {
+        "label": "Reallocated event",
+        "kind": "engine",
+        "lines": [
+          "old ID -> new ID"
+        ]
+      },
+      {
+        "label": "New allocation lifetime",
+        "kind": "evidence",
+        "lines": [
+          "Successor ID + predecessor"
+        ]
+      },
+      {
+        "label": "realloc_link",
+        "kind": "risk",
+        "lines": [
+          "One match, one predecessor"
+        ]
+      },
+      {
+        "label": "Verified confidence",
+        "kind": "evidence",
+        "lines": [
+          "Definite only with definite identity"
+        ]
+      }
+    ]
+  },
+  "d3-realloc-forged": {
+    "title": "Forged or cyclic predecessor",
+    "alt": "An imported old ID can exist while no compatible creation event proves the edge. Missing corroboration is unavailable; conflicting type, PID, sequence or a cycle is structural corruption.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Imported realloc_from_id",
+        "kind": "source",
+        "lines": [
+          "Existing but unsupported ID"
+        ]
+      },
+      {
+        "label": "Creation scans",
+        "kind": "engine",
+        "lines": [
+          "Successor and predecessor events"
+        ]
+      },
+      {
+        "label": "No match / conflict",
+        "kind": "risk",
+        "lines": [
+          "Missing, ambiguous or contradictory"
+        ]
+      },
+      {
+        "label": "REALLOC_LINK_UNVERIFIED",
+        "kind": "risk",
+        "lines": [
+          "Unavailable finding"
+        ]
+      },
+      {
+        "label": "REALLOC_LINK_CYCLE / CONTRADICTORY",
+        "kind": "risk",
+        "lines": [
+          "Structural finding"
+        ]
+      }
+    ]
+  },
+  "d3-realloc-confidence": {
+    "title": "Realloc confidence decision flow",
+    "alt": "Verified plus definite identity is Definite; verified with incomplete/legacy scope is Candidate; ambiguous is Ambiguous; unavailable is Unavailable; contradictory is Contradictory; any structural report forces Contradictory.",
+    "layout": "graph",
+    "width": 1060,
+    "height": 430,
+    "nodes": [
+      {
+        "id": "link",
+        "x": 20,
+        "y": 150,
+        "label": "realloc_link",
+        "kind": "source"
+      },
+      {
+        "id": "identity",
+        "x": 240,
+        "y": 150,
+        "label": "Heap identity confidence",
+        "kind": "evidence"
+      },
+      {
+        "id": "definite",
+        "x": 465,
+        "y": 45,
+        "label": "Definite",
+        "kind": "evidence"
+      },
+      {
+        "id": "candidate",
+        "x": 465,
+        "y": 160,
+        "label": "Candidate",
+        "kind": "engine"
+      },
+      {
+        "id": "ambiguous",
+        "x": 465,
+        "y": 275,
+        "label": "Ambiguous / Unavailable",
+        "kind": "risk"
+      },
+      {
+        "id": "contradictory",
+        "x": 690,
+        "y": 160,
+        "label": "Contradictory",
+        "kind": "risk"
+      },
+      {
+        "id": "qualify",
+        "x": 875,
+        "y": 160,
+        "label": "qualify(report)",
+        "kind": "risk"
+      }
+    ],
+    "edges": [
+      {
+        "from": "link",
+        "to": "definite"
+      },
+      {
+        "from": "link",
+        "to": "candidate"
+      },
+      {
+        "from": "link",
+        "to": "ambiguous"
+      },
+      {
+        "from": "link",
+        "to": "contradictory"
+      },
+      {
+        "from": "identity",
+        "to": "definite",
+        "kind": "conceptual"
+      },
+      {
+        "from": "qualify",
+        "to": "contradictory"
+      }
+    ]
+  },
+  "d3-pointer": {
+    "title": "Pointer provenance decision flow",
+    "alt": "A numeric address is always a candidate. A definite heap ID needs compatible status; missing legacy status is unavailable; address-only/freed is candidate; contradictions, inactive targets, offset and extent mismatches are structural.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Recorded pointer target",
+        "kind": "source",
+        "lines": [
+          "Address + optional allocation ID"
+        ]
+      },
+      {
+        "label": "Status and identity checks",
+        "kind": "risk",
+        "lines": [
+          "Heap vs variable, address candidate"
+        ]
+      },
+      {
+        "label": "Candidate / Ambiguous",
+        "kind": "engine",
+        "lines": [
+          "No definite origin"
+        ]
+      },
+      {
+        "label": "Unavailable",
+        "kind": "risk",
+        "lines": [
+          "Missing or legacy evidence"
+        ]
+      },
+      {
+        "label": "Structural contradiction",
+        "kind": "risk",
+        "lines": [
+          "Conflicting or impossible target"
+        ]
+      }
+    ]
+  },
+  "d3-process": {
+    "title": "Heap process coverage decision flow",
+    "alt": "The parser verifies observed event PIDs and the followed inferior only. Unknown scope, unsupported child claims, PID 0, missing PIDs and complete flags with losses produce distinct findings.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "HeapHistoryCoverage",
+        "kind": "source",
+        "lines": [
+          "Observed PIDs + scope annotation"
+        ]
+      },
+      {
+        "label": "HeapProcessScope",
+        "kind": "engine",
+        "lines": [
+          "Unknown / verified / unsupported"
+        ]
+      },
+      {
+        "label": "Observed-PID checks",
+        "kind": "risk",
+        "lines": [
+          "PID validity, event membership"
+        ]
+      },
+      {
+        "label": "Unknown descendants",
+        "kind": "risk",
+        "lines": [
+          "No census from events/ACK"
+        ]
+      },
+      {
+        "label": "Coverage findings",
+        "kind": "evidence",
+        "lines": [
+          "Corruption vs unavailable"
+        ]
+      }
+    ]
+  },
+  "d3-semantic-build": {
+    "title": "Validated semantic view construction",
+    "alt": "validated_semantic runs validate_deep once, stores the report and borrows the store. Queries resolve evidence and attach relationship-specific confidence; they do not revalidate.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "TraceStore",
+        "kind": "evidence",
+        "lines": [
+          "Canonical trace + indexes"
+        ]
+      },
+      {
+        "label": "validate_deep",
+        "kind": "engine",
+        "lines": [
+          "One report"
+        ]
+      },
+      {
+        "label": "ValidatedSemanticView",
+        "kind": "parser",
+        "lines": [
+          "Owns report, borrows store"
+        ]
+      },
+      {
+        "label": "Variable / heap / source query",
+        "kind": "engine",
+        "lines": [
+          "Borrowed evidence"
+        ]
+      },
+      {
+        "label": "Relationship confidence",
+        "kind": "evidence",
+        "lines": [
+          "Definite/Candidate/..."
+        ]
+      }
+    ]
+  },
+  "d3-confidence": {
+    "title": "Evidence confidence classification",
+    "alt": "Confidence belongs to a relationship. Definite is a recorded fact under scope; Candidate is compatible but incomplete; Ambiguous has multiple matches; Unavailable lacks evidence; Contradictory conflicts or follows structural corruption.",
+    "layout": "graph",
+    "width": 1060,
+    "height": 430,
+    "nodes": [
+      {
+        "id": "rel",
+        "x": 20,
+        "y": 150,
+        "label": "Stated relationship",
+        "kind": "source"
+      },
+      {
+        "id": "definite",
+        "x": 245,
+        "y": 40,
+        "label": "Definite",
+        "kind": "evidence"
+      },
+      {
+        "id": "candidate",
+        "x": 245,
+        "y": 150,
+        "label": "Candidate",
+        "kind": "engine"
+      },
+      {
+        "id": "ambiguous",
+        "x": 245,
+        "y": 260,
+        "label": "Ambiguous",
+        "kind": "risk"
+      },
+      {
+        "id": "unavailable",
+        "x": 465,
+        "y": 260,
+        "label": "Unavailable",
+        "kind": "risk"
+      },
+      {
+        "id": "contradictory",
+        "x": 465,
+        "y": 40,
+        "label": "Contradictory",
+        "kind": "risk"
+      },
+      {
+        "id": "report",
+        "x": 690,
+        "y": 150,
+        "label": "Validation report",
+        "kind": "evidence"
+      }
+    ],
+    "edges": [
+      {
+        "from": "rel",
+        "to": "definite"
+      },
+      {
+        "from": "rel",
+        "to": "candidate"
+      },
+      {
+        "from": "rel",
+        "to": "ambiguous"
+      },
+      {
+        "from": "rel",
+        "to": "unavailable"
+      },
+      {
+        "from": "rel",
+        "to": "contradictory"
+      },
+      {
+        "from": "report",
+        "to": "contradictory",
+        "kind": "conceptual"
+      }
+    ]
+  },
+  "d3-variable-evidence": {
+    "title": "Variable evidence resolution",
+    "alt": "A variable reference resolves to a borrowed VariableInfo, then optional DWARF type/declaration and AST declaration lookups run independently. Value, type, declaration and source declaration each receive their own confidence.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "EvidenceRef",
+        "kind": "source",
+        "lines": [
+          "Snapshot variable/global/caller"
+        ]
+      },
+      {
+        "label": "resolve_evidence",
+        "kind": "engine",
+        "lines": [
+          "Owner + position"
+        ]
+      },
+      {
+        "label": "VariableInfo",
+        "kind": "evidence",
+        "lines": [
+          "Value, identity, memory, pointer"
+        ]
+      },
+      {
+        "label": "Static metadata lookups",
+        "kind": "source",
+        "lines": [
+          "DWARF + optional AST"
+        ]
+      },
+      {
+        "label": "VariableEvidence",
+        "kind": "evidence",
+        "lines": [
+          "Per-relationship confidence"
+        ]
+      }
+    ]
+  },
+  "d3-heap-evidence": {
+    "title": "Heap evidence resolution",
+    "alt": "A heap reference resolves to an allocation ID; TP-2 indexes find lifetime, state and events; identity confidence depends on PID/process scope; realloc confidence uses the shared helper.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Allocation EvidenceRef",
+        "kind": "source",
+        "lines": [
+          "Event/lifetime/block"
+        ]
+      },
+      {
+        "label": "resolve_evidence",
+        "kind": "engine",
+        "lines": [
+          "Trace-scoped ID"
+        ]
+      },
+      {
+        "label": "AllocationIndex",
+        "kind": "engine",
+        "lines": [
+          "Lifetime, state, event positions"
+        ]
+      },
+      {
+        "label": "HeapEvidence",
+        "kind": "evidence",
+        "lines": [
+          "Borrowed records + history"
+        ]
+      },
+      {
+        "label": "Identity / realloc confidence",
+        "kind": "risk",
+        "lines": [
+          "Observed PID scope + helper"
+        ]
+      }
+    ]
+  },
+  "d3-source-evidence": {
+    "title": "Static source versus runtime evidence",
+    "alt": "An AST expression is static syntax. Candidate/ambiguity positions may relate it to a heap event's source line, but execution confidence remains unavailable. A Valgrind site is independent.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Clang AST expression",
+        "kind": "source",
+        "lines": [
+          "Static span and declaration"
+        ]
+      },
+      {
+        "label": "MetadataIndex",
+        "kind": "engine",
+        "lines": [
+          "Expression/declaration positions"
+        ]
+      },
+      {
+        "label": "Heap-call candidate",
+        "kind": "risk",
+        "lines": [
+          "Source-site relationship only"
+        ]
+      },
+      {
+        "label": "Heap event",
+        "kind": "evidence",
+        "lines": [
+          "Observed allocator event"
+        ]
+      },
+      {
+        "label": "Execution confidence",
+        "kind": "risk",
+        "lines": [
+          "Always unavailable"
+        ]
+      }
+    ]
+  },
+  "d3-diagnostics": {
+    "title": "Diagnostic evidence boundaries",
+    "alt": "Compiler diagnostics, crash, sanitizer and Valgrind reports are separate recorded evidence. A Valgrind source-site candidate never becomes a primary-run allocation ID; reports are session-wide, not causal checkpoint joins.",
+    "layout": "graph",
+    "width": 1060,
+    "height": 410,
+    "nodes": [
+      {
+        "id": "compile",
+        "x": 20,
+        "y": 55,
+        "label": "Compiler diagnostics",
+        "kind": "source"
+      },
+      {
+        "id": "crash",
+        "x": 20,
+        "y": 230,
+        "label": "Crash report",
+        "kind": "evidence"
+      },
+      {
+        "id": "san",
+        "x": 245,
+        "y": 55,
+        "label": "Sanitizer report",
+        "kind": "risk"
+      },
+      {
+        "id": "val",
+        "x": 245,
+        "y": 230,
+        "label": "Valgrind report",
+        "kind": "risk"
+      },
+      {
+        "id": "candidate",
+        "x": 465,
+        "y": 230,
+        "label": "Source-site candidate",
+        "kind": "risk"
+      },
+      {
+        "id": "trace",
+        "x": 690,
+        "y": 140,
+        "label": "Trace records",
+        "kind": "evidence"
+      },
+      {
+        "id": "nojoin",
+        "x": 875,
+        "y": 140,
+        "label": "No causal join",
+        "kind": "risk"
+      }
+    ],
+    "edges": [
+      {
+        "from": "compile",
+        "to": "trace"
+      },
+      {
+        "from": "crash",
+        "to": "trace"
+      },
+      {
+        "from": "san",
+        "to": "trace",
+        "kind": "independent"
+      },
+      {
+        "from": "val",
+        "to": "candidate",
+        "kind": "candidate"
+      },
+      {
+        "from": "candidate",
+        "to": "nojoin",
+        "kind": "conceptual"
+      }
+    ]
+  },
+  "d3-consumer-summary": {
+    "title": "Checkpoint summary construction",
+    "alt": "checkpoint_summary resolves a checkpoint and creates a snapshot EvidenceRef, retaining the validated view. Summary methods return borrowed records or bounded pages without cloning the snapshot.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "ValidatedSemanticView",
+        "kind": "parser",
+        "lines": [
+          "One report, borrowed store"
+        ]
+      },
+      {
+        "label": "checkpoint_summary(index)",
+        "kind": "engine",
+        "lines": [
+          "Checkpoint + snapshot ref"
+        ]
+      },
+      {
+        "label": "CheckpointSummary",
+        "kind": "evidence",
+        "lines": [
+          "Borrowed context + view"
+        ]
+      },
+      {
+        "label": "Variable/heap/event pages",
+        "kind": "engine",
+        "lines": [
+          "Positions + confidence"
+        ]
+      },
+      {
+        "label": "Consumer evidence",
+        "kind": "evidence",
+        "lines": [
+          "Original records"
+        ]
+      }
+    ]
+  },
+  "d3-pagination": {
+    "title": "Bounded pagination",
+    "alt": "page rejects reversed/out-of-range ranges and ranges over 128. Valid half-open ranges return iterators with canonical positions; there is no silent truncation.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Range + collection len",
+        "kind": "source",
+        "lines": [
+          "Half-open requested page"
+        ]
+      },
+      {
+        "label": "page gate",
+        "kind": "risk",
+        "lines": [
+          "InvalidRange / LimitExceeded"
+        ]
+      },
+      {
+        "label": "Canonical positions",
+        "kind": "engine",
+        "lines": [
+          "start..end within len"
+        ]
+      },
+      {
+        "label": "Evidence iterator",
+        "kind": "evidence",
+        "lines": [
+          "QueryResult items"
+        ]
+      }
+    ]
+  },
+  "d3-temporal": {
+    "title": "Temporal association boundaries",
+    "alt": "Explicit checkpoint tags are definite; heap intervals and gaps are candidate retained-boundary windows; source expressions are static candidates. None is an exact instruction timestamp.",
+    "layout": "graph",
+    "width": 1070,
+    "height": 430,
+    "nodes": [
+      {
+        "id": "tag",
+        "x": 20,
+        "y": 70,
+        "label": "Instruction checkpoint tag",
+        "kind": "evidence"
+      },
+      {
+        "id": "heap",
+        "x": 20,
+        "y": 245,
+        "label": "Heap interval",
+        "kind": "risk"
+      },
+      {
+        "id": "gap",
+        "x": 245,
+        "y": 245,
+        "label": "Attempted gap window",
+        "kind": "risk"
+      },
+      {
+        "id": "source",
+        "x": 245,
+        "y": 70,
+        "label": "Source expression match",
+        "kind": "source"
+      },
+      {
+        "id": "exact",
+        "x": 490,
+        "y": 70,
+        "label": "Exact stop causality",
+        "kind": "risk"
+      },
+      {
+        "id": "consumer",
+        "x": 720,
+        "y": 150,
+        "label": "TP-7 consumer",
+        "kind": "parser"
+      }
+    ],
+    "edges": [
+      {
+        "from": "tag",
+        "to": "exact",
+        "kind": "conceptual"
+      },
+      {
+        "from": "heap",
+        "to": "consumer"
+      },
+      {
+        "from": "gap",
+        "to": "consumer"
+      },
+      {
+        "from": "source",
+        "to": "consumer",
+        "kind": "candidate"
+      },
+      {
+        "from": "tag",
+        "to": "consumer"
+      }
+    ]
+  },
+  "d3-performance": {
+    "title": "Parser resource boundaries",
+    "alt": "JSON bytes, canonical trace memory, index payload, validation report and process RSS are different quantities. Input cap, estimated index bytes and engine export cap do not form one memory bound.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Serialized JSON bytes",
+        "kind": "source",
+        "lines": [
+          "Input cap"
+        ]
+      },
+      {
+        "label": "Canonical trace",
+        "kind": "evidence",
+        "lines": [
+          "Owned model"
+        ]
+      },
+      {
+        "label": "Index payload",
+        "kind": "engine",
+        "lines": [
+          "u32 positions + keys"
+        ]
+      },
+      {
+        "label": "Validation report",
+        "kind": "risk",
+        "lines": [
+          "Aggregated findings"
+        ]
+      },
+      {
+        "label": "Process RSS",
+        "kind": "risk",
+        "lines": [
+          "Allocator + runtime, not capped here"
+        ]
+      }
+    ]
+  },
+  "d3-story-load": {
+    "title": "Walkthrough A: JSON load",
+    "alt": "open gates and decodes JSON, assembles Arc trace and indexes, returns a store. Deep validation is not run.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "TraceStore::open",
+        "kind": "source",
+        "lines": [
+          "Path + options"
+        ]
+      },
+      {
+        "label": "gates/decode/schema",
+        "kind": "engine",
+        "lines": [
+          "Input + model checks"
+        ]
+      },
+      {
+        "label": "assemble/index",
+        "kind": "engine",
+        "lines": [
+          "Arc + position indexes"
+        ]
+      },
+      {
+        "label": "Loaded store",
+        "kind": "evidence",
+        "lines": [
+          "No deep validation yet"
+        ]
+      }
+    ]
+  },
+  "d3-story-instruction": {
+    "title": "Walkthrough B: instruction lookup",
+    "alt": "A public event index is direct vector access; a static instruction ID uses the execution CSR to find all recorded event positions.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "instruction_event(index)",
+        "kind": "source",
+        "lines": [
+          "Canonical vector"
+        ]
+      },
+      {
+        "label": "ExecutionsIndex",
+        "kind": "engine",
+        "lines": [
+          "CSR by instruction ID"
+        ]
+      },
+      {
+        "label": "Borrowed event(s)",
+        "kind": "evidence",
+        "lines": [
+          "Original order"
+        ]
+      }
+    ]
+  },
+  "d3-story-variable": {
+    "title": "Walkthrough C: variable evidence",
+    "alt": "A checkpoint variable reference resolves to VariableInfo, optional static metadata is joined, and variable_target checks same-checkpoint identity.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "CheckpointContext",
+        "kind": "source",
+        "lines": [
+          "Snapshot + variable position"
+        ]
+      },
+      {
+        "label": "EvidenceRef",
+        "kind": "engine",
+        "lines": [
+          "Owner + location"
+        ]
+      },
+      {
+        "label": "VariableEvidence",
+        "kind": "evidence",
+        "lines": [
+          "Value/type/declaration"
+        ]
+      },
+      {
+        "label": "Variable target",
+        "kind": "risk",
+        "lines": [
+          "Same-checkpoint identity"
+        ]
+      }
+    ]
+  },
+  "d3-story-corruption": {
+    "title": "Walkthrough D: imported corruption",
+    "alt": "Deep validation finds a forged pointer or unsupported process claim, records a finding, and TP-6 downgrades relationship confidence.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Imported record",
+        "kind": "source",
+        "lines": [
+          "Pointer/process claim"
+        ]
+      },
+      {
+        "label": "validate_deep",
+        "kind": "engine",
+        "lines": [
+          "Pointer/process passes"
+        ]
+      },
+      {
+        "label": "ValidationReport",
+        "kind": "risk",
+        "lines": [
+          "Corruption/unavailable"
+        ]
+      },
+      {
+        "label": "Validated view",
+        "kind": "evidence",
+        "lines": [
+          "No Definite claim"
+        ]
+      }
+    ]
+  },
+  "d3-story-realloc": {
+    "title": "Walkthrough E: realloc provenance",
+    "alt": "A valid recorded realloc has one compatible creation chain; a forged predecessor lacks corroboration or conflicts and becomes unavailable/corrupt.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Heap block + events",
+        "kind": "source",
+        "lines": [
+          "old ID and creations"
+        ]
+      },
+      {
+        "label": "realloc_link",
+        "kind": "engine",
+        "lines": [
+          "Event/lifetime/PID checks"
+        ]
+      },
+      {
+        "label": "Finding / confidence",
+        "kind": "risk",
+        "lines": [
+          "Verified vs unavailable/contradictory"
+        ]
+      }
+    ]
+  },
+  "d3-story-summary": {
+    "title": "Walkthrough F: checkpoint summary",
+    "alt": "A validated view plus checkpoint_summary yields borrowed variables, heap events and independent diagnostics through bounded pages.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "validated_semantic",
+        "kind": "parser",
+        "lines": [
+          "One report"
+        ]
+      },
+      {
+        "label": "checkpoint_summary",
+        "kind": "engine",
+        "lines": [
+          "Checkpoint + snapshot ref"
+        ]
+      },
+      {
+        "label": "Bounded pages",
+        "kind": "engine",
+        "lines": [
+          "Variables/heap/diagnostics"
+        ]
+      },
+      {
+        "label": "Consumer results",
+        "kind": "evidence",
+        "lines": [
+          "Borrowed evidence"
+        ]
+      }
+    ]
+  },
+  "d3-story-valgrind": {
+    "title": "Walkthrough G: Valgrind evidence",
+    "alt": "Valgrind errors are resolved as independent records with source-site candidates; primary_allocation_id remains None.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Valgrind report",
+        "kind": "risk",
+        "lines": [
+          "Independent process"
+        ]
+      },
+      {
+        "label": "valgrind_error",
+        "kind": "engine",
+        "lines": [
+          "Trace-scoped reference"
+        ]
+      },
+      {
+        "label": "Source candidate",
+        "kind": "risk",
+        "lines": [
+          "No primary allocation ID"
+        ]
+      }
+    ]
+  },
+  "d3-story-partial": {
+    "title": "Walkthrough H: partial execution",
+    "alt": "A crash or limit leaves original records accessible; validation reports partial coverage and confidence is qualified without rejecting the trace.",
+    "vertical": true,
+    "nodes": [
+      {
+        "label": "Partial trace",
+        "kind": "source",
+        "lines": [
+          "Crash/timeout/step cap"
+        ]
+      },
+      {
+        "label": "validate_deep",
+        "kind": "engine",
+        "lines": [
+          "Partial/unavailable findings"
+        ]
+      },
+      {
+        "label": "Raw + validated views",
+        "kind": "evidence",
+        "lines": [
+          "Records remain available"
+        ]
+      },
+      {
+        "label": "Qualified confidence",
+        "kind": "risk",
+        "lines": [
+          "No fabricated completion"
+        ]
+      }
+    ]
+  }
+}

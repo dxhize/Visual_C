@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 414" role="img" aria-labelledby="t desc"><title id="t">Walkthrough E: realloc provenance</title><desc id="desc">A valid recorded realloc has one compatible creation chain; a forged predecessor lacks corroboration or conflicts and becomes unavailable/corrupt.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="780" height="414" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Walkthrough E: realloc provenance</text>
+<rect x="55" y="50" width="666" height="70" rx="11" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="69" y="79" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#555a85">Heap block + events</text>
+<text x="69" y="103" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">old ID and creations</text>
+<path d="M 388 121 V 139" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="148" width="666" height="70" rx="11" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="69" y="177" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#185a97">realloc_link</text>
+<text x="69" y="201" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Event/lifetime/PID checks</text>
+<path d="M 388 219 V 237" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="246" width="666" height="70" rx="11" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="69" y="275" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#8b4146">Finding / confidence</text>
+<text x="69" y="299" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Verified vs unavailable/contradictory</text>
+<text x="24" y="392" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Blue: engine  ·  Green: parser  ·  Amber: evidence  ·  Red: partial/unknown  ·  Purple: source</text></svg>

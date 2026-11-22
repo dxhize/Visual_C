@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 580" role="img" aria-labelledby="t desc"><title id="t">Distinct identity domains and candidate bridges</title><desc id="desc">TraceStore owner distinguishes equal documents. Snapshot position, stop ID, attempted and retained instruction positions, activation and variable identity, PID and allocation lifetime are separate runtime domains. DWARF and AST IDs are static and source-site matches only candidates.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1080" height="580" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Distinct identity domains and candidate bridges</text>
+<path d="M 210 110 L 235 110" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 425 110 L 455 110" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 645 110 L 670 110" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 860 110 L 875 110" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 330 150 L 330 230" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 425 270 L 455 270" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 860 270 L 875 270" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 210 399 L 455 306" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 235 435 L 210 435" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 645 398 L 875 307" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="20" y="70" width="190" height="80" rx="10" fill="#e8f6ee" stroke="#306451" stroke-width="1.5"/>
+<text x="30" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#306451">Trace Arc identity</text>
+<rect x="235" y="70" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="245" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Snapshot position</text>
+<rect x="455" y="70" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="465" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">GDB stop ID</text>
+<rect x="670" y="70" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="680" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Attempted instruction</text>
+<rect x="875" y="70" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Retained event index</text>
+<rect x="235" y="230" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="245" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Frame activation</text>
+<rect x="455" y="230" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="465" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Runtime variable ID</text>
+<rect x="670" y="230" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="680" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Process / PID</text>
+<rect x="875" y="230" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Allocation lifetime ID</text>
+<rect x="20" y="395" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="30" y="421" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">DWARF DIE / type ID</text>
+<rect x="235" y="395" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="245" y="421" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">AST decl / expr ID</text>
+<rect x="455" y="395" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="465" y="421" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Source-site candidate</text>
+<text x="24" y="560" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

@@ -39,6 +39,7 @@ pub mod processor;
 pub mod recorder;
 pub mod resource_limits;
 pub mod sanitizer;
+pub mod semantic;
 pub mod storage;
 pub mod supervisor;
 pub mod trace;

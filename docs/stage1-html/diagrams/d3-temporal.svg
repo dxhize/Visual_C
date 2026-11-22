@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1070 430" role="img" aria-labelledby="t desc"><title id="t">Temporal association boundaries</title><desc id="desc">Explicit checkpoint tags are definite; heap intervals and gaps are candidate retained-boundary windows; source expressions are static candidates. None is an exact instruction timestamp.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1070" height="430" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Temporal association boundaries</text>
+<path d="M 210 110 L 490 110" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 210 272 L 720 203" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 266 L 720 209" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 126 L 720 174" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 210 121 L 720 179" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="20" y="70" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="30" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Instruction checkpoint tag</text>
+<rect x="20" y="245" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="30" y="271" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Heap interval</text>
+<rect x="245" y="245" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="255" y="271" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Attempted gap window</text>
+<rect x="245" y="70" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="255" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">Source expression match</text>
+<rect x="490" y="70" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="500" y="96" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Exact stop causality</text>
+<rect x="720" y="150" width="190" height="80" rx="10" fill="#e8f6ee" stroke="#306451" stroke-width="1.5"/>
+<text x="730" y="176" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#306451">TP-7 consumer</text>
+<text x="24" y="410" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1070 420" role="img" aria-labelledby="t desc"><title id="t">Source, executables and static metadata</title><desc id="desc">C source and embedded C wrapper are compiled into a GDB debug executable with DWARF. Optional ASan/UBSan executable is built separately without the wrapper; Clang AST is an independent static view.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1070" height="420" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Source, executables and static metadata</text>
+<path d="M 215 130 L 235 130" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 425 117 L 455 113" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 645 100 L 675 100" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 645 100 L 875 100" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 389 170 L 491 240" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 215 152 L 675 258" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<rect x="25" y="90" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="35" y="116" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">C source / flags</text>
+<rect x="235" y="90" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="245" y="116" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">GCC builds</text>
+<rect x="455" y="60" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="465" y="86" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Wrapped debug ELF</text>
+<rect x="675" y="60" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="685" y="86" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">DWARF registry</text>
+<rect x="455" y="240" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="465" y="266" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Sanitizer ELF</text>
+<rect x="675" y="240" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="685" y="266" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">Optional Clang AST</text>
+<rect x="875" y="60" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="86" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">GDB recording</text>
+<text x="24" y="400" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 460" role="img" aria-labelledby="t desc"><title id="t">Bounded post-recording evidence fusion</title><desc id="desc">GCC DWARF, optional Clang AST and existing runtime variables are indexed for source/declaration/type candidate links; heap call matching is site-only and final audit clears invalid references before publishing additive records.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1080" height="460" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Bounded post-recording evidence fusion</text>
+<path d="M 210 119 L 465 171" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 210 261 L 465 209" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 435 190 L 465 190" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 210 254 L 685 121" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 653 230 L 687 245" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 780 135 L 780 245" stroke="#a75d26" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 860 245 L 890 230" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="20" y="60" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="30" y="86" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">DWARF registry</text>
+<rect x="20" y="240" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="30" y="266" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">AST registry</text>
+<rect x="245" y="150" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="255" y="176" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Runtime variables</text>
+<rect x="465" y="150" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="475" y="176" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Indexed CU/DIE match</text>
+<rect x="685" y="55" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="695" y="81" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Heap site candidate</text>
+<rect x="685" y="245" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="695" y="271" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Reference audit</text>
+<rect x="875" y="150" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="176" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Additive cross-refs</text>
+<text x="24" y="440" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

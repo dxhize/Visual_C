@@ -1,4 +1,17 @@
-# Public API reference · Trace Engine and Parser
+# 62 · Public API reference · Trace Engine and Parser
+
+> **In one sentence:** An API is the set of functions another Rust program is allowed to call. This reference states their inputs, outputs and limits.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Borrowed** | The returned view points to records owned by the `TraceStore`; it cannot outlive that store. |
+| **Out of range** | A request for a position that does not exist in a recorded collection; it is an error, not an empty fabricated record. |
+
+> **Example.** Load a trace, call `validated_semantic()`, then ask for an actual snapshot index and an explicitly bounded page of its variables. The result points into the same saved trace.
+>
+> **What not to assume:** An API signature is not a runnable full example; use the practical usage page for imports and setup.
 
 ## Level 1 · Intuition
 

@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Trace Engine function reference — Visual C Stage 1</title><meta name="description" content="Offline Visual C Stage 1 systems documentation: Trace Engine function reference"><link rel="stylesheet" href="assets/site.css"><script src="assets/search-data.js" defer></script><script src="assets/site.js" defer></script></head>
+<body><a class="skip" href="#main">Skip to content</a><header class="topbar"><button class="nav-toggle" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><a class="brand" href="index.html" aria-label="Visual C documentation home"><span class="brandmark">V<span>C</span></span> Visual C <small>Stage 1 · V2.2</small></a><div class="top-actions"><button class="search-toggle" type="button" aria-label="Search documentation">⌕ <span>Search <kbd>/</kbd></span></button><button class="theme-toggle" type="button" aria-label="Change color theme" title="Switch light or dark mode">◐</button></div></header>
+<div class="shell"><aside class="sidebar" id="sidebar" aria-label="Documentation navigation"><nav><div class="nav-group"><div class="nav-label">Getting Started</div><a href="index.html">Documentation home</a><a href="reading.html">How to read this reference</a><a href="architecture.html">What Stage 1 does</a></div><div class="nav-group"><div class="nav-label">Architecture</div><a href="pipeline.html">Complete pipeline</a><a href="engine-architecture.html">Trace Engine architecture</a><a href="parser-architecture.html">Trace Parser architecture</a><a href="identity-contracts.html">Evidence and identity contracts</a><a href="resource-boundaries.html">Process and resource boundaries</a></div><div class="nav-group"><div class="nav-label">Developer Internals</div><a href="repository.html">Repository map</a><a href="files.html">Source file index</a><a href="functions.html">Function index</a><a href="dependencies.html">Module dependency explorer</a><a href="call-flow.html">Interactive call-flow explorer</a></div><div class="nav-group"><div class="nav-label">Trace Engine</div><a href="engine-build.html">Compilation &amp; diagnostics</a><a href="engine-debugger.html">GDB/MI and checkpoints</a><a href="engine-memory.html">Frames, variables &amp; memory</a><a href="engine-metadata.html">DWARF, Clang &amp; fusion</a><a href="engine-heap.html">Allocation lifetimes</a><a href="engine-diagnostics.html">Valgrind &amp; sanitizers</a><a href="engine-process.html">Processes &amp; event transport</a><a href="engine-limits.html">Budgets, gaps &amp; export</a></div><div class="nav-group"><div class="nav-label">Trace Engine Internals</div><a href="engine-entry-deep.html">Entry, configuration &amp; errors</a><a href="engine-compiler-deep.html">Compiler &amp; diagnostics</a><a href="engine-gdb-deep.html">GDB controller &amp; stop loop</a><a href="engine-mi-deep.html">MI2 parser &amp; transport</a><a href="engine-recorder-deep.html">Recorder &amp; journals</a><a href="engine-stack-deep.html">Frames, variables &amp; memory</a><a href="engine-dwarf-deep.html">DWARF extraction</a><a href="engine-ast-deep.html">Clang AST provider</a><a href="engine-allocator-deep.html">C allocator runtime</a><a href="engine-heap-deep.html">Heap reconstruction</a><a href="engine-diagnostics-deep.html">Valgrind &amp; sanitizer internals</a><a href="engine-fusion-deep.html">Evidence fusion internals</a><a href="engine-supervision-deep.html">Supervision &amp; resource limits</a><a href="engine-export-deep.html">Trace model, journal &amp; export</a><a href="engine-walkthroughs.html">Subsystem walkthroughs</a><a href="engine-handbook.html">Source file handbook</a><a href="engine-algorithms.html">Algorithms &amp; invariants</a><a href="engine-functions.html" aria-current="page">Trace Engine function reference</a></div><div class="nav-group"><div class="nav-label">Data model</div><a href="model.html">Trace data model</a></div><div class="nav-group"><div class="nav-label">Trace Parser</div><a href="parser-ingestion.html">TP-1 · Load &amp; compatibility</a><a href="parser-indexes.html">TP-2 · Position indexes</a><a href="parser-views.html">TP-3 · Borrowed views</a><a href="parser-validation.html">TP-5 · Deep validation</a><a href="parser-semantic.html">TP-6 · Evidence confidence</a><a href="parser-consumer.html">TP-7 · Bounded queries</a></div><div class="nav-group"><div class="nav-label">Trace Parser Internals</div><a href="parser-ingestion-deep.html">JSON and JSONL ingestion</a><a href="parser-ownership-deep.html">Ownership, views &amp; evidence references</a><a href="parser-indexes-deep.html">Compact position indexes</a><a href="parser-validation-deep.html">Deep validation architecture</a><a href="parser-realloc-deep.html">Realloc verification and TP8-F01</a><a href="parser-coverage-deep.html">Pointer provenance &amp; process coverage</a><a href="parser-semantic-deep.html">TP-6 validated semantic evidence</a><a href="parser-consumer-deep.html">TP-7 consumer composition</a><a href="parser-data-structures.html">Parser data structures</a><a href="parser-algorithms.html">Parser algorithms &amp; invariants</a><a href="parser-walkthroughs.html">Parser walkthroughs</a><a href="parser-handbook.html">Parser source file handbook</a><a href="parser-functions.html">Parser function reference</a></div><div class="nav-group"><div class="nav-label">Execution Walkthroughs</div><a href="walkthroughs.html">Execution walkthroughs</a></div><div class="nav-group"><div class="nav-label">Practical usage</div><a href="usage.html">Worked API walkthrough</a></div><div class="nav-group"><div class="nav-label">Reference</div><a href="api.html">Public API reference</a><a href="stage1-api.html">Stage 1 public API</a><a href="schema.html">Schema &amp; identity reference</a><a href="handoff.html">Stage 2 handoff &amp; limits</a><a href="glossary.html">Terminology and glossary</a><a href="limitations.html">Known limitations</a></div><div class="nav-group"><div class="nav-label">Execution Walkthroughs</div><p class="nav-planned">Planned for DOC-4</p></div></nav><div class="side-foot">Offline reference · schema v2<br>Engine + Parser, not Stage 2</div></aside><main id="main" tabindex="-1"><nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="index.html">Documentation</a><span aria-hidden="true">›</span><span>Trace Engine Internals</span><span aria-hidden="true">›</span><span aria-current="page">Trace Engine function reference</span></nav><article class="document"><h1 id="39-trace-engine-function-reference">39 · Trace Engine function reference <a class="anchor" href="#39-trace-engine-function-reference" aria-label="Link to 39 · Trace Engine function reference">#</a></h1>
+<aside class="admonition note" role="note"><p><strong>In one sentence:</strong> Use this reference when you already have a function name and want to find its purpose, source and reviewed connections.</p></aside>
+<h2 id="key-terms">Key terms <a class="anchor" href="#key-terms" aria-label="Link to Key terms">#</a></h2>
+<div class="table-scroll"><table><thead><tr><th scope="col">Term</th><th scope="col">Plain meaning</th></tr></thead><tbody><tr><td><strong>Signature</strong></td><td>The function name, inputs and output written in source code.</td></tr><tr><td><strong>Reviewed graph entry</strong></td><td>A function whose purpose and linked relationships were checked against source instead of guessed from its name.</td></tr></tbody></table></div>
+<aside class="admonition note" role="note"><p><strong>Example.</strong> Look up <code>run_gdb_phase</code>, then follow its links to the stop loop. The entry tells you where to read, while the debugger chapter explains what the stop actually means.</p></aside>
+<p>&gt;</p>
+<aside class="admonition note" role="note"><p><strong>What not to assume:</strong> A direct source call may be conditional. The catalog does not prove that it executed in a particular trace.</p></aside>
+<h2 id="the-big-picture">The big picture <a class="anchor" href="#the-big-picture" aria-label="Link to The big picture">#</a></h2>
+<p>This page lists the engine functions that have a reviewed entry in the DOC-2 call-flow graph. Each entry shows the actual source location, signature, purpose, input/output boundary, qualification, and classified incoming/outgoing relationships. Use the subsystem links to read the surrounding algorithm and state transitions.</p>
+<h2 id="scope-and-reading-order">Scope and reading order <a class="anchor" href="#scope-and-reading-order" aria-label="Link to Scope and reading order">#</a></h2>
+<p>A reviewed entry is <strong>not</strong> a claim that the function ran in a particular trace. Direct edges were checked at call expressions; subprocess, data and conceptual edges retain their own labels. For functions absent here, search the complete <a href="functions.html">function index</a>, then consult the file chapter in the <a href="engine-handbook.html">source handbook</a>. DOC-2 prioritizes orchestration, debugger, compiler, heap, metadata, diagnostics and export paths; not every private helper is expanded yet.</p>
+<h3 id="review-status">Review status <a class="anchor" href="#review-status" aria-label="Link to Review status">#</a></h3>
+<p>The generated catalog marks these functions as <code>explained_and_graph_linked</code>. Functions in the same files remain <code>file_chapter_indexed_only</code> until a later pass verifies their own behavior. This distinction is intentional: an accurate inventory is more useful than a large but unsupported function encyclopedia.</p>
+<h3 id="engine-graph-entries">Engine graph entries <a class="anchor" href="#engine-graph-entries" aria-label="Link to Engine graph entries">#</a></h3>
+<div class="inventory" id="engine-functions">
+<section class="inventory-file"><h3><a href="engine-allocator-deep.html">C allocator runtime</a></h3>
+<details class="symbol" id="symbol-c-runtime-alloc-tracker-c-224-function-cte-write-all"><summary><code>cte_write_all</code> <small>function · c_runtime/alloc_tracker.c:224</small></summary>
+<p><code>static int cte_write_all(int fd, const char *buf, size_t len, int event)</code></p>
+<p>Append event with bounded EINTR retries. Inputs/outputs: event line -&gt; event file. Qualification: write failure recorded in terminal ACK.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../c_runtime/alloc_tracker.c">Open local source</a> · c_runtime/alloc_tracker.c:224 · <a href="engine-allocator-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-c-runtime-alloc-tracker-c-266-function-cte-emit-locked"><summary><code>cte_emit_locked</code> <small>function · c_runtime/alloc_tracker.c:266</small></summary>
+<p><code>static void cte_emit_locked(const char *kind, unsigned long id, unsigned long addr, unsigned long size, unsigned long old_id, unsigned long old_addr, unsigned long caller, const char *status, unsigned long nmemb, unsigned long element_size)</code></p>
+<p>Format per-PID monotonic event under lock. Inputs/outputs: allocator outcome -&gt; event line. Qualification: C process does not call Rust.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../c_runtime/alloc_tracker.c">Open local source</a> · c_runtime/alloc_tracker.c:266 · <a href="engine-allocator-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-c-runtime-alloc-tracker-c-343-function-wrap-malloc"><summary><code>__wrap_malloc</code> <small>function · c_runtime/alloc_tracker.c:343</small></summary>
+<p><code>void *__wrap_malloc(size_t size)</code></p>
+<p>Intercept linked malloc calls and call real allocator once. Inputs/outputs: malloc request -&gt; result + telemetry. Qualification: only linked references are wrapped.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../c_runtime/alloc_tracker.c">Open local source</a> · c_runtime/alloc_tracker.c:343 · <a href="engine-allocator-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-34-function-write-runtime-source"><summary><code>write_runtime_source</code> <small>function · src/allocation_tracker.rs:34</small></summary>
+<p><code>pub fn write_runtime_source(session_dir: &amp;Path) -&gt; Result&lt;PathBuf&gt;</code></p>
+<p>Write the allocator wrapper C runtime for the debug build. Inputs/outputs: session directory -&gt; C source path. Qualification: instrumentation source, not an allocation observation.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:228]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:34 · <a href="engine-allocator-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-84-function-parse-event-line"><summary><code>parse_event_line</code> <small>function · src/allocation_tracker.rs:84</small></summary>
+<p><code>pub fn parse_event_line(line: &amp;str) -&gt; Result&lt;RawEvent&gt;</code></p>
+<p>Parse one complete C telemetry line. Inputs/outputs: event text -&gt; raw event. Qualification: malformed lines quarantine lifetime certainty.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:84 · <a href="engine-allocator-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-181-function-verify-event-status"><summary><code>verify_event_status</code> <small>function · src/allocation_tracker.rs:181</small></summary>
+<p><code>pub fn verify_event_status( path: &amp;Path, timeline: &amp;HeapTimeline, inferior_pid: Option&lt;u32&gt;, ) -&gt; Vec&lt;String&gt;</code></p>
+<p>Verify terminal per-PID event sequence/write-failure ACKs. Inputs/outputs: status file -&gt; coverage errors. Qualification: absent ACK cannot prove clean termination.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:181 · <a href="engine-allocator-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-ast-deep.html">Clang AST provider</a></h3>
+<details class="symbol" id="symbol-src-clang-ast-rs-180-function-clang-flags"><summary><code>clang_flags</code> <small>function · src/clang_ast.rs:180</small></summary>
+<p><code>pub fn clang_flags(build: &amp;BuildConfig) -&gt; std::result::Result&lt;Vec&lt;String&gt;, String&gt;</code></p>
+<p>Preserve preprocessing flags or skip incompatible AST input. Inputs/outputs: GCC build settings -&gt; Clang flags. Qualification: unclassified flags are not silently dropped.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/clang_ast.rs">Open local source</a> · src/clang_ast.rs:180 · <a href="engine-ast-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-clang-ast-rs-229-function-analyze"><summary><code>analyze</code> <small>function · src/clang_ast.rs:229</small></summary>
+<p><code>pub async fn analyze( build: &amp;BuildConfig, clang: &amp;str, dwarf: Option&lt;&amp;TypeRegistry&gt;, ) -&gt; (SourceMetadataRegistry, u64)</code></p>
+<p>Collect optional Clang AST source metadata. Inputs/outputs: source files -&gt; optional source registry. Qualification: AST syntax does not establish execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:371]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/clang_ast.rs">Open local source</a> · src/clang_ast.rs:229 · <a href="engine-ast-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-clang-ast-rs-560-function-extract"><summary><code>extract</code> <small>function · src/clang_ast.rs:560</small></summary>
+<p><code>fn extract( root: &amp;Value, path: &amp;Path, source: &amp;[u8], unit_id: &amp;str, unit: &amp;mut AstUnit, registry: &amp;mut SourceMetadataRegistry, budget_end: Instant, ) -&gt; std::result::Result&lt;(), String&gt;</code></p>
+<p>Walk bounded AST declaration/expression nodes. Inputs/outputs: Clang JSON -&gt; source registry. Qualification: AST does not prove execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/clang_ast.rs">Open local source</a> · src/clang_ast.rs:560 · <a href="engine-ast-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-clang-ast-rs-832-function-correlate-declarations"><summary><code>correlate_declarations</code> <small>function · src/clang_ast.rs:832</small></summary>
+<p><code>fn correlate_declarations( registry: &amp;mut SourceMetadataRegistry, dwarf: Option&lt;&amp;TypeRegistry&gt;, cwd: &amp;Path, )</code></p>
+<p>Link unique source declarations to compatible DWARF sites. Inputs/outputs: AST + DWARF -&gt; optional declaration refs. Qualification: ambiguous locations remain unlinked.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/clang_ast.rs">Open local source</a> · src/clang_ast.rs:832 · <a href="engine-ast-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-compiler-deep.html">Compiler &amp; diagnostics</a></h3>
+<details class="symbol" id="symbol-src-compiler-rs-100-function-probe-tool"><summary><code>probe_tool</code> <small>function · src/compiler.rs:100</small></summary>
+<p><code>pub async fn probe_tool(tool: &amp;str, version_arg: &amp;str) -&gt; Result&lt;String&gt;</code></p>
+<p>Check tool availability and version in a bounded subprocess. Inputs/outputs: tool path -&gt; version. Qualification: optional tool failures are recorded as skips.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:100 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-132-function-detect-diagnostics-format"><summary><code>detect_diagnostics_format</code> <small>function · src/compiler.rs:132</small></summary>
+<p><code>pub async fn detect_diagnostics_format(cc: &amp;str) -&gt; DiagnosticsFormat</code></p>
+<p>Probe JSON, SARIF, then text diagnostics support. Inputs/outputs: compiler path -&gt; diagnostics format. Qualification: fallback does not fabricate structured locations.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:132 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-232-function-parse-legacy-gcc-json"><summary><code>parse_legacy_gcc_json</code> <small>function · src/compiler.rs:232</small></summary>
+<p><code>fn parse_legacy_gcc_json(stderr: &amp;str) -&gt; Option&lt;Vec&lt;CompilerDiagnostic&gt;&gt;</code></p>
+<p>Decode GCC legacy JSON diagnostic streams. Inputs/outputs: stderr -&gt; located diagnostics. Qualification: text fallback on parse failure.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:232 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-317-function-parse-sarif"><summary><code>parse_sarif</code> <small>function · src/compiler.rs:317</small></summary>
+<p><code>fn parse_sarif(stderr: &amp;str) -&gt; Option&lt;Vec&lt;CompilerDiagnostic&gt;&gt;</code></p>
+<p>Decode GCC SARIF diagnostic streams. Inputs/outputs: stderr -&gt; located diagnostics. Qualification: text fallback on parse failure.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:317 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-369-function-text-diagnostics"><summary><code>text_diagnostics</code> <small>function · src/compiler.rs:369</small></summary>
+<p><code>fn text_diagnostics(stderr: &amp;str) -&gt; Vec&lt;CompilerDiagnostic&gt;</code></p>
+<p>Retain unstructured compiler/linker errors. Inputs/outputs: stderr -&gt; diagnostic. Qualification: no fabricated file/line.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:369 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-393-function-build-argv"><summary><code>build_argv</code> <small>function · src/compiler.rs:393</small></summary>
+<p><code>fn build_argv(build: &amp;BuildConfig, opts: &amp;CompileOptions, diag_flag: Option&lt;&amp;str&gt;) -&gt; Vec&lt;String&gt;</code></p>
+<p>Construct flags and link debug-only allocation wrappers. Inputs/outputs: build + options -&gt; GCC arguments. Qualification: sanitized artifact omits wrapper.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:393 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-455-function-compile"><summary><code>compile</code> <small>function · src/compiler.rs:455</small></summary>
+<p><code>pub async fn compile( build: &amp;BuildConfig, cc: &amp;str, opts: &amp;CompileOptions, format: DiagnosticsFormat, ) -&gt; Result&lt;CompilationOutput&gt;</code></p>
+<p>Execute one bounded compiler invocation and parse diagnostics. Inputs/outputs: build options -&gt; binary and diagnostics. Qualification: compiler outcome is separate from inferior execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> compiler.project [direct, src/compiler.rs:546]</p>
+<p><strong>Outgoing reviewed relationships:</strong> tool.gcc [external, src/compiler.rs:471]</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:455 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-compiler-rs-530-function-compile-project"><summary><code>compile_project</code> <small>function · src/compiler.rs:530</small></summary>
+<p><code>pub async fn compile_project( build: &amp;BuildConfig, session_dir: &amp;Path, tracker_source: Option&lt;PathBuf&gt;, ) -&gt; Result&lt;(CompilationOutput, CompilationOutput)&gt;</code></p>
+<p>Build debug and optional sanitized binaries. Inputs/outputs: build config -&gt; two compilation results. Qualification: failed debug build skips sanitized build.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:235]</p>
+<p><strong>Outgoing reviewed relationships:</strong> compiler.compile [direct, src/compiler.rs:546]</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · src/compiler.rs:530 · <a href="engine-compiler-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-diagnostics-deep.html">Valgrind &amp; sanitizer internals</a></h3>
+<details class="symbol" id="symbol-src-sanitizer-rs-21-function-run-sanitized"><summary><code>run_sanitized</code> <small>function · src/sanitizer.rs:21</small></summary>
+<p><code>pub async fn run_sanitized( binary: &amp;Path, program_args: &amp;[String], working_directory: Option&lt;&amp;Path&gt;, limits: &amp;crate::resource_limits::ExecutionLimits, ) -&gt; SanitizerReport</code></p>
+<p>Run sanitized binary in its own bounded process. Inputs/outputs: sanitized binary -&gt; stderr/stdout. Qualification: not the GDB inferior.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/sanitizer.rs">Open local source</a> · src/sanitizer.rs:21 · <a href="engine-diagnostics-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-sanitizer-rs-95-function-parse-sanitizer-output"><summary><code>parse_sanitizer_output</code> <small>function · src/sanitizer.rs:95</small></summary>
+<p><code>pub fn parse_sanitizer_output(stderr: &amp;str, stdout: &amp;str, report: &amp;mut SanitizerReport)</code></p>
+<p>Extract ASan/UBSan category, source site and frames. Inputs/outputs: diagnostic streams -&gt; report. Qualification: no exact heap-event link.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/sanitizer.rs">Open local source</a> · src/sanitizer.rs:95 · <a href="engine-diagnostics-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-49-function-run-sanitizer-pass"><summary><code>run_sanitizer_pass</code> <small>function · src/trace.rs:49</small></summary>
+<p><code>async fn run_sanitizer_pass( asan_binary: &amp;Path, program_args: &amp;[String], working_directory: Option&lt;&amp;Path&gt;, limits: &amp;ExecutionLimits, crash: &amp;mut Option&lt;CrashReport&gt;, started: Instant, sanitizer_started: Instant, trace: &amp;mut DebugSessionTrace, notes: &amp;mut Vec&lt;String&gt;, ) -&gt; Option&lt;SanitizerReport&gt;</code></p>
+<p>Apply trigger/deadline and attach independent ASan/UBSan result. Inputs/outputs: sanitized artifact -&gt; diagnostic report. Qualification: separate execution; crash matching only by site.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:49 · <a href="engine-diagnostics-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-valgrind-rs-39-function-run-valgrind"><summary><code>run_valgrind</code> <small>function · src/valgrind.rs:39</small></summary>
+<p><code>pub async fn run_valgrind( binary: &amp;Path, program_args: &amp;[String], working_directory: Option&lt;&amp;Path&gt;, limits: &amp;crate::resource_limits::ExecutionLimits, xml_path: &amp;Path, _event_file: &amp;Path, valgrind_path: Option&lt;&amp;str&gt;, ) -&gt; Result&lt;ValgrindRun&gt;</code></p>
+<p>Run independent Memcheck and load capped XML. Inputs/outputs: debug binary -&gt; separate diagnostic report. Qualification: not observations from GDB-recorded execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/valgrind.rs">Open local source</a> · src/valgrind.rs:39 · <a href="engine-diagnostics-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-valgrind-rs-169-function-parse-valgrind-xml"><summary><code>parse_valgrind_xml</code> <small>function · src/valgrind.rs:169</small></summary>
+<p><code>pub fn parse_valgrind_xml(xml: &amp;str) -&gt; Result&lt;ValgrindReport&gt;</code></p>
+<p>Parse native Memcheck XML records. Inputs/outputs: XML -&gt; ValgrindReport. Qualification: no same-run heap allocation identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/valgrind.rs">Open local source</a> · src/valgrind.rs:169 · <a href="engine-diagnostics-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-dwarf-deep.html">DWARF extraction</a></h3>
+<details class="symbol" id="symbol-src-dwarf-rs-338-function-resolve"><summary><code>resolve</code> <small>function · src/dwarf.rs:338</small></summary>
+<p><code>fn resolve( &amp;self, unit: &amp;Rc&lt;gimli::Unit&lt;R&gt;&gt;, unit_id: &amp;str, entry: &amp;gimli::DebuggingInformationEntry&lt;R&gt;, ) -&gt; OriginFacts</code></p>
+<p>Follow bounded specification/abstract-origin chains. Inputs/outputs: DIE -&gt; supplemental declaration facts. Qualification: cycles and missing targets fail closed.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · src/dwarf.rs:338 · <a href="engine-dwarf-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-dwarf-rs-480-function-load-dwarf"><summary><code>load_dwarf</code> <small>function · src/dwarf.rs:480</small></summary>
+<p><code>fn load_dwarf(path: &amp;Path) -&gt; Result&lt;gimli::Dwarf&lt;R&gt;, String&gt;</code></p>
+<p>Bound object size and decompressed DWARF sections. Inputs/outputs: debug artifact -&gt; DWARF reader. Qualification: static metadata only.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · src/dwarf.rs:480 · <a href="engine-dwarf-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-dwarf-rs-536-function-index-dies"><summary><code>index_dies</code> <small>function · src/dwarf.rs:536</small></summary>
+<p><code>fn index_dies( dwarf: &amp;gimli::Dwarf&lt;R&gt;, begun: Instant, ) -&gt; Result&lt;(Vec&lt;String&gt;, HashMap&lt;usize, String&gt;), String&gt;</code></p>
+<p>Index DIEs for cross-CU references under time/entry caps. Inputs/outputs: DWARF -&gt; unit/DIE identity index. Qualification: unresolved references stay unresolved.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · src/dwarf.rs:536 · <a href="engine-dwarf-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-dwarf-rs-584-function-extract-excluding"><summary><code>extract_excluding</code> <small>function · src/dwarf.rs:584</small></summary>
+<p><code>pub fn extract_excluding( path: &amp;Path, instrumentation_source: &amp;Path, ) -&gt; Result&lt;(TypeRegistry, ExtractionMetrics), String&gt;</code></p>
+<p>Read project DWARF excluding tracker metadata. Inputs/outputs: debug binary -&gt; optional type registry. Qualification: static declarations do not prove runtime observations.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:355]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · src/dwarf.rs:584 · <a href="engine-dwarf-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-dwarf-rs-591-function-extract-impl"><summary><code>extract_impl</code> <small>function · src/dwarf.rs:591</small></summary>
+<p><code>fn extract_impl( path: &amp;Path, instrumentation: Option&lt;&amp;Path&gt;, ) -&gt; Result&lt;(TypeRegistry, ExtractionMetrics), String&gt;</code></p>
+<p>Walk retained project compilation units. Inputs/outputs: DWARF sections -&gt; types/declarations. Qualification: excluded tracker unit contributes no project types.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · src/dwarf.rs:591 · <a href="engine-dwarf-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-dwarf-rs-1045-function-associate"><summary><code>associate</code> <small>function · src/dwarf.rs:1045</small></summary>
+<p><code>pub fn associate(trace: &amp;mut DebugSessionTrace) -&gt; u64</code></p>
+<p>Attach static type/declaration references to observations. Inputs/outputs: trace and DWARF -&gt; optional refs. Qualification: association cannot establish initialization.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:954]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · src/dwarf.rs:1045 · <a href="engine-dwarf-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-entry-deep.html">Entry, configuration &amp; errors</a></h3>
+<details class="symbol" id="symbol-src-cli-rs-197-function-to-config"><summary><code>to_config</code> <small>function · src/cli.rs:197</small></summary>
+<p><code>pub fn to_config(&amp;self) -&gt; Result&lt;TraceConfig&gt;</code></p>
+<p>Merge and validate CLI configuration. Inputs/outputs: CLI flags and config file -&gt; TraceConfig. Qualification: no program has run yet.</p>
+<p><strong>Incoming reviewed relationships:</strong> main [direct, src/main.rs:26]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/cli.rs">Open local source</a> · src/cli.rs:197 · <a href="engine-entry-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-cli-rs-385-function-file-build"><summary><code>file_build</code> <small>function · src/cli.rs:385</small></summary>
+<p><code>fn file_build(file: &amp;ConfigFile, source: &amp;Path) -&gt; crate::config::BuildConfig</code></p>
+<p>Start the build config from JSON file settings. Inputs/outputs: config file + source -&gt; build config. Qualification: CLI overrides and appended lists apply afterward.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/cli.rs">Open local source</a> · src/cli.rs:385 · <a href="engine-entry-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-main-rs-23-function-main"><summary><code>main</code> <small>function · src/main.rs:23</small></summary>
+<p><code>async fn main() -&gt; ExitCode</code></p>
+<p>Parse CLI, trace, then export the result. Inputs/outputs: arguments -&gt; exit code / JSON. Qualification: operational errors return 1; compile failure returns 2.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> cli.config [direct, src/main.rs:26]; trace.program [direct, src/main.rs:34]; export.json [direct, src/main.rs:50]</p>
+<p><a href="../../src/main.rs">Open local source</a> · src/main.rs:23 · <a href="engine-entry-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-132-function-trace-program"><summary><code>trace_program</code> <small>function · src/trace.rs:132</small></summary>
+<p><code>pub async fn trace_program(config: TraceConfig) -&gt; Result&lt;DebugSessionTrace&gt;</code></p>
+<p>Bound the complete tracing session. Inputs/outputs: TraceConfig -&gt; trace. Qualification: cancellation can produce a partial trace.</p>
+<p><strong>Incoming reviewed relationships:</strong> main [direct, src/main.rs:34]</p>
+<p><strong>Outgoing reviewed relationships:</strong> trace.inner [direct, src/trace.rs:137]</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:132 · <a href="engine-entry-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-167-function-trace-program-inner"><summary><code>trace_program_inner</code> <small>function · src/trace.rs:167</small></summary>
+<p><code>async fn trace_program_inner(config: TraceConfig) -&gt; Result&lt;DebugSessionTrace&gt;</code></p>
+<p>Orchestrate build, execution, diagnostics and evidence assembly. Inputs/outputs: configuration -&gt; populated trace. Qualification: optional phases may be skipped; preserve recorded coverage.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.program [direct, src/trace.rs:137]</p>
+<p><strong>Outgoing reviewed relationships:</strong> tracker.source [direct, src/trace.rs:228]; compiler.project [direct, src/trace.rs:235]; dwarf.extract [direct, src/trace.rs:355]; clang.analyze [direct, src/trace.rs:371]; trace.gdb [direct, src/trace.rs:424]; trace.backfill [direct, src/trace.rs:854]; trace.intervals [direct, src/trace.rs:874]; dwarf.associate [direct, src/trace.rs:954]; fusion.fuse [direct, src/trace.rs:968]</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:167 · <a href="engine-entry-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-export-deep.html">Trace model, journal &amp; export</a></h3>
+<details class="symbol" id="symbol-src-json-export-rs-46-function-serialize-limited"><summary><code>serialize_limited</code> <small>function · src/json_export.rs:46</small></summary>
+<p><code>fn serialize_limited&lt;T: Serialize, W: Write&gt;( trace: &amp;T, pretty: bool, limit: usize, output: W, cancel: Option&lt;&amp;AtomicBool&gt;, ) -&gt; io::Result&lt;usize&gt;</code></p>
+<p>Serialize through byte-capped, cancellation-aware writer. Inputs/outputs: trace -&gt; bounded JSON bytes. Qualification: preflight occurs before destination write.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/json_export.rs">Open local source</a> · src/json_export.rs:46 · <a href="engine-export-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-json-export-rs-120-function-write-file-atomic"><summary><code>write_file_atomic</code> <small>function · src/json_export.rs:120</small></summary>
+<p><code>fn write_file_atomic&lt;T: Serialize&gt;( trace: &amp;T, pretty: bool, limit: usize, path: &amp;Path, cancel: Option&lt;&amp;AtomicBool&gt;, ) -&gt; io::Result&lt;()&gt;</code></p>
+<p>Write a sibling temp file then rename it. Inputs/outputs: trace -&gt; committed JSON file. Qualification: cancel before commit cleans temporary file.</p>
+<p><strong>Incoming reviewed relationships:</strong> export.json [direct, src/json_export.rs:164]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/json_export.rs">Open local source</a> · src/json_export.rs:120 · <a href="engine-export-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-json-export-rs-154-function-export-json-cancellable"><summary><code>export_json_cancellable</code> <small>function · src/json_export.rs:154</small></summary>
+<p><code>pub fn export_json_cancellable&lt;T: Serialize, W: Write&gt;( trace: &amp;T, pretty: bool, limit: usize, file: Option&lt;&amp;Path&gt;, stdout: &amp;mut W, cancel: Option&lt;&amp;AtomicBool&gt;, ) -&gt; io::Result&lt;usize&gt;</code></p>
+<p>Preflight and emit bounded JSON to file/stdout. Inputs/outputs: trace -&gt; JSON document. Qualification: atomic optional file commit; stdout failure reported.</p>
+<p><strong>Incoming reviewed relationships:</strong> main [direct, src/main.rs:50]</p>
+<p><strong>Outgoing reviewed relationships:</strong> export.atomic [direct, src/json_export.rs:164]; store.open [data, src/main.rs:50]</p>
+<p><a href="../../src/json_export.rs">Open local source</a> · src/json_export.rs:154 · <a href="engine-export-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-fusion-deep.html">Evidence fusion internals</a></h3>
+<details class="symbol" id="symbol-src-evidence-heap-rs-8-function-correlate"><summary><code>correlate</code> <small>function · src/evidence/heap.rs:8</small></summary>
+<p><code>pub(super) fn correlate(registry: &amp;mut SourceMetadataRegistry, events: &amp;[HeapEvent], cwd: &amp;Path)</code></p>
+<p>Find bounded candidate source heap calls. Inputs/outputs: source metadata + heap events -&gt; candidates. Qualification: candidate is not exact allocation-expression identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> fusion.fuse [direct, src/evidence/mod.rs:73]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/evidence/heap.rs">Open local source</a> · src/evidence/heap.rs:8 · <a href="engine-fusion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-evidence-mod-rs-35-function-fuse"><summary><code>fuse</code> <small>function · src/evidence/mod.rs:35</small></summary>
+<p><code>pub fn fuse(trace: &amp;mut DebugSessionTrace)</code></p>
+<p>Run one bounded cross-provider reconciliation pass. Inputs/outputs: assembled trace -&gt; optional source links / summary. Qualification: does not query GDB or turn syntax into execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:968]</p>
+<p><strong>Outgoing reviewed relationships:</strong> fusion.expressions [direct, src/evidence/mod.rs:62]; fusion.runtime [direct, src/evidence/mod.rs:68]; fusion.heap [direct, src/evidence/mod.rs:73]; fusion.audit [direct, src/evidence/mod.rs:78]; semantic.variable [data, src/trace_parser/semantic.rs:83]</p>
+<p><a href="../../src/evidence/mod.rs">Open local source</a> · src/evidence/mod.rs:35 · <a href="engine-fusion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-evidence-source-links-rs-15-function-link-expressions"><summary><code>link_expressions</code> <small>function · src/evidence/source_links.rs:15</small></summary>
+<p><code>pub(super) fn link_expressions(registry: &amp;mut SourceMetadataRegistry, index: &amp;DwarfIndex&lt;&#x27;_&gt;)</code></p>
+<p>Link AST expressions through known declaration identities. Inputs/outputs: AST and DWARF -&gt; optional links. Qualification: source expression is not an observed instruction.</p>
+<p><strong>Incoming reviewed relationships:</strong> fusion.fuse [direct, src/evidence/mod.rs:62]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/evidence/source_links.rs">Open local source</a> · src/evidence/source_links.rs:15 · <a href="engine-fusion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-evidence-source-links-rs-97-function-link-runtime"><summary><code>link_runtime</code> <small>function · src/evidence/source_links.rs:97</small></summary>
+<p><code>pub(super) fn link_runtime( source: Option&lt;&amp;SourceMetadataRegistry&gt;, snapshots: &amp;mut [ExecutionSnapshot], ) -&gt; usize</code></p>
+<p>Bridge recorded variable identities to source metadata. Inputs/outputs: snapshots + source metadata -&gt; optional refs. Qualification: no execution inferred from syntax.</p>
+<p><strong>Incoming reviewed relationships:</strong> fusion.fuse [direct, src/evidence/mod.rs:68]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/evidence/source_links.rs">Open local source</a> · src/evidence/source_links.rs:97 · <a href="engine-fusion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-evidence-validation-rs-15-function-audit"><summary><code>audit</code> <small>function · src/evidence/validation.rs:15</small></summary>
+<p><code>pub(super) fn audit( source: &amp;mut Option&lt;SourceMetadataRegistry&gt;, dwarf: Option&lt;&amp;TypeRegistry&gt;, snapshots: &amp;mut [ExecutionSnapshot], events: &amp;[HeapEvent], ) -&gt; usize</code></p>
+<p>Reject inconsistent cross-provider references. Inputs/outputs: links -&gt; checked links / rejected count. Qualification: failed links removed, not repaired by guessing.</p>
+<p><strong>Incoming reviewed relationships:</strong> fusion.fuse [direct, src/evidence/mod.rs:78]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/evidence/validation.rs">Open local source</a> · src/evidence/validation.rs:15 · <a href="engine-fusion-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-gdb-deep.html">GDB controller &amp; stop loop</a></h3>
+<details class="symbol" id="symbol-src-gdb-mi-rs-389-function-launch"><summary><code>launch</code> <small>function · src/gdb_mi.rs:389</small></summary>
+<p><code>pub async fn launch(opts: &amp;GdbLaunchOptions) -&gt; Result&lt;GdbSession&gt;</code></p>
+<p>Launch GDB/MI2, configure debugger and reader tasks. Inputs/outputs: launch options -&gt; GDB session. Qualification: GDB and inferior are distinct processes.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.gdb [direct, src/trace.rs:1191]</p>
+<p><strong>Outgoing reviewed relationships:</strong> tool.gdb [external, src/gdb_mi.rs:398]; gdb.reader [callback, src/gdb_mi.rs:446]</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:389 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-718-function-run"><summary><code>run</code> <small>function · src/gdb_mi.rs:718</small></summary>
+<p><code>pub async fn run(&amp;mut self, timeout: Duration) -&gt; Result&lt;StoppedInfo&gt;</code></p>
+<p>Start inferior via -exec-run then await its first stop. Inputs/outputs: MI commands -&gt; first stop. Qualification: GDB result acknowledgement is not the stop.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:718 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-1840-function-capture-state"><summary><code>capture_state</code> <small>function · src/gdb_mi.rs:1840</small></summary>
+<p><code>pub async fn capture_state( session: &amp;mut GdbSession, opts: &amp;CaptureOptions, reads: &amp;mut CheckpointReads, ) -&gt; Result&lt;CapturedState&gt;</code></p>
+<p>Inspect frames, variables and bounded memory at a stop. Inputs/outputs: session -&gt; captured state. Qualification: only observed debugger values.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.capture [direct, src/trace.rs:2169]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:1840 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-2302-function-reader-task"><summary><code>reader_task</code> <small>function · src/gdb_mi.rs:2302</small></summary>
+<p><code>async fn reader_task(stdout: ChildStdout, shared: Arc&lt;Shared&gt;)</code></p>
+<p>Read bounded MI records from GDB stdout. Inputs/outputs: GDB stdout -&gt; routed records. Qualification: asynchronous task started at launch.</p>
+<p><strong>Incoming reviewed relationships:</strong> tool.gdb [data, src/gdb_mi.rs:423]; gdb.launch [callback, src/gdb_mi.rs:446]</p>
+<p><strong>Outgoing reviewed relationships:</strong> gdb.handle [direct, src/gdb_mi.rs:2323]</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:2302 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-2340-function-handle-line"><summary><code>handle_line</code> <small>function · src/gdb_mi.rs:2340</small></summary>
+<p><code>fn handle_line(line: &amp;str, shared: &amp;Shared)</code></p>
+<p>Parse one MI line and route successful records. Inputs/outputs: MI line -&gt; parsed record or diagnostic. Qualification: malformed lines never become observations.</p>
+<p><strong>Incoming reviewed relationships:</strong> gdb.reader [direct, src/gdb_mi.rs:2323]</p>
+<p><strong>Outgoing reviewed relationships:</strong> mi.parse [direct, src/gdb_mi.rs:2354]</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:2340 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-1113-function-run-gdb-phase"><summary><code>run_gdb_phase</code> <small>function · src/trace.rs:1113</small></summary>
+<p><code>pub async fn run_gdb_phase( config: &amp;TraceConfig, limits: &amp;ExecutionLimits, classifier: &amp;UserCodeClassifier, binary: &amp;Path, event_file: &amp;Path, event_status_file: &amp;Path, reader: &amp;mut EventFileReader, timeline: &amp;mut HeapTimeline, notes: &amp;mut Vec&lt;String&gt;, type_metadata: Option&lt;std::sync::Arc&lt;crate::dwarf::ObservationTypes&gt;&gt;, ) -&gt; Result&lt;GdbPhaseResult&gt;</code></p>
+<p>Run inferior, ingest events and capture stops. Inputs/outputs: debug binary and tracker -&gt; observations. Qualification: bounded loop; partial recordings retained.</p>
+<p><strong>Incoming reviewed relationships:</strong> tool.gcc [data, src/trace.rs:424]; trace.inner [direct, src/trace.rs:424]</p>
+<p><strong>Outgoing reviewed relationships:</strong> gdb.launch [direct, src/trace.rs:1191]; tracker.read [direct, src/trace.rs:1390]; heap.ingest [direct, src/trace.rs:1395]; trace.capture [direct, src/trace.rs:1599]; trace.snapshot [direct, src/trace.rs:1620]; memory.enrich [direct, src/trace.rs:1669]; recorder.checkpoint [direct, src/trace.rs:1673]</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:1113 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-2164-function-capture-or-empty"><summary><code>capture_or_empty</code> <small>function · src/trace.rs:2164</small></summary>
+<p><code>async fn capture_or_empty( session: &amp;mut GdbSession, opts: &amp;CaptureOptions, reads: &amp;mut crate::gdb_mi::CheckpointReads, ) -&gt; crate::gdb_mi::CapturedState</code></p>
+<p>Preserve a stop even if state capture fails. Inputs/outputs: GDB session -&gt; captured/empty state. Qualification: errors are retained instead of invented values.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.gdb [direct, src/trace.rs:1599]</p>
+<p><strong>Outgoing reviewed relationships:</strong> gdb.capture [direct, src/trace.rs:2169]</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:2164 · <a href="engine-gdb-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-heap-deep.html">Heap reconstruction</a></h3>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-296-function-read-new"><summary><code>read_new</code> <small>function · src/allocation_tracker.rs:296</small></summary>
+<p><code>pub fn read_new(&amp;mut self) -&gt; Vec&lt;RawEvent&gt;</code></p>
+<p>Read new complete allocator telemetry lines. Inputs/outputs: event file -&gt; raw events. Qualification: partial lines buffered, transport errors tracked.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.gdb [direct, src/trace.rs:1390]</p>
+<p><strong>Outgoing reviewed relationships:</strong> heap.ingest [data, src/trace.rs:1394]</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:296 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-522-function-ingest"><summary><code>ingest</code> <small>function · src/allocation_tracker.rs:522</small></summary>
+<p><code>pub fn ingest(&amp;mut self, ev: &amp;RawEvent)</code></p>
+<p>Reconstruct per-process allocator event history. Inputs/outputs: raw event -&gt; timeline mutation. Qualification: sequence gaps and uncertain lifetimes remain explicit.</p>
+<p><strong>Incoming reviewed relationships:</strong> tracker.read [data, src/trace.rs:1394]; trace.gdb [direct, src/trace.rs:1395]; trace.snapshot [conceptual, src/trace.rs:2218]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:522 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-758-function-retire-block"><summary><code>retire_block</code> <small>function · src/allocation_tracker.rs:758</small></summary>
+<p><code>fn retire_block(&amp;mut self, idx: usize, seq: u64)</code></p>
+<p>Close an observed lifetime on free/realloc. Inputs/outputs: live block -&gt; retired block. Qualification: failed realloc does not retire.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:758 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-allocation-tracker-rs-768-function-add-block"><summary><code>add_block</code> <small>function · src/allocation_tracker.rs:768</small></summary>
+<p><code>fn add_block(&amp;mut self, ev: &amp;RawEvent, alloc_type: &amp;&#x27;static str, realloc_from: Option&lt;u64&gt;)</code></p>
+<p>Create bounded per-PID allocation lifetime. Inputs/outputs: raw event -&gt; live block. Qualification: gaps or duplicate IDs prevent new certainty.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · src/allocation_tracker.rs:768 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-2566-function-backfill-snapshots"><summary><code>backfill_snapshots</code> <small>function · src/trace.rs:2566</small></summary>
+<p><code>fn backfill_snapshots( timeline: &amp;HeapTimeline, mut snapshots: Vec&lt;ExecutionSnapshot&gt;, parent_pid: Option&lt;u32&gt;, ) -&gt; Vec&lt;ExecutionSnapshot&gt;</code></p>
+<p>Reconcile snapshots with final heap history. Inputs/outputs: timeline + snapshots -&gt; updated snapshots. Qualification: does not create missing stops.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:854]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:2566 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-2618-function-correlate-heap-intervals"><summary><code>correlate_heap_intervals</code> <small>function · src/trace.rs:2618</small></summary>
+<p><code>fn correlate_heap_intervals( events: &amp;mut [crate::models::HeapEvent], snapshots: &amp;[ExecutionSnapshot], history_reliable: bool, )</code></p>
+<p>Bracket heap events by observed checkpoint intervals. Inputs/outputs: events + snapshots -&gt; interval references. Qualification: not an exact source-expression identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.inner [direct, src/trace.rs:874]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:2618 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-2662-function-build-heap-state"><summary><code>build_heap_state</code> <small>function · src/trace.rs:2662</small></summary>
+<p><code>fn build_heap_state( timeline: &amp;HeapTimeline, snapshots: &amp;[ExecutionSnapshot], _parent_pid: Option&lt;u32&gt;, ) -&gt; Vec&lt;HeapBlockInfo&gt;</code></p>
+<p>Combine observed lifetime states with previously captured bytes. Inputs/outputs: timeline + snapshots -&gt; heap state. Qualification: bytes remain tied to their original stop.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:2662 · <a href="engine-heap-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-mi-deep.html">MI2 parser &amp; transport</a></h3>
+<details class="symbol" id="symbol-src-gdb-mi-rs-533-function-execute"><summary><code>execute</code> <small>function · src/gdb_mi.rs:533</small></summary>
+<p><code>pub async fn execute(&amp;mut self, command: &amp;str) -&gt; Result&lt;MiCommandResponse&gt;</code></p>
+<p>Send tokened MI command and await matching result. Inputs/outputs: command -&gt; MI response. Qualification: async stop is a separate channel.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:533 · <a href="engine-mi-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-624-function-wait-stopped"><summary><code>wait_stopped</code> <small>function · src/gdb_mi.rs:624</small></summary>
+<p><code>pub async fn wait_stopped(&amp;mut self, timeout: Duration) -&gt; Result&lt;StoppedInfo&gt;</code></p>
+<p>Consume asynchronous *stopped record with timeout. Inputs/outputs: async MI records -&gt; stopped info. Qualification: unrelated records buffered.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:624 · <a href="engine-mi-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-1275-function-stopped-info-from"><summary><code>stopped_info_from</code> <small>function · src/gdb_mi.rs:1275</small></summary>
+<p><code>fn stopped_info_from(record: &amp;MiRecord) -&gt; StoppedInfo</code></p>
+<p>Extract reason, frame and thread from observed stop. Inputs/outputs: *stopped -&gt; StoppedInfo. Qualification: only recorded stop is a checkpoint candidate.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:1275 · <a href="engine-mi-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-2374-function-route-record"><summary><code>route_record</code> <small>function · src/gdb_mi.rs:2374</small></summary>
+<p><code>fn route_record(record: MiRecord, shared: &amp;Shared)</code></p>
+<p>Route tokened results and async records to distinct channels. Inputs/outputs: parsed MI -&gt; pending command or async queue. Qualification: matching tokens on async records never acknowledge a command.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:2374 · <a href="engine-mi-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-mi-parser-rs-361-function-lex-line"><summary><code>lex_line</code> <small>function · src/mi_parser.rs:361</small></summary>
+<p><code>fn lex_line(input: &amp;[u8]) -&gt; Result&lt;Vec&lt;Token&gt;, MiParseError&gt;</code></p>
+<p>Tokenize one MI line with located failures. Inputs/outputs: MI text -&gt; token list. Qualification: malformed strings rejected.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/mi_parser.rs">Open local source</a> · src/mi_parser.rs:361 · <a href="engine-mi-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-mi-parser-rs-559-function-parse-line"><summary><code>parse_line</code> <small>function · src/mi_parser.rs:559</small></summary>
+<p><code>pub fn parse_line(line: &amp;str) -&gt; Result&lt;Option&lt;MiRecord&gt;, MiParseError&gt;</code></p>
+<p>Parse MI protocol syntax into typed records. Inputs/outputs: text -&gt; optional MI record. Qualification: parsing is not an inferior stop.</p>
+<p><strong>Incoming reviewed relationships:</strong> gdb.handle [direct, src/gdb_mi.rs:2354]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/mi_parser.rs">Open local source</a> · src/mi_parser.rs:559 · <a href="engine-mi-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-recorder-deep.html">Recorder &amp; journals</a></h3>
+<details class="symbol" id="symbol-src-recorder-rs-45-function-capture-variable-memory"><summary><code>capture_variable_memory</code> <small>function · src/recorder.rs:45</small></summary>
+<p><code>pub(crate) async fn capture_variable_memory( session: &amp;mut GdbSession, var: &amp;mut VariableInfo, reads: &amp;mut crate::gdb_mi::CheckpointReads, budget: &amp;mut MemoryBudget, )</code></p>
+<p>Read variable bytes within checkpoint/object caps. Inputs/outputs: storage + extent -&gt; memory evidence. Qualification: initialization stays unknown.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/recorder.rs">Open local source</a> · src/recorder.rs:45 · <a href="engine-recorder-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-recorder-rs-206-function-new"><summary><code>new</code> <small>function · src/recorder.rs:206</small></summary>
+<p><code>pub fn new(config: &amp;TracingConfig, limits: &amp;ExecutionLimits) -&gt; Result&lt;Self&gt;</code></p>
+<p>Initialize coverage, caps and optional JSONL journal. Inputs/outputs: tracing config -&gt; recorder. Qualification: journal alone cannot reconstruct full trace.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/recorder.rs">Open local source</a> · src/recorder.rs:206 · <a href="engine-recorder-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-recorder-rs-259-function-checkpoint"><summary><code>checkpoint</code> <small>function · src/recorder.rs:259</small></summary>
+<p><code>pub fn checkpoint(&amp;mut self, snapshot: &amp;ExecutionSnapshot) -&gt; Result&lt;()&gt;</code></p>
+<p>Record a captured checkpoint within configured limits. Inputs/outputs: snapshot -&gt; recording and optional journal. Qualification: only retained snapshots become checkpoints.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.gdb [direct, src/trace.rs:1673]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/recorder.rs">Open local source</a> · src/recorder.rs:259 · <a href="engine-recorder-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-recorder-rs-267-function-allocations"><summary><code>allocations</code> <small>function · src/recorder.rs:267</small></summary>
+<p><code>pub fn allocations(&amp;mut self, events: &amp;[HeapEvent], stop_id: u64) -&gt; Result&lt;()&gt;</code></p>
+<p>Journal newly ingested events at the observed stop. Inputs/outputs: events + stop -&gt; optional JSONL. Qualification: records observation time, not allocation expression identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/recorder.rs">Open local source</a> · src/recorder.rs:267 · <a href="engine-recorder-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-stack-deep.html">Frames, variables &amp; memory</a></h3>
+<details class="symbol" id="symbol-src-gdb-mi-rs-778-function-lexical-symbols"><summary><code>lexical_symbols</code> <small>function · src/gdb_mi.rs:778</small></summary>
+<p><code>async fn lexical_symbols( &amp;mut self, names: &amp;[&amp;str], ambiguous: &amp;[&amp;str], ) -&gt; (HashMap&lt;String, Vec&lt;LexicalSymbol&gt;&gt;, bool)</code></p>
+<p>Request lexical declaration/storage evidence. Inputs/outputs: variable names -&gt; scoped symbols. Qualification: GDB Python is a debugger command, not inferior execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:778 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-800-function-inspect-lexical-symbols"><summary><code>inspect_lexical_symbols</code> <small>function · src/gdb_mi.rs:800</small></summary>
+<p><code>async fn inspect_lexical_symbols( &amp;mut self, names: &amp;[&amp;str], ambiguous: &amp;[&amp;str], level: Option&lt;u32&gt;, limit: usize, ) -&gt; std::result::Result&lt;ProbeOutput, String&gt;</code></p>
+<p>Send bounded GDB-Python block traversal via MI. Inputs/outputs: frame + names -&gt; GDB stream JSON. Qualification: probe cannot establish initialization.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:800 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-1136-function-read-memory-bytes-partial"><summary><code>read_memory_bytes_partial</code> <small>function · src/gdb_mi.rs:1136</small></summary>
+<p><code>pub(crate) async fn read_memory_bytes_partial( &amp;mut self, address: &amp;str, size: u64, ) -&gt; MemoryRead</code></p>
+<p>Read a bounded contiguous byte prefix with error evidence. Inputs/outputs: address + size -&gt; bytes/error. Qualification: missing bytes stay unknown.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:1136 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-gdb-mi-rs-1386-function-parse-variables"><summary><code>parse_variables</code> <small>function · src/gdb_mi.rs:1386</small></summary>
+<p><code>pub fn parse_variables(record: &amp;MiRecord) -&gt; Vec&lt;RawVariable&gt;</code></p>
+<p>Decode MI stack-variable rows. Inputs/outputs: MI result -&gt; raw variables. Qualification: names alone do not disambiguate shadowing.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · src/gdb_mi.rs:1386 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-memory-rs-145-function-enrich-snapshot"><summary><code>enrich_snapshot</code> <small>function · src/memory.rs:145</small></summary>
+<p><code>pub fn enrich_snapshot( snapshot: &amp;mut ExecutionSnapshot, timeline: &amp;HeapTimeline, pid: Option&lt;u32&gt;, )</code></p>
+<p>Annotate observed pointers against heap history. Inputs/outputs: snapshot and timeline -&gt; pointer evidence. Qualification: address equality alone does not prove pointer origin.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.gdb [direct, src/trace.rs:1669]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/memory.rs">Open local source</a> · src/memory.rs:145 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-recorder-rs-512-function-capture-global"><summary><code>capture_global</code> <small>function · src/recorder.rs:512</small></summary>
+<p><code>pub(crate) async fn capture_global( session: &amp;mut GdbSession, name: &amp;str, limits: &amp;ExecutionLimits, reads: &amp;mut crate::gdb_mi::CheckpointReads, budget: &amp;mut MemoryBudget, types: Option&lt;&amp;crate::dwarf::ObservationTypes&gt;, func: &amp;str, ) -&gt; VariableInfo</code></p>
+<p>Observe a named global/static symbol and bounded bytes. Inputs/outputs: name -&gt; variable evidence. Qualification: scope and size do not prove initialization.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/recorder.rs">Open local source</a> · src/recorder.rs:512 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-2179-function-push-snapshot"><summary><code>push_snapshot</code> <small>function · src/trace.rs:2179</small></summary>
+<p><code>async fn push_snapshot( result: &amp;mut GdbPhaseResult, session: &amp;mut GdbSession, stop: &amp;StoppedInfo, state: &amp;crate::gdb_mi::CapturedState, timeline: &amp;HeapTimeline, pid: Option&lt;u32&gt;, limits: &amp;ExecutionLimits, snapshot_cap_noted: &amp;mut bool, read_cap_noted: &amp;mut bool, notes: &amp;mut Vec&lt;String&gt;, )</code></p>
+<p>Capture live heap bytes and append one stop snapshot. Inputs/outputs: stopped state + timeline -&gt; snapshot. Qualification: budgeted read; missing bytes are not inferred.</p>
+<p><strong>Incoming reviewed relationships:</strong> trace.gdb [direct, src/trace.rs:1620]</p>
+<p><strong>Outgoing reviewed relationships:</strong> heap.ingest [conceptual, src/trace.rs:2218]</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:2179 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-rs-2356-function-capture-requested-globals"><summary><code>capture_requested_globals</code> <small>function · src/trace.rs:2356</small></summary>
+<p><code>async fn capture_requested_globals( snapshot: &amp;mut ExecutionSnapshot, session: &amp;mut GdbSession, names: &amp;[String], capped: bool, limits: &amp;ExecutionLimits, state: &amp;crate::gdb_mi::CapturedState, reads: &amp;mut crate::gdb_mi::CheckpointReads, types: Option&lt;&amp;crate::dwarf::ObservationTypes&gt;, deadline: Instant, )</code></p>
+<p>Capture each requested global with explicit omission on deadline. Inputs/outputs: names + stop -&gt; observed globals. Qualification: declaration alone is not value evidence.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace.rs">Open local source</a> · src/trace.rs:2356 · <a href="engine-stack-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="engine-supervision-deep.html">Supervision &amp; resource limits</a></h3>
+<details class="symbol" id="symbol-src-resource-limits-rs-154-function-validate"><summary><code>validate</code> <small>function · src/resource_limits.rs:154</small></summary>
+<p><code>pub fn validate(&amp;self) -&gt; Result&lt;()&gt;</code></p>
+<p>Reject unusable execution budgets. Inputs/outputs: limits -&gt; validation result. Qualification: validation is not process enforcement.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/resource_limits.rs">Open local source</a> · src/resource_limits.rs:154 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-resource-limits-rs-253-function-limit-stopped-inferior"><summary><code>limit_stopped_inferior</code> <small>function · src/resource_limits.rs:253</small></summary>
+<p><code>pub fn limit_stopped_inferior(pid: u32, limits: &amp;ExecutionLimits) -&gt; std::io::Result&lt;()&gt;</code></p>
+<p>Apply inferior-only prlimit at the first observed stop. Inputs/outputs: pid + limits -&gt; rlimit attempt. Qualification: startup before main is not covered.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/resource_limits.rs">Open local source</a> · src/resource_limits.rs:253 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-resource-limits-rs-317-function-create"><summary><code>create</code> <small>function · src/resource_limits.rs:317</small></summary>
+<p><code>pub fn create(limits: &amp;ExecutionLimits) -&gt; Option&lt;CgroupGuard&gt;</code></p>
+<p>Try delegated cgroup v2 memory/process limits. Inputs/outputs: limits -&gt; optional guard. Qualification: failure falls back to rlimits.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/resource_limits.rs">Open local source</a> · src/resource_limits.rs:317 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-resource-limits-rs-364-function-attach"><summary><code>attach</code> <small>function · src/resource_limits.rs:364</small></summary>
+<p><code>pub fn attach(&amp;self, pid: u32) -&gt; bool</code></p>
+<p>Attach observed inferior PID to its session cgroup. Inputs/outputs: pid -&gt; enforcement result. Qualification: never attach GDB itself.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/resource_limits.rs">Open local source</a> · src/resource_limits.rs:364 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-supervisor-rs-106-function-scope"><summary><code>scope</code> <small>function · src/supervisor.rs:106</small></summary>
+<p><code>pub async fn scope&lt;T&gt;(seconds: u64, future: impl Future&lt;Output = T&gt;) -&gt; T</code></p>
+<p>Install session deadline and signal cancellation context. Inputs/outputs: deadline + future -&gt; bounded session. Qualification: SIGINT/SIGTERM mark cancellation.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/supervisor.rs">Open local source</a> · src/supervisor.rs:106 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-supervisor-rs-148-function-stage-deadline"><summary><code>stage_deadline</code> <small>function · src/supervisor.rs:148</small></summary>
+<p><code>pub fn stage_deadline(seconds: u64) -&gt; Instant</code></p>
+<p>Clamp a stage deadline to the whole session. Inputs/outputs: stage seconds -&gt; instant. Qualification: does not independently spawn a process.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/supervisor.rs">Open local source</a> · src/supervisor.rs:148 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-supervisor-rs-167-function-spawn"><summary><code>spawn</code> <small>function · src/supervisor.rs:167</small></summary>
+<p><code>pub fn spawn(cmd: &amp;mut Command) -&gt; std::io::Result&lt;Self&gt;</code></p>
+<p>Start a process group with kill-on-drop ownership. Inputs/outputs: command -&gt; owned child. Qualification: descendants reaped on stage exit.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/supervisor.rs">Open local source</a> · src/supervisor.rs:167 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-supervisor-rs-209-function-drain"><summary><code>drain</code> <small>function · src/supervisor.rs:209</small></summary>
+<p><code>async fn drain( mut pipe: impl tokio::io::AsyncRead + Unpin, cap: usize, bytes: &amp;mut Vec&lt;u8&gt;, truncated: &amp;mut bool, )</code></p>
+<p>Read bounded subprocess output while the child runs. Inputs/outputs: pipe -&gt; retained bytes / truncation. Qualification: output cap never extends deadline.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/supervisor.rs">Open local source</a> · src/supervisor.rs:209 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-supervisor-rs-228-function-output"><summary><code>output</code> <small>function · src/supervisor.rs:228</small></summary>
+<p><code>pub async fn output(cmd: &amp;mut Command, end: Instant, cap: usize) -&gt; Result&lt;ProcessOutput&gt;</code></p>
+<p>Own subprocess and bounded pipe collection with timeout cleanup. Inputs/outputs: command -&gt; capped output/status. Qualification: independent tool process, not GDB observation.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/supervisor.rs">Open local source</a> · src/supervisor.rs:228 · <a href="engine-supervision-deep.html">Implementation chapter</a></p></details>
+</section></div>
+<h2 id="related-algorithm-notes">Related algorithm notes <a class="anchor" href="#related-algorithm-notes" aria-label="Link to Related algorithm notes">#</a></h2>
+<p>For cross-file mechanisms, see <a href="engine-algorithms.html">algorithms and invariants</a>. For the six source-guided subsystem sequences, see <a href="engine-walkthroughs.html">walkthroughs</a>. The interactive <a href="call-flow.html">call-flow explorer</a> filters the same verified graph by subsystem.</p></article><nav class="pager" aria-label="Adjacent pages"><a href="engine-algorithms.html">← Algorithms &amp; invariants</a><a href="model.html">Trace data model →</a></nav><footer class="footer">Visual C Stage 1 · Offline documentation · <a href="handoff.html">Evidence contract</a> · <a href="../stage1-final-audit.md">Freeze audit (Markdown)</a></footer></main><aside class="right-toc" aria-label="On this page"><p>On this page</p><nav><a href="#key-terms" class="toc-2">Key terms</a><a href="#the-big-picture" class="toc-2">The big picture</a><a href="#scope-and-reading-order" class="toc-2">Scope and reading order</a><a href="#review-status" class="toc-3">Review status</a><a href="#engine-graph-entries" class="toc-3">Engine graph entries</a><a href="#related-algorithm-notes" class="toc-2">Related algorithm notes</a></nav></aside></div>
+<div class="search-overlay" hidden><div class="search-dialog" role="dialog" aria-modal="true" aria-label="Search documentation"><label for="site-search">Search Stage 1 reference <kbd>Esc</kbd></label><input type="search" id="site-search" placeholder="Try “realloc”, “EvidenceRef”, “GDB” …" autocomplete="off"><div class="search-results" role="status" aria-live="polite"></div></div></div></body></html>

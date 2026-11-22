@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1070 420" role="img" aria-labelledby="t desc"><title id="t">Fork child and observed-PID scope</title><desc id="desc">An atfork child callback resets inherited lock and counters, deferring table clearing. Parent and logged child append PID-specific event lines and ACKs. An unlogged silent descendant is not known to the reader.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1070" height="420" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Fork child and observed-PID scope</text>
+<path d="M 210 140 L 235 130" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 206 215 L 239 230" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 425 270 L 455 270" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 380 230 L 500 135" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 645 270 L 675 270" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 425 133 L 675 232" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 645 113 L 870 157" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 852 230 L 883 215" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="20" y="135" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="30" y="161" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">fork / inherited state</text>
+<rect x="235" y="55" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="245" y="81" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Parent PID events</text>
+<rect x="235" y="230" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="245" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Child lock/ID reset</text>
+<rect x="455" y="230" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="465" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">Child logged events</text>
+<rect x="455" y="55" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="465" y="81" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Silent descendant</text>
+<rect x="675" y="230" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="685" y="256" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">ACK each observed PID</text>
+<rect x="870" y="135" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="880" y="161" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Unknown unseen PIDs</text>
+<text x="24" y="400" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

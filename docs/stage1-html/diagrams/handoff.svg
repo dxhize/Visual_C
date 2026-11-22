@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 902 235" role="img" aria-labelledby="t desc"><title id="t">Stage 1 → Stage 2 boundary</title><desc id="desc">Stage 1 gives a validated borrowed evidence view; Stage 2 may compose explanations but must preserve observation scope and uncertainty, without claiming pointer provenance or AST execution.</desc>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 902 235" role="img" aria-labelledby="t desc"><title id="t">Stage 1 → downstream boundary</title><desc id="desc">Stage 1 gives validated borrowed evidence and bounded pages; downstream consumers must preserve observation scope and uncertainty.</desc>
 <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
 <rect width="902" height="235" rx="16" fill="#fafcff"/>
-<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Stage 1 → Stage 2 boundary</text>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Stage 1 → downstream boundary</text>
 <rect x="22" y="57" width="194" height="118" rx="11" fill="#e8f6ee" stroke="#306451" stroke-width="1.5"/>
 <text x="36" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#306451">TraceStore</text>
 <text x="36" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Immutable trace</text>
@@ -18,7 +18,7 @@
 <text x="472" y="127" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">≤128 per query</text>
 <path d="M 656 116 H 670" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
 <rect x="676" y="57" width="194" height="118" rx="11" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
-<text x="690" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#8b4146">Future Semantic Engine</text>
-<text x="690" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Interpret C cautiously</text>
+<text x="690" y="86" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#8b4146">Downstream consumer</text>
+<text x="690" y="110" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Preserve uncertainty</text>
 <text x="690" y="127" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">no new observations</text>
 <text x="24" y="213" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Blue: engine  ·  Green: parser  ·  Amber: evidence  ·  Red: partial/unknown  ·  Purple: source</text></svg>

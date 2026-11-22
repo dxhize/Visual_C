@@ -1,18 +1,62 @@
-# Independent diagnostics · Valgrind and sanitizers
+# 19 · Independent diagnostics · Valgrind and sanitizers
+
+> **In one sentence:** Memory-error tools add valuable clues, but they run *separately* from the main GDB observation, so their findings belong to their own runs.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| **Valgrind** | Runs the program under memory checking and reports leaks or invalid accesses. Generally slower. |
+| **Sanitizer** | Compiler-inserted checks in a separately built program, such as AddressSanitizer for memory misuse. |
+
+> **Example.** A Valgrind leak at line 52 may point you at useful source code. It cannot identify "allocation 17" from the debugger's run just because that run also visited line 52.
+>
+> Each analysis records its own status. A **skipped or failed** analysis is not the same as "checked, no errors found."
 
 ## Level 1 · Intuition
 
-GDB shows what happened in the **primary** traced run. Valgrind and sanitizer runs can detect memory problems the primary trace does not prove, but they execute the program again. A similar address or source line across executions is not the same allocation. A diagnostic belongs to its own run; missing or truncated output is not a clean bill of health.
+GDB shows what happened in the **primary** traced run. Valgrind and sanitizer runs can detect memory problems the primary trace doesn't prove, but they execute the program *again*.
+
+- A similar address or source line across executions is **not** the same allocation.
+- A diagnostic belongs to its own run.
+- Missing or truncated output is **not** a clean bill of health.
 
 {{diagram:metadata}}
 
 ## Level 2 · Stages and uncertainty
 
-Valgrind runs the compiled program independently and produces native XML. `parse_valgrind_xml` decodes complete error records, native summaries and leaks. If XML is truncated, `recover_errors` can retain complete `<error>` elements while marking output incomplete and summary numbers unknown (`observed_summary`, nullable observed leak totals and parse error); a zero legacy total when the observed field is absent is not a measured zero. The runtime wrapper is passive in a Valgrind process so its table does not hide leaks as still-reachable objects.
+### Valgrind
 
-An ASan/UBSan-compiled executable is run separately when `sanitizer_trigger` selects `never`, `on_crash`, `on_crash_or_valgrind_error` (default) or `always`. Reports and `StageResult` distinguish skipped, timed out, failed and completed passes. An ASan diagnostic is attached to a primary crash only with supported source-site correlation; otherwise it stays an independent `diagnostic_observed`. A nonzero sanitizer exit with no diagnostic is inconclusive. Stage budget/cancellation may prevent analyses after a deadline; program `execution_status` is not overwritten by an unrelated Valgrind failure.
+| Point | Detail |
+|---|---|
+| How it runs | Starts **another execution** and writes an XML report |
+| What the engine reads | Complete error entries, leak details and summary numbers |
+| Truncated output | `recover_errors` keeps the `<error>` entries that were fully written, and marks the whole report **incomplete** |
+| Missing leak total | Means "we don't know the total," **not** zero (even if an older default field contains `0`) |
+| The allocation wrapper | Does **not** actively track blocks in the Valgrind run, because its own table could make leaks look reachable and hide the problem |
 
-### Worked crash: useful prefix, separate completeness
+### Sanitizer
+
+It is compiled into a **different executable**. The `sanitizer_trigger` setting chooses when it runs:
+
+| Setting | Runs the sanitizer… |
+|---|---|
+| never | Never |
+| after a crash | Only if the primary run crashed |
+| after a crash or Valgrind error | **Default** |
+| always | Always |
+
+The trace records whether the stage was **skipped, timed out, failed or completed**.
+
+| Situation | How it's treated |
+|---|---|
+| An ASan report and a primary GDB crash have a supported source-location match | May be shown together as **related clues** |
+| No such support | The sanitizer finding stays **independent** |
+| Nonzero exit, no usable diagnostic | **Inconclusive**, not proof of a memory bug |
+| A deadline arrives | May stop optional checks |
+| Valgrind fails | Does **not** change the status of the program's primary run |
+
+### Worked crash: a useful prefix, separate completeness
 
 ```c
 // Source: fixtures/c/phase8r3_crash.c
@@ -20,17 +64,37 @@ int observed_global = 123;
 int main(void) { *(volatile int *)0 = observed_global; return 0; }
 ```
 
-In a fresh audited run, this produced `execution_status="crashed"`, a `SIGSEGV` crash report, **3** snapshots and **5** retained instruction attempts. `coverage.complete_for_scope=true` for the observed user-code interval, while `heap_history.complete=false` because the allocation tracker did not receive a normal terminal ACK. These are **different dimensions**: neither the crash nor heap partiality erases the captured stops, and a complete user-code scope does not make heap history complete. With a forced sanitizer pass, the separately run sanitizer also produced a diagnostic. Do not infer unrecorded writes or a complete process-tree history from the retained prefix.
+In a fresh audited run, this produced:
+
+| Result | Value |
+|---|---|
+| `execution_status` | `"crashed"` |
+| Crash report | `SIGSEGV` |
+| Snapshots | **3** |
+| Retained instruction attempts | **5** |
+| `coverage.complete_for_scope` | `true` (for the observed user-code interval) |
+| `heap_history.complete` | `false` (the allocation tracker got no normal terminal ACK) |
+
+These are **different dimensions**. Neither the crash nor the heap partiality erases the captured stops, and a complete user-code scope does not make heap history complete. With a forced sanitizer pass, the separately run sanitizer also produced a diagnostic. Don't infer unrecorded writes or a complete process-tree history from the retained prefix.
 
 ### Source site is not identity
 
-`src/valgrind.rs::correlate_with_allocations` is a legacy-name helper that now ignores supplied primary allocation IDs; it may produce ID-free **same-absolute-file/line candidates** but never an exact cross-run allocation link. Imported legacy `related_allocation_ids` can remain in raw reports, yet TP-6 `valgrind_error(index).primary_allocation_id` is **always `None`**. See [confidence contracts](parser-semantic.html#independent-diagnostics).
+- `src/valgrind.rs::correlate_with_allocations` is a legacy-name helper that now **ignores** supplied primary allocation IDs.
+- It may produce ID-free **same-absolute-file/line candidates**, but never an exact cross-run allocation link.
+- Imported legacy `related_allocation_ids` can remain in raw reports, yet TP-6 `valgrind_error(index).primary_allocation_id` is **always `None`**.
+
+See [confidence contracts](parser-semantic.html#independent-diagnostics).
 
 ## Level 3 · Models and real failure path
 
-- `src/valgrind.rs::{parse_valgrind_xml, recover_errors, correlate_with_allocations}` and `src/sanitizer.rs::{parse_sanitizer_output, matches_crash}`.
-- `src/trace.rs` schedules passes and records `stage_results`; `src/models.rs::{ValgrindReport, ValgrindError, SanitizerReport, CrashReport, StageResult}` holds outputs.
-- `ValidatedSemanticView::diagnostics()` borrows the session reports; `valgrind_error(index)` provides a trace-local reference to an **independent** diagnostic.
+| File / item | Role |
+|---|---|
+| `src/valgrind.rs::{parse_valgrind_xml, recover_errors, correlate_with_allocations}` | Valgrind parsing and recovery |
+| `src/sanitizer.rs::{parse_sanitizer_output, matches_crash}` | Sanitizer parsing and crash matching |
+| `src/trace.rs` | Schedules passes and records `stage_results` |
+| `src/models.rs::{ValgrindReport, ValgrindError, SanitizerReport, CrashReport, StageResult}` | Holds outputs |
+| `ValidatedSemanticView::diagnostics()` | Borrows the session reports |
+| `valgrind_error(index)` | A trace-local reference to an **independent** diagnostic |
 
 ```rust
 let diagnostics = validated.diagnostics();
@@ -42,6 +106,8 @@ if let Some(report) = diagnostics.valgrind {
 }
 ```
 
-The code assumes a previously defined `validated` view; see the runnable [usage example](usage.html#level-3-load-and-validate). In the final Stage 1 audit, a fresh Valgrind fixture produced one native diagnostic and **zero** primary allocation links. Crash/forced-sanitizer samples each retained only the reports actually observed. A missing report is never a negative diagnosis.
+The code assumes a previously defined `validated` view; see the runnable [usage example](usage.html#level-3-load-and-validate).
 
-> WARNING: A primary-run allocation ID found in an imported Valgrind raw field is not an authorized Stage 2 identity join. Do not use matching source, address, PID or name across executions as a substitute for same-execution event evidence.
+In the final Stage 1 audit, a fresh Valgrind fixture produced one native diagnostic and **zero** primary allocation links. The crash and forced-sanitizer samples each kept only the reports actually observed. A missing report is never a negative diagnosis.
+
+> **Warning:** A primary-run allocation ID found in an imported Valgrind raw field is **not** an authorized Stage 2 identity join. Never use matching source, address, PID or name across executions as a substitute for same-execution event evidence.

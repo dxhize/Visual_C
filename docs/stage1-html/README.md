@@ -1,29 +1,35 @@
-# Visual C Stage 1 · offline HTML reference
+# Visual C Stage 1 developer reference
 
-Open **[`index.html`](index.html)** directly in a browser (`file://` works). All pages, SVGs, styles, scripts and search data are local; no server, CDN or network access is needed. On the page, press `/` or `Ctrl/⌘+K` to search, `Esc` to close; use the theme button to toggle light/dark. On narrow screens use the menu button. The content, navigation and diagrams still render with JavaScript disabled (search/theme toggling need JavaScript). Print styles remove navigation.
+Open [`index.html`](index.html) from a file browser or run `python3 -m http.server 8000 -d docs/stage1-html` at the repository root and visit `http://localhost:8000/`. HTML, SVGs, search index and call-flow data are checked in. There is no CDN, runtime network call or frontend build dependency. Search uses a generated `assets/search-data.js` global instead of fetching JSON, so it works when `file://` forbids `fetch`. A local browser may open a linked Rust file without jumping to its numbered line: use the adjacent copyable `path:line` instead.
 
 ## Edit and regenerate
 
-Source of truth for this *website*:
-
-- `content/*.md` — page bodies, a deliberately small Markdown subset (headings, paragraphs, code fences, tables, lists, callouts, `[text](relative-link)`, inline code and `{{diagram:key}}`). The **implementation**, not these docs, remains the source of truth for Stage 1 behavior.
-- `diagrams.json` — editable node, arrow, alt text and caption data for the twelve locally generated SVG diagrams. Edit this file rather than generated `diagrams/*.svg`. Node `kind` chooses the legend color: `source`, `engine`, `parser`, `evidence`, `risk`; `vertical:true` stacks the nodes. Every diagram has descriptive alt text and an HTML caption.
-- `build.py` — standard-library-only static renderer, shared navigation/layout, syntax coloring for Rust/C/JSON/shell, diagram and search-index generator.
-- `assets/site.css`, `assets/site.js` — shared CSS and optional offline interactions. `assets/search-data.js` is generated instead of fetched so `file://` works even in browsers that deny local `fetch()`; `assets/search.json` is also produced for inspection.
+The existing single-site, Python-standard-library generator remains the source for HTML. Edit `content/*.md` for chapters and the page manifest/templates in `build.py`. Chapters 1–25 were adapted from the user-provided `new_docs_md/stage1-docs-part1.md` through `stage1-docs-part5.md` (kept unchanged as review inputs); later chapters use the same one-sentence summary, key-term table, example and boundary before their source-level detail. `stage1-complete-text.md` collects the current chapter Markdown for review, but the individual `content/*.md` files are the site sources. The earlier `study-notes.json`/`apply-study-notes.py` are archival scaffolding; **do not rerun that script** against the restructured chapters. Edit `diagrams.json`, `doc2-diagrams.json`, `doc3-diagrams.json` and `doc4-diagrams.json` for SVGs. The new `layout: graph` format accepts stable node IDs, explicit `(x,y)` coordinates and typed arrows. Linear diagrams retain the older simple format. `assets/site.css`/`site.js` supply the shared layout, theme, menu and search. `assets/call-flow.js` contains curated real nodes and classified relationships; `assets/guided-paths.js` defines six guided execution paths; `assets/explorer.js`/`explorer.css` implement the interactive browser and tour controls. Do not edit generated `.html`, `diagrams/*.svg`, `assets/search-data.js` or `assets/search.json` directly.
 
 From the repository root:
 
 ```sh
+node docs/stage1-html/export-call-flow.mjs
+python3 docs/stage1-html/inventory.py
 python3 docs/stage1-html/build.py
 python3 docs/stage1-html/check.py
+node --check docs/stage1-html/assets/site.js
+node --check docs/stage1-html/assets/explorer.js
+node docs/stage1-html/browser-check.mjs
 ```
 
-Run `python3 docs/stage1-html/build.py` after editing `content/`, `diagrams.json` or the page list in `build.py`. Commit the generated `.html`, `.svg` and search data alongside sources so browsing needs **no build**. No Rust/C source or architecture behavior is changed by this process.
+`export-call-flow.mjs` projects the curated browser graph into `assets/data/verified-relationships.json` (Node is needed only to regenerate this optional machine-readable companion). `inventory.py` scans the current production Rust/C source tree, excluding `src/semantic/` Stage 2, and writes `assets/data/stage1-inventory.json`. It indexes definitions and static module references with source locations, and enriches graph-matched functions with reviewed purposes and classified incoming/outgoing edges. A lexical reference is **not** a verified call or a full implementation explanation. Review output after source edits rather than assuming a regex proves dispatch. `check.py` validates local links, anchors, generated SVGs and the search index. Update the browser-ready files together with their sources.
 
-## Verify examples and document structure
+`browser-check.mjs` is optional real-browser verification. It needs Node 22 and `google-chrome`, creates a disposable system-temp Chrome profile, and checks file-open navigation, search, theme, call-flow filter/selection/path and mobile menu. Run it with `http://127.0.0.1:8000/index.html` as its argument to test a local static server as well. Static `check.py` does not claim to replace a visual/a11y browser review.
 
-`check.py` (Python stdlib) verifies all 21 pages, local assets, internal links/anchors, the 12 parseable SVGs, alt text/captions, three-level headings, relative navigation, local scripts, and the absence of remote resources. `node --check assets/site.js` can additionally check JavaScript syntax if Node is installed; a browser with an HTML5 engine is recommended to inspect responsive styles and print layout. Tested Rust snippets use the existing public crate APIs; snippets labelled *body excerpt*, *signature excerpt*, *illustrative projection* or *abridged excerpt* are **not** claimed to be standalone programs/importable traces. The complete executable consumer is on [`usage.html`](usage.html); the larger checked-in oracle is `examples/stage1_public_consumer_audit.rs` at the repository root.
+## Add verified call-flow edges
 
-## Scope and limitations
+Choose stable node IDs in `assets/call-flow.js`; attach the actual source path, line, signature, purpose and relevant documentation page. An edge needs real source evidence for its classification: `direct` for a checked call expression, `callback` for an evidenced dispatch, `external` for process/tool communication, `data` for a transferred artifact, or `conceptual` for architecture only. Include a source reference for both dispatch and receiving implementation where practical. Do not infer runtime invocation from an import, shared type, identical name, address or source line. Keep candidate relationships visibly distinct and leave uncertain edges out. Subsystem filtering keeps the explorer usable when DOC-2/DOC-3 add more nodes.
 
-This site documents the frozen Stage 1 C Trace Engine and Trace Parser as implemented. It is not Stage 2, a developer GUI, a sandbox, a complete descendant census, a proof of pointer provenance or AST execution, or a guarantee that final JSON limits bound assembled-trace RAM. [Stage 1 handoff](handoff.html) describes the exact qualified evidence contract and known limitations. The integrated audit and historical reports in `docs/` are supporting evidence, not a substitute for inspecting current source.
+## Continue this website
+
+- **DOC-2 (complete):** Engine chapters live under `engine-*-deep.md`, with the [source handbook](engine-handbook.html), [algorithms](engine-algorithms.html), [function reference](engine-functions.html) and six subsystem [walkthroughs](engine-walkthroughs.html). DOC-2 diagrams are in `doc2-diagrams.json`. Preserve shared navigation and graph IDs when extending.
+- **DOC-3 (complete):** Parser chapters live under `parser-*-deep.md`, with the [source handbook](parser-handbook.html), [data structures](parser-data-structures.html), [algorithms](parser-algorithms.html), [function reference](parser-functions.html) and eight [walkthroughs](parser-walkthroughs.html). DOC-3 diagrams are in `doc3-diagrams.json`; parser graph nodes point to these chapters.
+- **DOC-4:** Add actual end-to-end execution walkthroughs with real C fixtures and captured trace records, then perform browser/device and final source-reference checks. Do not fork a second documentation site.
+
+The site intentionally excludes `src/semantic/` (SE-1/SE-2), frontend implementation, and Stage 2 tests and reports. A brief public downstream boundary describes **only** what Stage 1 provides. See [`DOC1-REPORT.md`](DOC1-REPORT.md), [`DOC2-REPORT.md`](DOC2-REPORT.md), [`DOC3-REPORT.md`](DOC3-REPORT.md), and [`DOC4-REPORT.md`](DOC4-REPORT.md) for the final release verdict and verification evidence.

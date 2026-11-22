@@ -698,3 +698,262 @@ fn f_g_parallel_readers_share_raw_and_semantic_observations() {
     assert_eq!(results[0].1, 3);
     assert_eq!(results[0].2, 3);
 }
+
+// TP-5 imported-evidence regressions: load success is not deep-validation success.
+fn has_finding(trace: DebugSessionTrace, code: &str) -> bool {
+    TraceStore::from_trace(trace)
+        .unwrap()
+        .validate_deep()
+        .findings()
+        .iter()
+        .any(|f| {
+            f.code == code
+                && f.severity
+                    == c_trace_engine::trace_parser::ValidationSeverity::StructuralCorruption
+        })
+}
+
+#[test]
+fn tp5_address_only_cannot_be_a_definite_heap_identity_in_any_frame() {
+    for place in 0..3 {
+        let mut trace = caller_trace();
+        let info = VariableInfo {
+            points_to: Some("0x705010".into()),
+            target: Some(PointerTarget {
+                kind: "heap".into(),
+                allocation_id: Some(1),
+                address_match_allocation_id: Some(1),
+                provenance_status: Some("address_only".into()),
+                ..Default::default()
+            }),
+            ..Default::default()
+        };
+        match place {
+            0 => trace.snapshots[0].variables.push(info),
+            1 => trace.snapshots[0].observation.globals.push(info),
+            _ => trace.snapshots[0].caller_frames[0]
+                .variables
+                .push(VariableInfo {
+                    activation_id: Some(1),
+                    ..info
+                }),
+        }
+        assert!(
+            has_finding(trace, "POINTER_HEAP_PROVENANCE_CONTRADICTORY"),
+            "place {place}"
+        );
+    }
+}
+
+#[test]
+fn tp5_silent_child_cannot_claim_complete_descendant_coverage() {
+    let mut trace = caller_trace();
+    trace.recording.heap_history = Some(c_trace_engine::models::HeapHistoryCoverage {
+        complete: true,
+        process_scope: Some("verified_observed_pids_only".into()),
+        unobserved_process_coverage: Some("complete_all_processes".into()),
+        followed_inferior_pid: Some(42),
+        observed_event_pids: vec![42],
+        ..Default::default()
+    });
+    assert!(has_finding(trace, "HEAP_PROCESS_COVERAGE_UNSUPPORTED"));
+}
+
+#[test]
+fn tp5_candidates_and_legacy_unknowns_do_not_gain_provenance() {
+    let baseline = caller_trace();
+    for status in [
+        Some("address_only"),
+        Some("known_freed_address"),
+        Some("ambiguous_reuse"),
+        Some("history_incomplete"),
+        Some("future_unknown"),
+        None,
+    ] {
+        for place in 0..3 {
+            let mut trace = baseline.clone();
+            let variable = VariableInfo {
+                target: Some(PointerTarget {
+                    kind: "heap".into(),
+                    address_match_allocation_id: Some(73),
+                    provenance_status: status.map(str::to_string),
+                    active: Some(status == Some("address_only")),
+                    ..Default::default()
+                }),
+                ..Default::default()
+            };
+            match place {
+                0 => trace.snapshots[0].variables.push(variable),
+                1 => trace.snapshots[0].observation.globals.push(variable),
+                _ => trace.snapshots[0].caller_frames[0]
+                    .variables
+                    .push(VariableInfo {
+                        activation_id: Some(1),
+                        ..variable
+                    }),
+            }
+            assert!(
+                !has_finding(trace, "POINTER_HEAP_PROVENANCE_CONTRADICTORY"),
+                "{status:?} place {place}"
+            );
+        }
+    }
+    let mut legacy = baseline.clone();
+    legacy.snapshots[0].variables.push(VariableInfo {
+        target: Some(PointerTarget {
+            kind: "heap".into(),
+            allocation_id: Some(7),
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
+    assert!(!has_finding(
+        legacy.clone(),
+        "POINTER_HEAP_PROVENANCE_CONTRADICTORY"
+    ));
+    assert!(TraceStore::from_trace(legacy)
+        .unwrap()
+        .validate_deep()
+        .findings()
+        .iter()
+        .any(
+            |finding| finding.code == "POINTER_HEAP_PROVENANCE_UNRECORDED"
+                && finding.severity
+                    == c_trace_engine::trace_parser::ValidationSeverity::UnavailableEvidence
+        ));
+    for (status, kind, candidate) in [
+        (None, "heap", Some(8)),
+        (None, "code", None),
+        (Some("future_unknown"), "heap", None),
+        (Some("known_freed_address"), "heap", None),
+    ] {
+        let mut imported = baseline.clone();
+        imported.snapshots[0].variables.push(VariableInfo {
+            target: Some(PointerTarget {
+                kind: kind.into(),
+                allocation_id: Some(7),
+                address_match_allocation_id: candidate,
+                provenance_status: status.map(str::to_string),
+                ..Default::default()
+            }),
+            ..Default::default()
+        });
+        assert!(has_finding(
+            imported,
+            if candidate.is_some() {
+                "POINTER_HEAP_ADDRESS_MISMATCH"
+            } else {
+                "POINTER_HEAP_PROVENANCE_CONTRADICTORY"
+            }
+        ));
+    }
+    // No caller frames: both frame-0 and global pointer observations still run.
+    let mut no_caller = baseline;
+    no_caller.snapshots[0].caller_frames.clear();
+    no_caller.snapshots[0].variables.push(VariableInfo {
+        target: Some(PointerTarget {
+            kind: "heap".into(),
+            allocation_id: Some(1),
+            provenance_status: Some("ambiguous_reuse".into()),
+            ..Default::default()
+        }),
+        ..Default::default()
+    });
+    assert!(has_finding(
+        no_caller,
+        "POINTER_HEAP_PROVENANCE_CONTRADICTORY"
+    ));
+}
+
+#[test]
+fn tp5_process_scope_is_typed_but_not_a_fork_census() {
+    use c_trace_engine::models::HeapHistoryCoverage;
+    use c_trace_engine::trace_parser::views::HeapProcessScope;
+    let legacy = TraceStore::from_trace(caller_trace()).unwrap();
+    assert!(matches!(
+        legacy.heap_process_scope(),
+        HeapProcessScope::Unknown
+    ));
+    let mut trace = caller_trace();
+    trace.recording.heap_history = Some(HeapHistoryCoverage {
+        complete: true,
+        ..Default::default()
+    });
+    let missing = TraceStore::from_trace(trace.clone()).unwrap();
+    assert!(matches!(
+        missing.heap_process_scope(),
+        HeapProcessScope::Unknown
+    ));
+    for (pids, complete) in [
+        (vec![42], true),
+        (vec![42, 43], true),
+        (vec![42, 43], false),
+    ] {
+        trace.recording.heap_history = Some(HeapHistoryCoverage {
+            complete,
+            process_scope: Some("verified_observed_pids_only".into()),
+            unobserved_process_coverage: Some("unknown".into()),
+            followed_inferior_pid: Some(42),
+            observed_event_pids: pids.clone(),
+            ..Default::default()
+        });
+        let store = TraceStore::from_trace(trace.clone()).unwrap();
+        assert!(
+            matches!(store.heap_process_scope(), HeapProcessScope::VerifiedObservedPidsOnly {
+            observed_event_pids, followed_inferior_pid: Some(42), observed_history_complete,
+        } if observed_event_pids == pids && observed_history_complete == complete)
+        );
+        assert!(!has_finding(
+            trace.clone(),
+            "HEAP_PROCESS_COVERAGE_UNSUPPORTED"
+        ));
+        assert!(!has_finding(
+            trace.clone(),
+            "HEAP_OBSERVED_COVERAGE_CONTRADICTORY"
+        ));
+    }
+    trace.recording.heap_history.as_mut().unwrap().process_scope = Some("all_descendants".into());
+    assert!(has_finding(trace.clone(), "HEAP_PROCESS_SCOPE_UNSUPPORTED"));
+    trace.recording.heap_history.as_mut().unwrap().process_scope =
+        Some("verified_observed_pids_only".into());
+    trace
+        .recording
+        .heap_history
+        .as_mut()
+        .unwrap()
+        .observed_event_pids = vec![42, 42];
+    assert!(has_finding(trace.clone(), "HEAP_OBSERVED_PID_INVALID"));
+    let history = trace.recording.heap_history.as_mut().unwrap();
+    history.observed_event_pids = vec![42];
+    history.complete = true;
+    history.missing_events = 1;
+    assert!(has_finding(trace, "HEAP_OBSERVED_COVERAGE_CONTRADICTORY"));
+}
+
+#[test]
+fn tp5_metadata_borrows_same_canonical_trace_across_clones() {
+    let store = load("v21_normal.json");
+    let clone = store.clone();
+    assert!(std::ptr::eq(store.trace(), clone.trace()));
+    assert!(store.heap_history().is_none());
+    assert!(store.type_registry().is_none());
+    assert!(store.evidence_fusion().is_none());
+    assert_eq!(
+        store.allocation_lifetimes().as_ptr(),
+        clone.allocation_lifetimes().as_ptr()
+    );
+    assert!(matches!(
+        store.heap_process_scope(),
+        c_trace_engine::trace_parser::views::HeapProcessScope::Unknown
+    ));
+    let evidence = store
+        .semantic_input()
+        .checkpoint_context(0)
+        .unwrap()
+        .snapshot_evidence()
+        .unwrap();
+    assert!(matches!(
+        clone.resolve_evidence(&evidence).unwrap(),
+        Evidence::Snapshot(_)
+    ));
+}

@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Source file index — Visual C Stage 1</title><meta name="description" content="Offline Visual C Stage 1 systems documentation: Source file index"><link rel="stylesheet" href="assets/site.css"><script src="assets/search-data.js" defer></script><script src="assets/site.js" defer></script></head>
+<body><a class="skip" href="#main">Skip to content</a><header class="topbar"><button class="nav-toggle" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><a class="brand" href="index.html" aria-label="Visual C documentation home"><span class="brandmark">V<span>C</span></span> Visual C <small>Stage 1 · V2.2</small></a><div class="top-actions"><button class="search-toggle" type="button" aria-label="Search documentation">⌕ <span>Search <kbd>/</kbd></span></button><button class="theme-toggle" type="button" aria-label="Change color theme" title="Switch light or dark mode">◐</button></div></header>
+<div class="shell"><aside class="sidebar" id="sidebar" aria-label="Documentation navigation"><nav><div class="nav-group"><div class="nav-label">Getting Started</div><a href="index.html">Documentation home</a><a href="reading.html">How to read this reference</a><a href="architecture.html">What Stage 1 does</a></div><div class="nav-group"><div class="nav-label">Architecture</div><a href="pipeline.html">Complete pipeline</a><a href="engine-architecture.html">Trace Engine architecture</a><a href="parser-architecture.html">Trace Parser architecture</a><a href="identity-contracts.html">Evidence and identity contracts</a><a href="resource-boundaries.html">Process and resource boundaries</a></div><div class="nav-group"><div class="nav-label">Developer Internals</div><a href="repository.html">Repository map</a><a href="files.html" aria-current="page">Source file index</a><a href="functions.html">Function index</a><a href="dependencies.html">Module dependency explorer</a><a href="call-flow.html">Interactive call-flow explorer</a></div><div class="nav-group"><div class="nav-label">Trace Engine</div><a href="engine-build.html">Compilation &amp; diagnostics</a><a href="engine-debugger.html">GDB/MI and checkpoints</a><a href="engine-memory.html">Frames, variables &amp; memory</a><a href="engine-metadata.html">DWARF, Clang &amp; fusion</a><a href="engine-heap.html">Allocation lifetimes</a><a href="engine-diagnostics.html">Valgrind &amp; sanitizers</a><a href="engine-process.html">Processes &amp; event transport</a><a href="engine-limits.html">Budgets, gaps &amp; export</a></div><div class="nav-group"><div class="nav-label">Trace Engine Internals</div><a href="engine-entry-deep.html">Entry, configuration &amp; errors</a><a href="engine-compiler-deep.html">Compiler &amp; diagnostics</a><a href="engine-gdb-deep.html">GDB controller &amp; stop loop</a><a href="engine-mi-deep.html">MI2 parser &amp; transport</a><a href="engine-recorder-deep.html">Recorder &amp; journals</a><a href="engine-stack-deep.html">Frames, variables &amp; memory</a><a href="engine-dwarf-deep.html">DWARF extraction</a><a href="engine-ast-deep.html">Clang AST provider</a><a href="engine-allocator-deep.html">C allocator runtime</a><a href="engine-heap-deep.html">Heap reconstruction</a><a href="engine-diagnostics-deep.html">Valgrind &amp; sanitizer internals</a><a href="engine-fusion-deep.html">Evidence fusion internals</a><a href="engine-supervision-deep.html">Supervision &amp; resource limits</a><a href="engine-export-deep.html">Trace model, journal &amp; export</a><a href="engine-walkthroughs.html">Subsystem walkthroughs</a><a href="engine-handbook.html">Source file handbook</a><a href="engine-algorithms.html">Algorithms &amp; invariants</a><a href="engine-functions.html">Trace Engine function reference</a></div><div class="nav-group"><div class="nav-label">Data model</div><a href="model.html">Trace data model</a></div><div class="nav-group"><div class="nav-label">Trace Parser</div><a href="parser-ingestion.html">TP-1 · Load &amp; compatibility</a><a href="parser-indexes.html">TP-2 · Position indexes</a><a href="parser-views.html">TP-3 · Borrowed views</a><a href="parser-validation.html">TP-5 · Deep validation</a><a href="parser-semantic.html">TP-6 · Evidence confidence</a><a href="parser-consumer.html">TP-7 · Bounded queries</a></div><div class="nav-group"><div class="nav-label">Trace Parser Internals</div><a href="parser-ingestion-deep.html">JSON and JSONL ingestion</a><a href="parser-ownership-deep.html">Ownership, views &amp; evidence references</a><a href="parser-indexes-deep.html">Compact position indexes</a><a href="parser-validation-deep.html">Deep validation architecture</a><a href="parser-realloc-deep.html">Realloc verification and TP8-F01</a><a href="parser-coverage-deep.html">Pointer provenance &amp; process coverage</a><a href="parser-semantic-deep.html">TP-6 validated semantic evidence</a><a href="parser-consumer-deep.html">TP-7 consumer composition</a><a href="parser-data-structures.html">Parser data structures</a><a href="parser-algorithms.html">Parser algorithms &amp; invariants</a><a href="parser-walkthroughs.html">Parser walkthroughs</a><a href="parser-handbook.html">Parser source file handbook</a><a href="parser-functions.html">Parser function reference</a></div><div class="nav-group"><div class="nav-label">Execution Walkthroughs</div><a href="walkthroughs.html">Execution walkthroughs</a></div><div class="nav-group"><div class="nav-label">Practical usage</div><a href="usage.html">Worked API walkthrough</a></div><div class="nav-group"><div class="nav-label">Reference</div><a href="api.html">Public API reference</a><a href="stage1-api.html">Stage 1 public API</a><a href="schema.html">Schema &amp; identity reference</a><a href="handoff.html">Stage 2 handoff &amp; limits</a><a href="glossary.html">Terminology and glossary</a><a href="limitations.html">Known limitations</a></div><div class="nav-group"><div class="nav-label">Execution Walkthroughs</div><p class="nav-planned">Planned for DOC-4</p></div></nav><div class="side-foot">Offline reference · schema v2<br>Engine + Parser, not Stage 2</div></aside><main id="main" tabindex="-1"><nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="index.html">Documentation</a><span aria-hidden="true">›</span><span>Developer Internals</span><span aria-hidden="true">›</span><span aria-current="page">Source file index</span></nav><article class="document"><h1 id="10-source-file-index">10 · Source file index <a class="anchor" href="#10-source-file-index" aria-label="Link to 10 · Source file index">#</a></h1>
+<aside class="admonition note" role="note"><p><strong>In one sentence:</strong> A table of contents for the actual source tree. A path tells you <em>where</em> an implementation lives, not that it ran.</p></aside>
+<h2 id="key-terms">Key terms <a class="anchor" href="#key-terms" aria-label="Link to Key terms">#</a></h2>
+<div class="table-scroll"><table><thead><tr><th scope="col">Term</th><th scope="col">Meaning</th></tr></thead><tbody><tr><td><strong>Generated catalog</strong></td><td>A listing built by scanning the current source tree, so you can navigate even when a file has no long explanation yet.</td></tr><tr><td><strong>Source location</strong></td><td>A file and line number where a definition can be read. The number may shift after code edits.</td></tr></tbody></table></div>
+<aside class="admonition note" role="note"><p><strong>Example.</strong> Searching <code>src/gdb_mi.rs</code> helps you find the debugger commands. It does <strong>not</strong> show a particular command ran in your trace. That needs recorded evidence.</p></aside>
+<h2 id="what-s-listed">What&#x27;s listed <a class="anchor" href="#what-s-listed" aria-label="Link to What&#x27;s listed">#</a></h2>
+<ul><li>Every Stage 1 Rust file under <code>src/</code></li><li>The allocator wrapper under <code>c_runtime/</code></li><li><strong>Not</strong> <code>src/semantic/</code> (deliberately excluded; it&#x27;s Stage 2)</li></ul>
+<p>File names, paths and symbols come from the checked-in, generated, machine-readable inventory. Each file&#x27;s short responsibility note describes a <em>subsystem</em>. It is not a replacement for reading the implementation.</p>
+<h2 id="browsing-the-catalog">Browsing the catalog <a class="anchor" href="#browsing-the-catalog" aria-label="Link to Browsing the catalog">#</a></h2>
+<p>Select a file to open its source, or follow its <strong>symbol count</strong> to the <a href="functions.html">function index</a>. Line locations refer to the inspected working tree.</p>
+<aside class="admonition note" role="note"><p><strong>Tip:</strong> Local browsers may open the source file but ignore the line number. The adjacent <code>path:line</code> text is the reliable locator.</p></aside>
+<h3 id="stage-1-file-catalog">Stage 1 file catalog <a class="anchor" href="#stage-1-file-catalog" aria-label="Link to Stage 1 file catalog">#</a></h3>
+<div class="inventory" id="inventory-files">
+<section class="inventory-entry" id="file-cargo-toml"><h3><code>Cargo.toml</code></h3>
+<p><strong>build</strong> · manifest · Package metadata and external dependency declarations.</p>
+<p><a href="../../Cargo.toml">Open local source</a> · <a href="functions.html#functions-cargo-toml">0 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> No public symbols indexed</p>
+<p><strong>Outbound static references:</strong> None indexed</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-c-runtime-alloc-tracker-c"><h3><code>c_runtime/alloc_tracker.c</code></h3>
+<p><strong>engine/heap</strong> · instrumentation runtime · Wrapped C allocators, allocation bookkeeping, and event/status file emission.</p>
+<p><a href="../../c_runtime/alloc_tracker.c">Open local source</a> · <a href="functions.html#functions-c-runtime-alloc-tracker-c">21 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> cte_slot, CTE_TABLE_SLOTS, CTE_TABLE_MASK, cte_test_fault_next_event, cte_test_fail_status_ack, cte_test_hold_lock, __wrap_malloc, __wrap_calloc, __wrap_realloc, __wrap_free</p>
+<p><strong>Outbound static references:</strong> None indexed</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> GNU ld --wrap allocator hooks, event/status file descriptors, pthread_atfork</p>
+<p><strong>Test references:</strong> tests/adversarial_8b.rs, tests/heap_instrumentation.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-allocation-tracker-rs"><h3><code>src/allocation_tracker.rs</code></h3>
+<p><strong>engine/heap</strong> · heap event ingestion · Writes the C runtime source, reads allocation events, reconstructs heap history, and resolves caller sites.</p>
+<p><a href="../../src/allocation_tracker.rs">Open local source</a> · <a href="functions.html#functions-src-allocation-tracker-rs">81 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> ALLOC_RUNTIME_C, RawKind, RawStatus, RawEvent, EventFileReader, MAX_EVENT_READ_BYTES, BlockState, HeapSequenceGap, HeapTimeline, CallerInfo, tests, write_runtime_source (+ 23 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/error.rs, src/models.rs, src/supervisor.rs</p>
+<p><strong>Incoming static references:</strong> src/memory.rs, src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> tokio, allocation event/status files, addr2line subprocess</p>
+<p><strong>Test references:</strong> src/allocation_tracker.rs, tests/adversarial_8b.rs, tests/heap_instrumentation.rs, tests/heap_provenance.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-clang-ast-rs"><h3><code>src/clang_ast.rs</code></h3>
+<p><strong>engine/metadata</strong> · Clang AST extraction · Collects optional static source declarations/expressions and correlates candidate metadata.</p>
+<p><a href="../../src/clang_ast.rs">Open local source</a> · <a href="functions.html#functions-src-clang-ast-rs">46 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> MAX_TUS, MAX_JSON, MAX_NODES, MAX_DEPTH, MAX_DECLS, MAX_EXPRS, MAX_TEXT, SourceMetadataRegistry, HeapCallCandidate, HeapCallAmbiguity, DwarfMemberRef, AstUnit (+ 11 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/compiler.rs, src/config.rs, src/dwarf.rs, src/models.rs, src/resource_limits.rs, src/supervisor.rs</p>
+<p><strong>Incoming static references:</strong> src/evidence/declarations.rs, src/evidence/heap.rs, src/evidence/source_links.rs, src/evidence/validation.rs, src/models.rs, src/trace.rs, src/trace_parser/consumer.rs, src/trace_parser/validation.rs, src/trace_parser/views.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde, serde_json, tokio, Clang JSON AST subprocess (optional)</p>
+<p><strong>Test references:</strong> src/clang_ast.rs, tests/clang_ast.rs, tests/evidence_fusion.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-cli-rs"><h3><code>src/cli.rs</code></h3>
+<p><strong>engine/cli</strong> · command-line configuration · Defines CLI arguments and translates them into trace configuration.</p>
+<p><a href="../../src/cli.rs">Open local source</a> · <a href="functions.html#functions-src-cli-rs">11 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> Cli, tests, to_config</p>
+<p><strong>Outbound static references:</strong> src/config.rs, src/error.rs, src/resource_limits.rs</p>
+<p><strong>Incoming static references:</strong> src/main.rs</p>
+<p><strong>External libraries/interfaces:</strong> clap, serde_json</p>
+<p><strong>Test references:</strong> src/cli.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-compiler-rs"><h3><code>src/compiler.rs</code></h3>
+<p><strong>engine/build</strong> · C compiler integration · Invokes C builds and parses compiler diagnostic outputs.</p>
+<p><a href="../../src/compiler.rs">Open local source</a> · <a href="functions.html#functions-src-compiler-rs">31 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> CompileOptions, CompilationOutput, DiagnosticsFormat, GccJsonLocation, GccJsonFile, GccJsonDiagnostic, SarifMessage, SarifRegion, SarifArtifactLocation, SarifPhysicalLocation, SarifLocation, SarifResult (+ 10 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/config.rs, src/error.rs, src/models.rs, src/supervisor.rs</p>
+<p><strong>Incoming static references:</strong> src/clang_ast.rs, src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde, serde_json, tokio, GCC subprocess, compiler diagnostics</p>
+<p><strong>Test references:</strong> src/compiler.rs, tests/adversarial_8b.rs, tests/clang_ast.rs, tests/dwarf_registry.rs, tests/evidence_fusion.rs, tests/heap_provenance.rs (+ 10 more)</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-config-rs"><h3><code>src/config.rs</code></h3>
+<p><strong>engine/config</strong> · configuration model · Defines and loads build, tracing, and execution configuration.</p>
+<p><a href="../../src/config.rs">Open local source</a> · <a href="functions.html#functions-src-config-rs">11 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> BuildConfig, TraceConfig, ConfigFile, TraceMode, SanitizerTrigger, TracingConfig, MemoryRegion, user_sources, runs_on_crash</p>
+<p><strong>Outbound static references:</strong> src/resource_limits.rs</p>
+<p><strong>Incoming static references:</strong> src/clang_ast.rs, src/cli.rs, src/compiler.rs, src/gdb_mi.rs, src/models.rs, src/recorder.rs, src/trace.rs, src/trace_parser/journal.rs, src/trace_parser/mod.rs</p>
+<p><strong>External libraries/interfaces:</strong> clap, serde</p>
+<p><strong>Test references:</strong> tests/adversarial_8b.rs, tests/clang_ast.rs, tests/evidence_fusion.rs, tests/heap_provenance.rs, tests/integration.rs, tests/runtime_memory.rs (+ 9 more)</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-dwarf-rs"><h3><code>src/dwarf.rs</code></h3>
+<p><strong>engine/metadata</strong> · DWARF metadata extraction · Indexes debug information and associates recorded observations with type/declaration metadata.</p>
+<p><a href="../../src/dwarf.rs">Open local source</a> · <a href="functions.html#functions-src-dwarf-rs">53 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> MAX_OBJECT_BYTES, MAX_UNITS, MAX_ENTRIES, MAX_CHILDREN, MAX_TEXT, MAX_EXTRACT_TIME, MAX_ORIGIN_HOPS, TypeRegistry, UnitInfo, TypeEntry, Member, Dimension (+ 15 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/models.rs</p>
+<p><strong>Incoming static references:</strong> src/clang_ast.rs, src/evidence/declarations.rs, src/evidence/validation.rs, src/gdb_mi.rs, src/models.rs, src/recorder.rs, src/trace.rs, src/trace_parser/validation.rs, src/trace_parser/views.rs</p>
+<p><strong>External libraries/interfaces:</strong> gimli, object, serde, ELF/DWARF debug artifact</p>
+<p><strong>Test references:</strong> src/dwarf.rs, tests/evidence_fusion.rs, tests/semantic_layout_se2.rs, tests/semantic_registry_se1_edges.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-error-rs"><h3><code>src/error.rs</code></h3>
+<p><strong>engine/core</strong> · error types · Defines engine error and result types.</p>
+<p><a href="../../src/error.rs">Open local source</a> · <a href="functions.html#functions-src-error-rs">2 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> EngineError, Result</p>
+<p><strong>Outbound static references:</strong> src/mi_parser.rs</p>
+<p><strong>Incoming static references:</strong> src/allocation_tracker.rs, src/cli.rs, src/compiler.rs, src/gdb_mi.rs, src/recorder.rs, src/resource_limits.rs, src/sanitizer.rs, src/storage.rs, src/supervisor.rs, src/trace.rs, src/valgrind.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde_json, thiserror</p>
+<p><strong>Test references:</strong> tests/v2.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-evidence-declarations-rs"><h3><code>src/evidence/declarations.rs</code></h3>
+<p><strong>engine/evidence</strong> · declaration links · Indexes DWARF declarations and links uniquely matched source members.</p>
+<p><a href="../../src/evidence/declarations.rs">Open local source</a> · <a href="functions.html#functions-src-evidence-declarations-rs">17 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> DwarfIndex, tests</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/dwarf.rs</p>
+<p><strong>Incoming static references:</strong> src/evidence/source_links.rs</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> src/evidence/declarations.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-evidence-heap-rs"><h3><code>src/evidence/heap.rs</code></h3>
+<p><strong>engine/evidence</strong> · heap/source candidates · Records bounded heap-event to static allocator-call candidates and ambiguities.</p>
+<p><a href="../../src/evidence/heap.rs">Open local source</a> · <a href="functions.html#functions-src-evidence-heap-rs">1 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> No public symbols indexed</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/models.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-evidence-mod-rs"><h3><code>src/evidence/mod.rs</code></h3>
+<p><strong>engine/evidence</strong> · evidence fusion coordinator · Coordinates bounded links across recorded runtime, AST, and DWARF evidence.</p>
+<p><a href="../../src/evidence/mod.rs">Open local source</a> · <a href="functions.html#functions-src-evidence-mod-rs">7 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> declarations, heap, source_links, validation, fuse</p>
+<p><strong>Outbound static references:</strong> src/models.rs</p>
+<p><strong>Incoming static references:</strong> src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> tests/evidence_fusion.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-evidence-source-links-rs"><h3><code>src/evidence/source_links.rs</code></h3>
+<p><strong>engine/evidence</strong> · source/observation links · Links source expressions and qualified runtime observations to recorded declarations.</p>
+<p><a href="../../src/evidence/source_links.rs">Open local source</a> · <a href="functions.html#functions-src-evidence-source-links-rs">2 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> No public symbols indexed</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/evidence/declarations.rs, src/models.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-evidence-validation-rs"><h3><code>src/evidence/validation.rs</code></h3>
+<p><strong>engine/evidence</strong> · link audit · Audits constructed cross-source references and clears invalid links.</p>
+<p><a href="../../src/evidence/validation.rs">Open local source</a> · <a href="functions.html#functions-src-evidence-validation-rs">2 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> No public symbols indexed</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/dwarf.rs, src/models.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-gdb-mi-rs"><h3><code>src/gdb_mi.rs</code></h3>
+<p><strong>engine/debugger</strong> · GDB/MI session · Manages debugger subprocess communication, commands, and captured state.</p>
+<p><a href="../../src/gdb_mi.rs">Open local source</a> · <a href="functions.html#functions-src-gdb-mi-rs">135 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> COMMAND_TIMEOUT_SECS, MAX_CONSOLE_LOG_BYTES, MAX_FRAMES_PER_SNAPSHOT, PtyPair, ProgramBuffer, StreamRecord, CommandOutcome, Shared, StoppedInfo, GdbLaunchOptions, MiCommandResponse, GlobalStaticMeta (+ 56 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/config.rs, src/dwarf.rs, src/error.rs, src/memory.rs, src/mi_parser.rs, src/models.rs, src/recorder.rs, src/resource_limits.rs, src/supervisor.rs</p>
+<p><strong>Incoming static references:</strong> src/recorder.rs, src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> libc, serde, serde_json, tokio, GDB/MI2 subprocess, PTY, inferior process</p>
+<p><strong>Test references:</strong> src/gdb_mi.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-json-export-rs"><h3><code>src/json_export.rs</code></h3>
+<p><strong>engine/export</strong> · bounded JSON export · Preflights serialization and writes final JSON with size and cancellation checks.</p>
+<p><a href="../../src/json_export.rs">Open local source</a> · <a href="functions.html#functions-src-json-export-rs">33 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> BoundedWriter, NEXT_TEMP, TempPath, tests, FailOnCall, RejectWrites, Full, CancelDuringFile, preflight, export_json, export_json_cancellable</p>
+<p><strong>Outbound static references:</strong> src/models.rs</p>
+<p><strong>Incoming static references:</strong> src/main.rs</p>
+<p><strong>External libraries/interfaces:</strong> libc, serde, serde_json, JSON output file, stdout</p>
+<p><strong>Test references:</strong> src/json_export.rs, tests/stress_8c.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-lib-rs"><h3><code>src/lib.rs</code></h3>
+<p><strong>crate</strong> · library root · Declares library modules and re-exports selected entry points.</p>
+<p><a href="../../src/lib.rs">Open local source</a> · <a href="functions.html#functions-src-lib-rs">23 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> allocation_tracker, clang_ast, cli, compiler, config, dwarf, error, evidence, gdb_mi, json_export, memory, mi_parser (+ 11 more in function index)</p>
+<p><strong>Outbound static references:</strong> None indexed</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-main-rs"><h3><code>src/main.rs</code></h3>
+<p><strong>engine/cli</strong> · binary entry point · Parses CLI input, runs a trace, and exports its JSON result.</p>
+<p><a href="../../src/main.rs">Open local source</a> · <a href="functions.html#functions-src-main-rs">1 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> No public symbols indexed</p>
+<p><strong>Outbound static references:</strong> src/cli.rs, src/json_export.rs, src/models.rs, src/trace.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> clap, tokio, CLI arguments, stdout, filesystem</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-memory-rs"><h3><code>src/memory.rs</code></h3>
+<p><strong>engine/memory</strong> · pointer enrichment · Reads process maps/load bias and qualifies checkpoint pointer address candidates against observed extents.</p>
+<p><a href="../../src/memory.rs">Open local source</a> · <a href="functions.html#functions-src-memory-rs">30 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> Observed, tests, address, storage_region, executable_bias, enrich, enrich_snapshot, refresh_heap_targets</p>
+<p><strong>Outbound static references:</strong> src/allocation_tracker.rs, src/models.rs</p>
+<p><strong>Incoming static references:</strong> src/gdb_mi.rs, src/recorder.rs, src/trace.rs, src/trace_parser/semantic.rs, src/trace_parser/validation.rs</p>
+<p><strong>External libraries/interfaces:</strong> /proc/PID/maps, ELF load bias</p>
+<p><strong>Test references:</strong> src/memory.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-mi-parser-rs"><h3><code>src/mi_parser.rs</code></h3>
+<p><strong>engine/debugger</strong> · MI syntax parser · Parses GDB machine-interface output into structured protocol records.</p>
+<p><a href="../../src/mi_parser.rs">Open local source</a> · <a href="functions.html#functions-src-mi-parser-rs">59 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> MiParseError, Token, MiValue, MiResult, MiListItem, StreamKind, MiRecord, Parser, tests, class, token, results (+ 6 more in function index)</p>
+<p><strong>Outbound static references:</strong> None indexed</p>
+<p><strong>Incoming static references:</strong> src/error.rs, src/gdb_mi.rs, src/recorder.rs, src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> bytes, nom, thiserror, GDB/MI2 protocol records</p>
+<p><strong>Test references:</strong> src/mi_parser.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-models-rs"><h3><code>src/models.rs</code></h3>
+<p><strong>engine/schema</strong> · trace schema · Defines serializable trace records and evidence/status fields.</p>
+<p><a href="../../src/models.rs">Open local source</a> · <a href="functions.html#functions-src-models-rs">51 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> StageStatus, StageResult, StageResults, CompilerDiagnostic, ExecutionSnapshot, FrameVariables, StackFrameInfo, VariableInfo, MemoryEvidence, HeapBlockInfo, HeapEventType, HeapEvent (+ 35 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/config.rs, src/dwarf.rs, src/resource_limits.rs</p>
+<p><strong>Incoming static references:</strong> src/allocation_tracker.rs, src/clang_ast.rs, src/compiler.rs, src/dwarf.rs, src/evidence/heap.rs, src/evidence/mod.rs, src/evidence/source_links.rs, src/evidence/validation.rs, src/gdb_mi.rs, src/json_export.rs, src/main.rs, src/memory.rs, src/processor.rs, src/recorder.rs, src/sanitizer.rs, src/supervisor.rs, src/trace.rs, src/trace_parser/consumer.rs, src/trace_parser/evidence.rs, src/trace_parser/indexes.rs, src/trace_parser/journal.rs, src/trace_parser/json.rs, src/trace_parser/mod.rs, src/trace_parser/semantic.rs, src/trace_parser/validation.rs, src/trace_parser/views.rs, src/valgrind.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde, serde_json</p>
+<p><strong>Test references:</strong> src/models.rs, tests/adversarial_8b.rs, tests/clang_ast.rs, tests/dwarf_registry.rs, tests/evidence_fusion.rs, tests/heap_provenance.rs (+ 14 more)</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-processor-rs"><h3><code>src/processor.rs</code></h3>
+<p><strong>engine/validation</strong> · optional structural validator · Checks recording instruction IDs, event references and coverage structure; not invoked by the engine production assembly path.</p>
+<p><a href="../../src/processor.rs">Open local source</a> · <a href="functions.html#functions-src-processor-rs">4 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> tests, validate</p>
+<p><strong>Outbound static references:</strong> src/models.rs</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/validation.rs</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> src/processor.rs, tests/dwarf_registry.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-recorder-rs"><h3><code>src/recorder.rs</code></h3>
+<p><strong>engine/recording</strong> · trace recording · Records bounded tracing events and session journal data.</p>
+<p><a href="../../src/recorder.rs">Open local source</a> · <a href="functions.html#functions-src-recorder-rs">21 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> MemoryBudget, Recorder, Observed, coverage_regressions, set_validity, new, truncate, checkpoint, allocations, gap, disassemble, selected_memory (+ 3 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/config.rs, src/dwarf.rs, src/error.rs, src/gdb_mi.rs, src/memory.rs, src/mi_parser.rs, src/models.rs, src/resource_limits.rs, src/storage.rs</p>
+<p><strong>Incoming static references:</strong> src/gdb_mi.rs, src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde, serde_json</p>
+<p><strong>Test references:</strong> src/recorder.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-resource-limits-rs"><h3><code>src/resource_limits.rs</code></h3>
+<p><strong>engine/limits</strong> · resource enforcement · Defines execution limits and applies operating-system resource controls.</p>
+<p><a href="../../src/resource_limits.rs">Open local source</a> · <a href="functions.html#functions-src-resource-limits-rs">22 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> MAX_INFERIOR_FILE_SIZE_BYTES, MAX_INFERIOR_OPEN_FILES, ExecutionLimits, CgroupGuard, validate, apply_pre_exec_limits, apply_diagnostic_limits, limit_stopped_inferior, set_process_group, kill_process_group, create, attach (+ 1 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/error.rs</p>
+<p><strong>Incoming static references:</strong> src/clang_ast.rs, src/cli.rs, src/config.rs, src/gdb_mi.rs, src/models.rs, src/recorder.rs, src/sanitizer.rs, src/supervisor.rs, src/trace.rs, src/trace_parser/mod.rs, src/valgrind.rs</p>
+<p><strong>External libraries/interfaces:</strong> libc, serde, tokio, Linux prlimit, cgroup v2 (best effort)</p>
+<p><strong>Test references:</strong> tests/integration.rs, tests/v2.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-sanitizer-rs"><h3><code>src/sanitizer.rs</code></h3>
+<p><strong>engine/diagnostics</strong> · sanitizer runner · Runs a separate sanitizer diagnostic pass and captures its report.</p>
+<p><a href="../../src/sanitizer.rs">Open local source</a> · <a href="functions.html#functions-src-sanitizer-rs">18 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> RE, once_cell_lite, Lazy, fn, Target, tests, run_sanitized, parse_sanitizer_output, matches_crash, new</p>
+<p><strong>Outbound static references:</strong> src/error.rs, src/models.rs, src/resource_limits.rs, src/supervisor.rs</p>
+<p><strong>Incoming static references:</strong> src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> regex, tokio, ASan/UBSan executable, bounded stderr</p>
+<p><strong>Test references:</strong> src/sanitizer.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-storage-rs"><h3><code>src/storage.rs</code></h3>
+<p><strong>engine/storage</strong> · bounded JSONL journal · Writes capped append-only record journals and reads recoverable complete lines.</p>
+<p><a href="../../src/storage.rs">Open local source</a> · <a href="functions.html#functions-src-storage-rs">9 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> Journal, Record, tests, new, append, finalize, recover</p>
+<p><strong>Outbound static references:</strong> src/error.rs</p>
+<p><strong>Incoming static references:</strong> src/recorder.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde, serde_json, JSONL journal filesystem</p>
+<p><strong>Test references:</strong> src/storage.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-supervisor-rs"><h3><code>src/supervisor.rs</code></h3>
+<p><strong>engine/process</strong> · process supervision · Supervises execution and termination of child processes.</p>
+<p><a href="../../src/supervisor.rs">Open local source</a> · <a href="functions.html#functions-src-supervisor-rs">29 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> ENABLED, Cancellation, SignalTask, OwnedChild, ProcessOutput, tests, enable_subreaper, descendants, reap_descendants, cancelled, request_cancel, cancellation (+ 10 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/error.rs, src/models.rs, src/resource_limits.rs</p>
+<p><strong>Incoming static references:</strong> src/allocation_tracker.rs, src/clang_ast.rs, src/compiler.rs, src/gdb_mi.rs, src/sanitizer.rs, src/trace.rs, src/valgrind.rs</p>
+<p><strong>External libraries/interfaces:</strong> libc, tokio, OS process groups, signals, subprocess stdout/stderr</p>
+<p><strong>Test references:</strong> src/supervisor.rs, tests/v2.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-rs"><h3><code>src/trace.rs</code></h3>
+<p><strong>engine/orchestration</strong> · trace coordinator · Coordinates compilation, GDB capture, heap reconstruction, optional metadata, diagnostics, and export-ready trace assembly.</p>
+<p><a href="../../src/trace.rs">Open local source</a> · <a href="functions.html#functions-src-trace-rs">49 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> STDOUT_HEAD_CAP, MAX_FINISH_CHAIN, PER_STEP_TIMEOUT, FATAL_SIGNALS, RESOURCE_SIGNALS, BENIGN_SIGNALS, GdbPhaseResult, SignalClass, tests, trace_program, push_limit_once, run_gdb_phase</p>
+<p><strong>Outbound static references:</strong> src/allocation_tracker.rs, src/clang_ast.rs, src/compiler.rs, src/config.rs, src/dwarf.rs, src/error.rs, src/evidence/mod.rs, src/gdb_mi.rs, src/memory.rs, src/mi_parser.rs, src/models.rs, src/recorder.rs, src/resource_limits.rs, src/sanitizer.rs, src/supervisor.rs, src/valgrind.rs</p>
+<p><strong>Incoming static references:</strong> src/main.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde_json, tokio, GCC, GDB/MI2, addr2line, Valgrind (optional), sanitizer executable (conditional)</p>
+<p><strong>Test references:</strong> src/trace.rs, tests/clang_ast.rs, tests/evidence_fusion.rs, tests/heap_provenance.rs, tests/integration.rs, tests/runtime_memory_deep.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-consumer-rs"><h3><code>src/trace_parser/consumer.rs</code></h3>
+<p><strong>parser/consumer</strong> · bounded consumer views · Composes checkpoint summaries and scoped, paged consumer evidence.</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-consumer-rs">36 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> MAX_CONSUMER_PAGE, VariableScope, CheckpointSummary, SessionReportRefs, CallerEvidence, FrameActivation, AllocationEventEvidence, InstructionEvidence, HeapIntervalEvidence, GapEvidence, SourceLocationEvidence, checkpoint_summary (+ 22 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/models.rs, src/trace_parser/evidence.rs, src/trace_parser/semantic.rs, src/trace_parser/validation.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> tests/trace_parser_consumer_tp7.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-error-rs"><h3><code>src/trace_parser/error.rs</code></h3>
+<p><strong>parser/core</strong> · parser errors · Defines ingestion and query error types.</p>
+<p><a href="../../src/trace_parser/error.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-error-rs">5 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> TraceParseError, QueryError, Result, tests</p>
+<p><strong>Outbound static references:</strong> None indexed</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/indexes.rs, src/trace_parser/journal.rs, src/trace_parser/json.rs</p>
+<p><strong>External libraries/interfaces:</strong> thiserror</p>
+<p><strong>Test references:</strong> src/trace_parser/error.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-evidence-rs"><h3><code>src/trace_parser/evidence.rs</code></h3>
+<p><strong>parser/evidence</strong> · evidence references · Defines trace-local evidence locations and resolves borrowed references.</p>
+<p><a href="../../src/trace_parser/evidence.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-evidence-rs">9 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> EvidenceLocation, EvidenceRef, Evidence, location, evidence_ref, resolve_evidence</p>
+<p><strong>Outbound static references:</strong> src/models.rs</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/consumer.rs, src/trace_parser/semantic.rs, src/trace_parser/views.rs</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> No explicit match indexed</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-indexes-rs"><h3><code>src/trace_parser/indexes.rs</code></h3>
+<p><strong>parser/indexes</strong> · position indexes · Builds position-only indexes and supports indexed trace navigation.</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-indexes-rs">71 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> TraceIndexes, MetadataIndex, ExecutionsIndex, SourceKey, SourceIndex, Slots, AllocationIndex, OrderingFacts, Executions, Item, SourceEvents, Item (+ 26 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/models.rs, src/trace_parser/error.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> serde_json</p>
+<p><strong>Test references:</strong> src/trace_parser/indexes.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-journal-rs"><h3><code>src/trace_parser/journal.rs</code></h3>
+<p><strong>parser/ingestion</strong> · journal records · Parses bounded JSONL journal records without reconstructing a full trace.</p>
+<p><a href="../../src/trace_parser/journal.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-journal-rs">27 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> JournalRecord, JournalCounts, JournalTrace, ObservedAllocation, tests, kind, configuration</p>
+<p><strong>Outbound static references:</strong> src/config.rs, src/models.rs, src/trace_parser/mod.rs, src/trace_parser/error.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> serde, serde_json, typed JSONL record stream</p>
+<p><strong>Test references:</strong> src/trace_parser/journal.rs, tests/trace_parser.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-json-rs"><h3><code>src/trace_parser/json.rs</code></h3>
+<p><strong>parser/ingestion</strong> · JSON ingestion · Detects input format and decodes bounded JSON trace documents.</p>
+<p><a href="../../src/trace_parser/json.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-json-rs">14 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> SUPPORTED_SCHEMA_VERSION, SUPPORTED_SCHEMA_VERSION_LABEL, DetectedFormat, tests</p>
+<p><strong>Outbound static references:</strong> src/models.rs, src/trace_parser/error.rs</p>
+<p><strong>Incoming static references:</strong> None indexed</p>
+<p><strong>External libraries/interfaces:</strong> serde_json, serialized schema-v2 JSON</p>
+<p><strong>Test references:</strong> src/trace_parser/json.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-mod-rs"><h3><code>src/trace_parser/mod.rs</code></h3>
+<p><strong>parser/core</strong> · parser root · Loads a canonical immutable trace, exposes bounded queries, and coordinates parser modules.</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-mod-rs">88 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> consumer, error, evidence, indexes, journal, semantic, validation, views, json, QueryResult, TraceFormatSelection, TraceFormat (+ 64 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/config.rs, src/models.rs, src/resource_limits.rs</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/journal.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde_json</p>
+<p><strong>Test references:</strong> src/trace_parser/mod.rs, tests/clang_ast.rs, tests/dwarf_registry.rs, tests/evidence_fusion.rs, tests/heap_provenance.rs, tests/runtime_memory.rs (+ 12 more)</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-semantic-rs"><h3><code>src/trace_parser/semantic.rs</code></h3>
+<p><strong>parser/semantic</strong> · validated evidence views · Exposes qualified borrowed evidence after explicit deep validation.</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-semantic-rs">38 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> EvidenceConfidence, ValidatedSemanticView, VariableEvidence, Relationship, MemoryEvidenceView, PointerEvidence, HeapEvidence, SourceExpressionEvidence, SourceCallSite, CheckpointEvidence, ExecutionEvidence, DiagnosticEvidence (+ 21 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/memory.rs, src/models.rs, src/trace_parser/evidence.rs, src/trace_parser/validation.rs, src/trace_parser/views.rs</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/consumer.rs</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> tests/trace_parser_semantic_tp6.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-validation-rs"><h3><code>src/trace_parser/validation.rs</code></h3>
+<p><strong>parser/validation</strong> · deep validation · Audits imported trace relationships and reports structural/partial findings.</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-validation-rs">48 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> ValidationSeverity, ValidationLocation, ValidationFinding, ValidationReport, Builder, ReallocLink, tests, label, findings, of_severity, is_structurally_sound, corruption_count (+ 2 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/dwarf.rs, src/memory.rs, src/models.rs, src/processor.rs, src/trace_parser/views.rs</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/consumer.rs, src/trace_parser/semantic.rs</p>
+<p><strong>External libraries/interfaces:</strong> serde_json</p>
+<p><strong>Test references:</strong> src/trace_parser/validation.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-trace-parser-views-rs"><h3><code>src/trace_parser/views.rs</code></h3>
+<p><strong>parser/views</strong> · borrowed trace views · Exposes raw and semantic-input views over the canonical trace.</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · <a href="functions.html#functions-src-trace-parser-views-rs">52 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> HeapProcessScope, RawTraceView, Target, SemanticInputView, CheckpointContext, store, source_metadata, source_declaration, source_expression, store, source_metadata, raw (+ 38 more in function index)</p>
+<p><strong>Outbound static references:</strong> src/clang_ast.rs, src/dwarf.rs, src/models.rs, src/trace_parser/evidence.rs</p>
+<p><strong>Incoming static references:</strong> src/trace_parser/semantic.rs, src/trace_parser/validation.rs</p>
+<p><strong>External libraries/interfaces:</strong> None explicitly indexed</p>
+<p><strong>Test references:</strong> tests/trace_parser_consumer_tp7.rs, tests/trace_parser_semantic_tp6.rs, tests/trace_parser_views.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section>
+<section class="inventory-entry" id="file-src-valgrind-rs"><h3><code>src/valgrind.rs</code></h3>
+<p><strong>engine/diagnostics</strong> · Valgrind diagnostics · Runs independent Valgrind analysis and parses its XML report.</p>
+<p><a href="../../src/valgrind.rs">Open local source</a> · <a href="functions.html#functions-src-valgrind-rs">22 indexed symbols</a></p>
+<details><summary>Symbols, dependencies and tests</summary>
+<p><strong>Major symbols:</strong> ValgrindRun, tests, UAF_XML, LEAK_XML, run_valgrind, recover_errors, parse_valgrind_xml, correlate_with_allocations</p>
+<p><strong>Outbound static references:</strong> src/error.rs, src/models.rs, src/resource_limits.rs, src/supervisor.rs</p>
+<p><strong>Incoming static references:</strong> src/trace.rs</p>
+<p><strong>External libraries/interfaces:</strong> roxmltree, serde_json, tokio, Valgrind Memcheck subprocess, native XML report</p>
+<p><strong>Test references:</strong> src/valgrind.rs, tests/release_closure_8dr.rs</p>
+<p class="inventory-caveat">These dependencies and test matches are lexical, not verified invocations or coverage.</p></details></section></div>
+<h2 id="how-far-to-trust-this-list">How far to trust this list <a class="anchor" href="#how-far-to-trust-this-list" aria-label="Link to How far to trust this list">#</a></h2>
+<div class="table-scroll"><table><thead><tr><th scope="col">Question</th><th scope="col">Answer</th></tr></thead><tbody><tr><td>How is the list checked?</td><td>Against repository <strong>file discovery</strong>, not an old design document.</td></tr><tr><td>Are definitions and module references verified calls?</td><td>No. They&#x27;re labeled as <em>automatically discovered</em> in the JSON.</td></tr><tr><td>Where are verified <strong>execution edges</strong>?</td><td>Maintained separately in the <a href="call-flow.html">call-flow dataset</a>.</td></tr><tr><td>Do adjacent file names form a call chain?</td><td>No. For how files cooperate, use the walkthroughs.</td></tr><tr><td>Are there fuller explanations?</td><td>Yes. Follow the DOC-2 engine handbook and DOC-3 parser handbook for the existing implementation walkthroughs in this same website.</td></tr></tbody></table></div></article><nav class="pager" aria-label="Adjacent pages"><a href="repository.html">← Repository map</a><a href="functions.html">Function index →</a></nav><footer class="footer">Visual C Stage 1 · Offline documentation · <a href="handoff.html">Evidence contract</a> · <a href="../stage1-final-audit.md">Freeze audit (Markdown)</a></footer></main><aside class="right-toc" aria-label="On this page"><p>On this page</p><nav><a href="#key-terms" class="toc-2">Key terms</a><a href="#what-s-listed" class="toc-2">What&#x27;s listed</a><a href="#browsing-the-catalog" class="toc-2">Browsing the catalog</a><a href="#stage-1-file-catalog" class="toc-3">Stage 1 file catalog</a><a href="#how-far-to-trust-this-list" class="toc-2">How far to trust this list</a></nav></aside></div>
+<div class="search-overlay" hidden><div class="search-dialog" role="dialog" aria-modal="true" aria-label="Search documentation"><label for="site-search">Search Stage 1 reference <kbd>Esc</kbd></label><input type="search" id="site-search" placeholder="Try “realloc”, “EvidenceRef”, “GDB” …" autocomplete="off"><div class="search-results" role="status" aria-live="polite"></div></div></div></body></html>

@@ -138,6 +138,13 @@ pub enum TraceParseError {
 /// such records were recorded".
 #[derive(Debug, Error, Clone, PartialEq, Eq)]
 pub enum QueryError {
+    /// A consumer page would exceed its explicit per-call result bound.
+    #[error("{collection} page requests {requested} entries (maximum {max})")]
+    LimitExceeded {
+        collection: &'static str,
+        requested: usize,
+        max: usize,
+    },
     /// An evidence reference was created by another loaded trace. Identical
     /// positions in two independent stores are not interchangeable.
     #[error("evidence reference belongs to a different loaded trace")]

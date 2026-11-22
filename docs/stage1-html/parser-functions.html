@@ -1,0 +1,475 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="color-scheme" content="light dark"><title>Parser function reference — Visual C Stage 1</title><meta name="description" content="Offline Visual C Stage 1 systems documentation: Parser function reference"><link rel="stylesheet" href="assets/site.css"><script src="assets/search-data.js" defer></script><script src="assets/site.js" defer></script></head>
+<body><a class="skip" href="#main">Skip to content</a><header class="topbar"><button class="nav-toggle" type="button" aria-label="Open navigation" aria-controls="sidebar" aria-expanded="false">☰</button><a class="brand" href="index.html" aria-label="Visual C documentation home"><span class="brandmark">V<span>C</span></span> Visual C <small>Stage 1 · V2.2</small></a><div class="top-actions"><button class="search-toggle" type="button" aria-label="Search documentation">⌕ <span>Search <kbd>/</kbd></span></button><button class="theme-toggle" type="button" aria-label="Change color theme" title="Switch light or dark mode">◐</button></div></header>
+<div class="shell"><aside class="sidebar" id="sidebar" aria-label="Documentation navigation"><nav><div class="nav-group"><div class="nav-label">Getting Started</div><a href="index.html">Documentation home</a><a href="reading.html">How to read this reference</a><a href="architecture.html">What Stage 1 does</a></div><div class="nav-group"><div class="nav-label">Architecture</div><a href="pipeline.html">Complete pipeline</a><a href="engine-architecture.html">Trace Engine architecture</a><a href="parser-architecture.html">Trace Parser architecture</a><a href="identity-contracts.html">Evidence and identity contracts</a><a href="resource-boundaries.html">Process and resource boundaries</a></div><div class="nav-group"><div class="nav-label">Developer Internals</div><a href="repository.html">Repository map</a><a href="files.html">Source file index</a><a href="functions.html">Function index</a><a href="dependencies.html">Module dependency explorer</a><a href="call-flow.html">Interactive call-flow explorer</a></div><div class="nav-group"><div class="nav-label">Trace Engine</div><a href="engine-build.html">Compilation &amp; diagnostics</a><a href="engine-debugger.html">GDB/MI and checkpoints</a><a href="engine-memory.html">Frames, variables &amp; memory</a><a href="engine-metadata.html">DWARF, Clang &amp; fusion</a><a href="engine-heap.html">Allocation lifetimes</a><a href="engine-diagnostics.html">Valgrind &amp; sanitizers</a><a href="engine-process.html">Processes &amp; event transport</a><a href="engine-limits.html">Budgets, gaps &amp; export</a></div><div class="nav-group"><div class="nav-label">Trace Engine Internals</div><a href="engine-entry-deep.html">Entry, configuration &amp; errors</a><a href="engine-compiler-deep.html">Compiler &amp; diagnostics</a><a href="engine-gdb-deep.html">GDB controller &amp; stop loop</a><a href="engine-mi-deep.html">MI2 parser &amp; transport</a><a href="engine-recorder-deep.html">Recorder &amp; journals</a><a href="engine-stack-deep.html">Frames, variables &amp; memory</a><a href="engine-dwarf-deep.html">DWARF extraction</a><a href="engine-ast-deep.html">Clang AST provider</a><a href="engine-allocator-deep.html">C allocator runtime</a><a href="engine-heap-deep.html">Heap reconstruction</a><a href="engine-diagnostics-deep.html">Valgrind &amp; sanitizer internals</a><a href="engine-fusion-deep.html">Evidence fusion internals</a><a href="engine-supervision-deep.html">Supervision &amp; resource limits</a><a href="engine-export-deep.html">Trace model, journal &amp; export</a><a href="engine-walkthroughs.html">Subsystem walkthroughs</a><a href="engine-handbook.html">Source file handbook</a><a href="engine-algorithms.html">Algorithms &amp; invariants</a><a href="engine-functions.html">Trace Engine function reference</a></div><div class="nav-group"><div class="nav-label">Data model</div><a href="model.html">Trace data model</a></div><div class="nav-group"><div class="nav-label">Trace Parser</div><a href="parser-ingestion.html">TP-1 · Load &amp; compatibility</a><a href="parser-indexes.html">TP-2 · Position indexes</a><a href="parser-views.html">TP-3 · Borrowed views</a><a href="parser-validation.html">TP-5 · Deep validation</a><a href="parser-semantic.html">TP-6 · Evidence confidence</a><a href="parser-consumer.html">TP-7 · Bounded queries</a></div><div class="nav-group"><div class="nav-label">Trace Parser Internals</div><a href="parser-ingestion-deep.html">JSON and JSONL ingestion</a><a href="parser-ownership-deep.html">Ownership, views &amp; evidence references</a><a href="parser-indexes-deep.html">Compact position indexes</a><a href="parser-validation-deep.html">Deep validation architecture</a><a href="parser-realloc-deep.html">Realloc verification and TP8-F01</a><a href="parser-coverage-deep.html">Pointer provenance &amp; process coverage</a><a href="parser-semantic-deep.html">TP-6 validated semantic evidence</a><a href="parser-consumer-deep.html">TP-7 consumer composition</a><a href="parser-data-structures.html">Parser data structures</a><a href="parser-algorithms.html">Parser algorithms &amp; invariants</a><a href="parser-walkthroughs.html">Parser walkthroughs</a><a href="parser-handbook.html">Parser source file handbook</a><a href="parser-functions.html" aria-current="page">Parser function reference</a></div><div class="nav-group"><div class="nav-label">Execution Walkthroughs</div><a href="walkthroughs.html">Execution walkthroughs</a></div><div class="nav-group"><div class="nav-label">Practical usage</div><a href="usage.html">Worked API walkthrough</a></div><div class="nav-group"><div class="nav-label">Reference</div><a href="api.html">Public API reference</a><a href="stage1-api.html">Stage 1 public API</a><a href="schema.html">Schema &amp; identity reference</a><a href="handoff.html">Stage 2 handoff &amp; limits</a><a href="glossary.html">Terminology and glossary</a><a href="limitations.html">Known limitations</a></div><div class="nav-group"><div class="nav-label">Execution Walkthroughs</div><p class="nav-planned">Planned for DOC-4</p></div></nav><div class="side-foot">Offline reference · schema v2<br>Engine + Parser, not Stage 2</div></aside><main id="main" tabindex="-1"><nav class="breadcrumbs" aria-label="Breadcrumbs"><a href="index.html">Documentation</a><span aria-hidden="true">›</span><span>Trace Parser Internals</span><span aria-hidden="true">›</span><span aria-current="page">Parser function reference</span></nav><article class="document"><h1 id="59-trace-parser-function-reference">59 · Trace Parser function reference <a class="anchor" href="#59-trace-parser-function-reference" aria-label="Link to 59 · Trace Parser function reference">#</a></h1>
+<aside class="admonition note" role="note"><p><strong>In one sentence:</strong> This catalog helps you find reviewed parser functions and the source lines that implement them.</p></aside>
+<h2 id="key-terms">Key terms <a class="anchor" href="#key-terms" aria-label="Link to Key terms">#</a></h2>
+<div class="table-scroll"><table><thead><tr><th scope="col">Term</th><th scope="col">Plain meaning</th></tr></thead><tbody><tr><td><strong>Public query</strong></td><td>A function other code may call to read existing trace evidence.</td></tr><tr><td><strong>Reviewed relationship</strong></td><td>A call or data link checked against source and labeled by what it actually means.</td></tr></tbody></table></div>
+<aside class="admonition note" role="note"><p><strong>Example.</strong> Find <code>checkpoint_summary</code>, then follow its source link. Its page queries keep the original evidence references and enforce the 128-record page limit.</p></aside>
+<p>&gt;</p>
+<aside class="admonition note" role="note"><p><strong>What not to assume:</strong> A function list is not a run log. Look at the trace to see which observations actually exist.</p></aside>
+<h2 id="the-big-picture">The big picture <a class="anchor" href="#the-big-picture" aria-label="Link to The big picture">#</a></h2>
+<p>This page lists parser functions with a reviewed entry in the DOC-3 call-flow graph. Each entry shows the source location, actual signature, purpose, inputs/outputs, qualification and classified incoming/outgoing relationships. It is a navigation aid, not a claim that every parser helper has an independent walkthrough.</p>
+<h2 id="scope">Scope <a class="anchor" href="#scope" aria-label="Link to Scope">#</a></h2>
+<p>A reviewed entry is not a runtime trace claim. Direct edges were checked at call expressions; borrowed-data, index/reference and validation dependencies retain their own labels. Functions absent here can be found in the complete <a href="functions.html">function index</a> or the <a href="parser-handbook.html">source handbook</a>. DOC-3 prioritizes ingestion, ownership, indexing, validation, TP-6 and TP-7; less central helpers remain source-located for later expansion.</p>
+<h3 id="review-status">Review status <a class="anchor" href="#review-status" aria-label="Link to Review status">#</a></h3>
+<p>The inventory marks graph-matched symbols as <code>explained_and_graph_linked</code>. Other parser symbols remain <code>file_chapter_indexed_only</code>. This distinction prevents a large but unsupported function encyclopedia.</p>
+<h3 id="parser-graph-entries">Parser graph entries <a class="anchor" href="#parser-graph-entries" aria-label="Link to Parser graph entries">#</a></h3>
+<div class="inventory" id="parser-functions">
+<section class="inventory-file"><h3><a href="parser-consumer-deep.html">TP-7 consumer composition</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-20-function-page"><summary><code>page</code> <small>function · src/trace_parser/consumer.rs:20</small></summary>
+<p><code>fn page(range: Range&lt;usize&gt;, len: usize, collection: &amp;&#x27;static str) -&gt; QueryResult&lt;Range&lt;usize&gt;&gt;</code></p>
+<p>Validate half-open bounds and the 128-item cap. Inputs/outputs: range + len -&gt; valid range. Qualification: no silent truncation.</p>
+<p><strong>Incoming reviewed relationships:</strong> consumer.vars [direct, src/trace_parser/consumer.rs:244]; consumer.instructions [direct, src/trace_parser/consumer.rs:324]; consumer.heap_interval [direct, src/trace_parser/consumer.rs:355]; consumer.gaps [direct, src/trace_parser/consumer.rs:406]; consumer.source [direct, src/trace_parser/consumer.rs:457]; consumer.frame [direct, src/trace_parser/consumer.rs:503]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:20 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-58-function-checkpoint-summary"><summary><code>checkpoint_summary</code> <small>function · src/trace_parser/consumer.rs:58</small></summary>
+<p><code>pub fn checkpoint_summary(&amp;self, index: usize) -&gt; QueryResult&lt;CheckpointSummary&lt;&#x27;_, &#x27;a&gt;&gt;</code></p>
+<p>Compose a retained checkpoint with its exact evidence reference. Inputs/outputs: index -&gt; summary. Qualification: never infers a stop.</p>
+<p><strong>Incoming reviewed relationships:</strong> store.validated [conceptual, src/trace_parser/consumer.rs:57]</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.variables [conceptual, src/trace_parser/consumer.rs:239]; semantic.variable [conceptual, src/trace_parser/consumer.rs:234]; sem.checkpoint [direct, src/trace_parser/consumer.rs:59]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:58 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-71-function-valgrind-errors-page"><summary><code>valgrind_errors_page</code> <small>function · src/trace_parser/consumer.rs:71</small></summary>
+<p><code>pub fn valgrind_errors_page( &amp;self, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl ExactSizeIterator&lt;Item = QueryResult&lt;ValgrindEvidence&lt;&#x27;a&gt;&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page independent Valgrind errors. Inputs/outputs: range -&gt; Valgrind evidence. Qualification: not a primary-run identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> sem.valgrind [direct, src/trace_parser/consumer.rs:82]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:71 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-88-function-heap-events-page"><summary><code>heap_events_page</code> <small>function · src/trace_parser/consumer.rs:88</small></summary>
+<p><code>pub fn heap_events_page( &amp;self, allocation: &amp;EvidenceRef, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl ExactSizeIterator&lt;Item = QueryResult&lt;AllocationEventEvidence&lt;&#x27;a&gt;&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page events for a trace-scoped allocation reference. Inputs/outputs: EvidenceRef + range -&gt; events. Qualification: foreign reference fails first.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> sem.heap_ref [direct, src/trace_parser/consumer.rs:94]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:88 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-239-function-variables-page"><summary><code>variables_page</code> <small>function · src/trace_parser/consumer.rs:239</small></summary>
+<p><code>pub fn variables_page( &amp;self, scope: VariableScope, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl ExactSizeIterator&lt;Item = QueryResult&lt;VariableEvidence&lt;&#x27;a&gt;&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page bounded variable evidence at one checkpoint. Inputs/outputs: scope + range -&gt; evidence. Qualification: out-of-range fails.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.page [direct, src/trace_parser/consumer.rs:244]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:239 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-251-function-frame-activation"><summary><code>frame_activation</code> <small>function · src/trace_parser/consumer.rs:251</small></summary>
+<p><code>pub fn frame_activation(&amp;self, id: u64) -&gt; QueryResult&lt;Option&lt;FrameActivation&lt;&#x27;v, &#x27;a&gt;&gt;&gt;</code></p>
+<p>Resolve a unique activation at this checkpoint. Inputs/outputs: activation ID -&gt; frame evidence. Qualification: not a cross-stop lifetime.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.page [direct, src/trace_parser/consumer.rs:503]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:251 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-319-function-instruction-events-page"><summary><code>instruction_events_page</code> <small>function · src/trace_parser/consumer.rs:319</small></summary>
+<p><code>pub fn instruction_events_page( &amp;self, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl ExactSizeIterator&lt;Item = QueryResult&lt;InstructionEvidence&lt;&#x27;a&gt;&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page events explicitly tagged to this checkpoint. Inputs/outputs: range -&gt; instruction evidence. Qualification: tag confidence definite.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.page [direct, src/trace_parser/consumer.rs:324]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:319 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-349-function-heap-interval-page"><summary><code>heap_interval_page</code> <small>function · src/trace_parser/consumer.rs:349</small></summary>
+<p><code>pub fn heap_interval_page( &amp;self, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl ExactSizeIterator&lt;Item = QueryResult&lt;HeapIntervalEvidence&lt;&#x27;a&gt;&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page heap events between retained snapshot counters. Inputs/outputs: range -&gt; heap evidence. Qualification: candidate interval.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.page [direct, src/trace_parser/consumer.rs:355]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:349 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-379-function-gaps-in-attempted-window"><summary><code>gaps_in_attempted_window</code> <small>function · src/trace_parser/consumer.rs:379</small></summary>
+<p><code>pub fn gaps_in_attempted_window( &amp;self, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl ExactSizeIterator&lt;Item = QueryResult&lt;GapEvidence&lt;&#x27;a&gt;&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page gaps in the attempted-position window. Inputs/outputs: range -&gt; gap evidence. Qualification: position window, not causality.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.page [direct, src/trace_parser/consumer.rs:406]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:379 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-consumer-rs-422-function-source-expressions-page"><summary><code>source_expressions_page</code> <small>function · src/trace_parser/consumer.rs:422</small></summary>
+<p><code>pub fn source_expressions_page( &amp;self, range: Range&lt;usize&gt;, ) -&gt; QueryResult&lt;impl Iterator&lt;Item = SourceLocationEvidence&lt;&#x27;a&gt;&gt; + &#x27;_&gt;</code></p>
+<p>Page AST expressions matching the exact source span. Inputs/outputs: range -&gt; source evidence. Qualification: missing AST unavailable.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> consumer.page [direct, src/trace_parser/consumer.rs:457]</p>
+<p><a href="../../src/trace_parser/consumer.rs">Open local source</a> · src/trace_parser/consumer.rs:422 · <a href="parser-consumer-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-coverage-deep.html">Pointer provenance &amp; process coverage</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-1306-function-validate-pointer-reference"><summary><code>validate_pointer_reference</code> <small>function · src/trace_parser/validation.rs:1306</small></summary>
+<p><code>fn validate_pointer_reference( info: &amp;VariableInfo, identities: &amp;HashMap&lt;&amp;str, Vec&lt;&amp;VariableInfo&gt;&gt;, location: ValidationLocation, builder: &amp;mut Builder, )</code></p>
+<p>Validate pointer target identity, status and extent claims. Inputs/outputs: variable target -&gt; findings. Qualification: address is candidate, not origin.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.snapshots [direct, src/trace_parser/validation.rs:1219]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:1306 · <a href="parser-coverage-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-1839-function-validate-heap-process-coverage"><summary><code>validate_heap_process_coverage</code> <small>function · src/trace_parser/validation.rs:1839</small></summary>
+<p><code>fn validate_heap_process_coverage( trace: &amp;DebugSessionTrace, history: &amp;crate::models::HeapHistoryCoverage, builder: &amp;mut Builder, )</code></p>
+<p>Verify observed PIDs and reject unsupported descendant claims. Inputs/outputs: history -&gt; findings. Qualification: no silent-child census.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.heap [direct, src/trace_parser/validation.rs:1734]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:1839 · <a href="parser-coverage-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-28-function-from-history"><summary><code>from_history</code> <small>function · src/trace_parser/views.rs:28</small></summary>
+<p><code>pub(crate) fn from_history(history: Option&lt;&amp;&#x27;a HeapHistoryCoverage&gt;) -&gt; Self</code></p>
+<p>Classify recorded heap process scope without inferring descendants. Inputs/outputs: optional history -&gt; typed scope. Qualification: Unknown/verified/unsupported.</p>
+<p><strong>Incoming reviewed relationships:</strong> sem.process [direct, src/trace_parser/semantic.rs:380]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:28 · <a href="parser-coverage-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-indexes-deep.html">Compact position indexes</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-94-function-build"><summary><code>build</code> <small>function · src/trace_parser/indexes.rs:94</small></summary>
+<p><code>pub fn build(trace: &amp;DebugSessionTrace) -&gt; Self</code></p>
+<p>Build all position indexes from canonical vectors. Inputs/outputs: trace -&gt; TraceIndexes. Qualification: no canonical clone.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.assemble [direct, src/trace_parser/mod.rs:224]</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.exec [direct, src/trace_parser/indexes.rs:99]; idx.source [direct, src/trace_parser/indexes.rs:104]; idx.alloc [direct, src/trace_parser/indexes.rs:109]; idx.meta [direct, src/trace_parser/indexes.rs:114]; idx.order [direct, src/trace_parser/indexes.rs:115]</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:94 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-123-function-estimated-bytes"><summary><code>estimated_bytes</code> <small>function · src/trace_parser/indexes.rs:123</small></summary>
+<p><code>pub fn estimated_bytes(&amp;self) -&gt; usize</code></p>
+<p>Estimate compact index payload bytes. Inputs/outputs: indexes -&gt; approximate bytes. Qualification: not RSS or trace RAM.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:123 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-178-function-build"><summary><code>build</code> <small>function · src/trace_parser/indexes.rs:178</small></summary>
+<p><code>fn build(trace: &amp;DebugSessionTrace) -&gt; Self</code></p>
+<p>Index static type/declaration/expression identities. Inputs/outputs: optional registries -&gt; position maps. Qualification: candidates remain candidates.</p>
+<p><strong>Incoming reviewed relationships:</strong> idx.build [direct, src/trace_parser/indexes.rs:114]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:178 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-277-function-build"><summary><code>build</code> <small>function · src/trace_parser/indexes.rs:277</small></summary>
+<p><code>fn build(events: &amp;[InstructionEvent], disassembly_len: usize) -&gt; Self</code></p>
+<p>Build CSR event positions by instruction ID. Inputs/outputs: events -&gt; CSR arrays. Qualification: repeats preserved.</p>
+<p><strong>Incoming reviewed relationships:</strong> idx.build [direct, src/trace_parser/indexes.rs:99]; store.exec_pos [data, src/trace_parser/mod.rs:750]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:277 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-400-function-build"><summary><code>build</code> <small>function · src/trace_parser/indexes.rs:400</small></summary>
+<p><code>fn build(events: &amp;[InstructionEvent], disassembly_len: usize) -&gt; Self</code></p>
+<p>Intern exact source paths and build static/dynamic source maps. Inputs/outputs: events -&gt; source keys/CSR. Qualification: basename never merges.</p>
+<p><strong>Incoming reviewed relationships:</strong> idx.build [direct, src/trace_parser/indexes.rs:104]; store.source_events [data, src/trace_parser/mod.rs:705]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:400 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-627-function-build"><summary><code>build</code> <small>function · src/trace_parser/indexes.rs:627</small></summary>
+<p><code>fn build( heap_events: &amp;[HeapEvent], heap_state: &amp;[crate::models::HeapBlockInfo], lifetimes: &amp;[crate::models::AllocationLifetime], ) -&gt; Self</code></p>
+<p>Map allocation IDs to event/state/lifetime positions. Inputs/outputs: heap arrays -&gt; ID maps. Qualification: ID, never address.</p>
+<p><strong>Incoming reviewed relationships:</strong> idx.build [direct, src/trace_parser/indexes.rs:109]; store.heap_alloc [data, src/trace_parser/mod.rs:792]; sem.heap [data, src/trace_parser/semantic.rs:227]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:627 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-indexes-rs-719-function-build"><summary><code>build</code> <small>function · src/trace_parser/indexes.rs:719</small></summary>
+<p><code>fn build( snapshots: &amp;[crate::models::ExecutionSnapshot], events: &amp;[InstructionEvent], gaps: &amp;[crate::models::TraceGap], ) -&gt; Self</code></p>
+<p>Record orderings required by binary-search queries. Inputs/outputs: trace -&gt; ordering booleans. Qualification: broken order disables guesses.</p>
+<p><strong>Incoming reviewed relationships:</strong> idx.build [direct, src/trace_parser/indexes.rs:115]; store.snapshot_stop [data, src/trace_parser/mod.rs:558]; store.events_checkpoint [data, src/trace_parser/mod.rs:601]; store.heap_stop [data, src/trace_parser/mod.rs:639]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/indexes.rs">Open local source</a> · src/trace_parser/indexes.rs:719 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-554-function-snapshot-at-stop"><summary><code>snapshot_at_stop</code> <small>function · src/trace_parser/mod.rs:554</small></summary>
+<p><code>pub fn snapshot_at_stop(&amp;self, stop_id: u64) -&gt; QueryResult&lt;Option&lt;&amp;ExecutionSnapshot&gt;&gt;</code></p>
+<p>Find a retained snapshot by recorded GDB stop. Inputs/outputs: stop ID -&gt; snapshot. Qualification: requires verified ordering.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.order [data, src/trace_parser/mod.rs:558]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:554 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-596-function-events-at-checkpoint"><summary><code>events_at_checkpoint</code> <small>function · src/trace_parser/mod.rs:596</small></summary>
+<p><code>pub fn events_at_checkpoint(&amp;self, snapshot_index: usize) -&gt; QueryResult&lt;&amp;[InstructionEvent]&gt;</code></p>
+<p>Return contiguous events tagged to a checkpoint. Inputs/outputs: snapshot index -&gt; events. Qualification: ordering checked first.</p>
+<p><strong>Incoming reviewed relationships:</strong> ctx.events [direct, src/trace_parser/views.rs:279]</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.order [data, src/trace_parser/mod.rs:601]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:596 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-634-function-heap-events-at-stop"><summary><code>heap_events_at_stop</code> <small>function · src/trace_parser/mod.rs:634</small></summary>
+<p><code>pub fn heap_events_at_stop(&amp;self, stop_id: u64) -&gt; QueryResult&lt;&amp;[HeapEvent]&gt;</code></p>
+<p>Return heap events bracketed by retained snapshots. Inputs/outputs: stop ID -&gt; event slice. Qualification: interval not exact causality.</p>
+<p><strong>Incoming reviewed relationships:</strong> ctx.heap [direct, src/trace_parser/views.rs:287]</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.order [data, src/trace_parser/mod.rs:639]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:634 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-703-function-executed-event-positions-for-source"><summary><code>executed_event_positions_for_source</code> <small>function · src/trace_parser/mod.rs:703</small></summary>
+<p><code>pub fn executed_event_positions_for_source(&amp;self, file: &amp;str, line: u32) -&gt; &amp;[u32]</code></p>
+<p>Return dynamic events associated with exact source location. Inputs/outputs: file + line -&gt; positions. Qualification: empty is a valid result.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.source [data, src/trace_parser/mod.rs:705]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:703 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-744-function-instruction-execution-positions"><summary><code>instruction_execution_positions</code> <small>function · src/trace_parser/mod.rs:744</small></summary>
+<p><code>pub fn instruction_execution_positions(&amp;self, instruction_id: u64) -&gt; QueryResult&lt;&amp;[u32]&gt;</code></p>
+<p>Return all recorded event positions for one instruction. Inputs/outputs: instruction ID -&gt; positions. Qualification: invalid ID is explicit.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.exec [data, src/trace_parser/mod.rs:750]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:744 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-797-function-heap-events-for-allocation"><summary><code>heap_events_for_allocation</code> <small>function · src/trace_parser/mod.rs:797</small></summary>
+<p><code>pub fn heap_events_for_allocation(&amp;self, allocation_id: u64) -&gt; AllocEvents&lt;&#x27;_&gt;</code></p>
+<p>Iterate recorded events for one allocation identity. Inputs/outputs: allocation ID -&gt; borrowed events. Qualification: address reuse not merged.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.alloc [data, src/trace_parser/mod.rs:792]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:797 · <a href="parser-indexes-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-ingestion-deep.html">JSON and JSONL ingestion</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-journal-rs-142-function-parse-bytes"><summary><code>parse_bytes</code> <small>function · src/trace_parser/journal.rs:142</small></summary>
+<p><code>pub(crate) fn parse_bytes(bytes: &amp;[u8], options: &amp;TraceLoadOptions) -&gt; Result&lt;JournalTrace&gt;</code></p>
+<p>Parse an in-memory JSONL journal. Inputs/outputs: bytes -&gt; ordered JournalTrace. Qualification: never a full trace.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.journal_reader [direct, src/trace_parser/journal.rs:147]</p>
+<p><a href="../../src/trace_parser/journal.rs">Open local source</a> · src/trace_parser/journal.rs:142 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-journal-rs-156-function-parse-reader"><summary><code>parse_reader</code> <small>function · src/trace_parser/journal.rs:156</small></summary>
+<p><code>pub(crate) fn parse_reader( mut reader: impl BufRead, options: &amp;TraceLoadOptions, ) -&gt; Result&lt;JournalTrace&gt;</code></p>
+<p>Parse a bounded line-oriented journal. Inputs/outputs: reader -&gt; JournalTrace. Qualification: torn tail retained as flag.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.journal_bytes [direct, src/trace_parser/journal.rs:147]</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.decode_line [direct, src/trace_parser/journal.rs:199]; p.push_record [direct, src/trace_parser/journal.rs:193]</p>
+<p><a href="../../src/trace_parser/journal.rs">Open local source</a> · src/trace_parser/journal.rs:156 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-journal-rs-234-function-push-record"><summary><code>push_record</code> <small>function · src/trace_parser/journal.rs:234</small></summary>
+<p><code>fn push_record( record: JournalRecord, records: &amp;mut Vec&lt;JournalRecord&gt;, counts: &amp;mut JournalCounts, line: usize, limit: usize, saw_configuration: &amp;mut bool, ) -&gt; Result&lt;()&gt;</code></p>
+<p>Enforce record cap and configuration-first order. Inputs/outputs: typed record -&gt; ordered journal. Qualification: record count is bounded.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.journal_reader [direct, src/trace_parser/journal.rs:193]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/journal.rs">Open local source</a> · src/trace_parser/journal.rs:234 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-journal-rs-270-function-decode-line"><summary><code>decode_line</code> <small>function · src/trace_parser/journal.rs:270</small></summary>
+<p><code>fn decode_line( buf: &amp;[u8], line: usize, options: &amp;TraceLoadOptions, ) -&gt; Result&lt;Option&lt;JournalRecord&gt;&gt;</code></p>
+<p>Decode one complete JSONL record envelope and payload. Inputs/outputs: line bytes -&gt; typed record. Qualification: malformed line rejects, not guesses.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.journal_reader [direct, src/trace_parser/journal.rs:199]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/journal.rs">Open local source</a> · src/trace_parser/journal.rs:270 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-json-rs-20-function-decode-document"><summary><code>decode_document</code> <small>function · src/trace_parser/json.rs:20</small></summary>
+<p><code>pub(crate) fn decode_document(text: &amp;str) -&gt; Result&lt;DebugSessionTrace&gt;</code></p>
+<p>Deserialize a complete JSON document and gate schema. Inputs/outputs: JSON text -&gt; trace. Qualification: schema 2 required.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.load [direct, src/trace_parser/mod.rs:976]</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.schema [direct, src/trace_parser/json.rs:27]</p>
+<p><a href="../../src/trace_parser/json.rs">Open local source</a> · src/trace_parser/json.rs:20 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-json-rs-38-function-validate-schema-version"><summary><code>validate_schema_version</code> <small>function · src/trace_parser/json.rs:38</small></summary>
+<p><code>pub(crate) fn validate_schema_version(trace: &amp;DebugSessionTrace) -&gt; Result&lt;()&gt;</code></p>
+<p>Accept only the supported trace schema version. Inputs/outputs: model -&gt; schema result. Qualification: valid model can still be unsupported.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.decode [direct, src/trace_parser/json.rs:27]; p.from_trace [direct, src/trace_parser/mod.rs:343]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/json.rs">Open local source</a> · src/trace_parser/json.rs:38 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-222-function-assemble"><summary><code>assemble</code> <small>function · src/trace_parser/mod.rs:222</small></summary>
+<p><code>fn assemble(trace: DebugSessionTrace, source: TraceSourceMetadata) -&gt; Self</code></p>
+<p>Own canonical trace and shared indexes. Inputs/outputs: trace -&gt; Arc store. Qualification: builds indexes eagerly.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.open [direct, src/trace_parser/mod.rs:257]; p.from_trace [direct, src/trace_parser/mod.rs:351]</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.build [direct, src/trace_parser/mod.rs:224]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:222 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-240-function-open"><summary><code>open</code> <small>function · src/trace_parser/mod.rs:240</small></summary>
+<p><code>pub fn open(path: impl AsRef&lt;Path&gt;, options: TraceLoadOptions) -&gt; Result&lt;Self&gt;</code></p>
+<p>Open a bounded schema-2 trace file. Inputs/outputs: path + options -&gt; TraceStore. Qualification: journal reconstruction unsupported.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.read [direct, src/trace_parser/mod.rs:248]; p.assemble [direct, src/trace_parser/mod.rs:257]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:240 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-248-function-open-inner"><summary><code>open_inner</code> <small>function · src/trace_parser/mod.rs:248</small></summary>
+<p><code>fn open_inner(path: &amp;Path, options: &amp;TraceLoadOptions) -&gt; Result&lt;Self&gt;</code></p>
+<p>Enforce size cap, read bytes, assemble store. Inputs/outputs: bounded file -&gt; trace + provenance. Qualification: rejects over-limit input.</p>
+<p><strong>Incoming reviewed relationships:</strong> store.open [direct, src/trace_parser/mod.rs:242]</p>
+<p><strong>Outgoing reviewed relationships:</strong> store.load [direct, src/trace_parser/mod.rs:273]; store.assemble [direct, src/trace_parser/mod.rs:274]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:248 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-289-function-from-reader"><summary><code>from_reader</code> <small>function · src/trace_parser/mod.rs:289</small></summary>
+<p><code>pub fn from_reader(mut reader: impl Read, options: TraceLoadOptions) -&gt; Result&lt;Self&gt;</code></p>
+<p>Read a complete trace from a bounded reader. Inputs/outputs: reader -&gt; trace bytes -&gt; store. Qualification: size gate before materialization.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.open [direct, src/trace_parser/mod.rs:248]</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.load [direct, src/trace_parser/mod.rs:291]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:289 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-319-function-from-json-bytes"><summary><code>from_json_bytes</code> <small>function · src/trace_parser/mod.rs:319</small></summary>
+<p><code>pub fn from_json_bytes(bytes: &amp;[u8], options: TraceLoadOptions) -&gt; Result&lt;Self&gt;</code></p>
+<p>Decode a JSON byte buffer regardless of format selection. Inputs/outputs: bytes -&gt; TraceStore. Qualification: format field is not consulted.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:319 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-342-function-from-trace"><summary><code>from_trace</code> <small>function · src/trace_parser/mod.rs:342</small></summary>
+<p><code>pub fn from_trace(trace: DebugSessionTrace) -&gt; Result&lt;Self&gt;</code></p>
+<p>Adopt an existing model after schema validation. Inputs/outputs: model -&gt; Arc store. Qualification: schema-only, not deep validation.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.schema [direct, src/trace_parser/mod.rs:343]; p.assemble [direct, src/trace_parser/mod.rs:351]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:342 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-973-function-load-trace-document"><summary><code>load_trace_document</code> <small>function · src/trace_parser/mod.rs:973</small></summary>
+<p><code>fn load_trace_document(bytes: &amp;[u8], options: &amp;TraceLoadOptions) -&gt; Result&lt;DebugSessionTrace&gt;</code></p>
+<p>Gate bytes and select JSON or reject journal-shaped input. Inputs/outputs: bytes -&gt; trace. Qualification: no journal reconstruction.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.read [direct, src/trace_parser/mod.rs:291]</p>
+<p><strong>Outgoing reviewed relationships:</strong> p.gates [direct, src/trace_parser/mod.rs:974]; p.decode [direct, src/trace_parser/mod.rs:976]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:973 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-990-function-gates"><summary><code>gates</code> <small>function · src/trace_parser/mod.rs:990</small></summary>
+<p><code>fn gates(bytes: &amp;[u8]) -&gt; Result&lt;&amp;str&gt;</code></p>
+<p>Reject empty and non-UTF-8 input before dispatch. Inputs/outputs: bytes -&gt; UTF-8 text. Qualification: no partial decoding.</p>
+<p><strong>Incoming reviewed relationships:</strong> p.load [direct, src/trace_parser/mod.rs:974]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:990 · <a href="parser-ingestion-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-ownership-deep.html">Ownership, views &amp; evidence references</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-evidence-rs-129-function-evidence-ref"><summary><code>evidence_ref</code> <small>function · src/trace_parser/evidence.rs:129</small></summary>
+<p><code>pub fn evidence_ref(&amp;self, location: EvidenceLocation) -&gt; QueryResult&lt;EvidenceRef&gt;</code></p>
+<p>Validate a location and bind it to this trace owner. Inputs/outputs: location -&gt; EvidenceRef. Qualification: weak owner identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> ev.resolve [data, src/trace_parser/evidence.rs:141]; sem.valgrind [direct, src/trace_parser/semantic.rs:360]</p>
+<p><strong>Outgoing reviewed relationships:</strong> ev.location [direct, src/trace_parser/evidence.rs:131]</p>
+<p><a href="../../src/trace_parser/evidence.rs">Open local source</a> · src/trace_parser/evidence.rs:129 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-evidence-rs-140-function-resolve-evidence"><summary><code>resolve_evidence</code> <small>function · src/trace_parser/evidence.rs:140</small></summary>
+<p><code>pub fn resolve_evidence(&amp;self, reference: &amp;EvidenceRef) -&gt; QueryResult&lt;Evidence&lt;&#x27;_&gt;&gt;</code></p>
+<p>Resolve a reference after checking trace identity. Inputs/outputs: EvidenceRef -&gt; borrowed Evidence. Qualification: foreign owner rejected first.</p>
+<p><strong>Incoming reviewed relationships:</strong> sem.variable [direct, src/trace_parser/semantic.rs:73]; sem.heap_ref [direct, src/trace_parser/semantic.rs:206]</p>
+<p><strong>Outgoing reviewed relationships:</strong> ev.location [direct, src/trace_parser/evidence.rs:144]; ev.ref [data, src/trace_parser/evidence.rs:141]</p>
+<p><a href="../../src/trace_parser/evidence.rs">Open local source</a> · src/trace_parser/evidence.rs:140 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-evidence-rs-147-function-resolve-location"><summary><code>resolve_location</code> <small>function · src/trace_parser/evidence.rs:147</small></summary>
+<p><code>fn resolve_location(&amp;self, location: EvidenceLocation) -&gt; QueryResult&lt;Evidence&lt;&#x27;_&gt;&gt;</code></p>
+<p>Map every supported location to an original record. Inputs/outputs: location -&gt; borrowed record. Qualification: optional report unavailable.</p>
+<p><strong>Incoming reviewed relationships:</strong> ev.ref [direct, src/trace_parser/evidence.rs:131]; ev.resolve [direct, src/trace_parser/evidence.rs:144]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/evidence.rs">Open local source</a> · src/trace_parser/evidence.rs:147 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-114-function-checkpoint-context"><summary><code>checkpoint_context</code> <small>function · src/trace_parser/views.rs:114</small></summary>
+<p><code>pub fn checkpoint_context(self, snapshot_index: usize) -&gt; QueryResult&lt;CheckpointContext&lt;&#x27;a&gt;&gt;</code></p>
+<p>Borrow one snapshot and retain its index. Inputs/outputs: snapshot index -&gt; context. Qualification: source checkpoint position absent.</p>
+<p><strong>Incoming reviewed relationships:</strong> store.input [direct, src/trace_parser/views.rs:114]; ctx.source [direct, src/trace_parser/views.rs:130]; sem.checkpoint [direct, src/trace_parser/semantic.rs:322]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:114 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-128-function-source-checkpoint-context"><summary><code>source_checkpoint_context</code> <small>function · src/trace_parser/views.rs:128</small></summary>
+<p><code>pub fn source_checkpoint_context(self, position: usize) -&gt; QueryResult&lt;CheckpointContext&lt;&#x27;a&gt;&gt;</code></p>
+<p>Resolve an explicit source checkpoint to a context. Inputs/outputs: checkpoint position -&gt; context. Qualification: retains source position.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> ctx.checkpoint [direct, src/trace_parser/views.rs:130]</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:128 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-277-function-events-at-checkpoint"><summary><code>events_at_checkpoint</code> <small>function · src/trace_parser/views.rs:277</small></summary>
+<p><code>pub fn events_at_checkpoint(self) -&gt; QueryResult&lt;&amp;&#x27;a [InstructionEvent]&gt;</code></p>
+<p>Return events explicitly tagged to this snapshot. Inputs/outputs: context -&gt; event slice. Qualification: tag is not exact stop proof.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> store.events_checkpoint [direct, src/trace_parser/views.rs:279]</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:277 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-285-function-heap-events-in-snapshot-interval"><summary><code>heap_events_in_snapshot_interval</code> <small>function · src/trace_parser/views.rs:285</small></summary>
+<p><code>pub fn heap_events_in_snapshot_interval(self) -&gt; QueryResult&lt;&amp;&#x27;a [HeapEvent]&gt;</code></p>
+<p>Return heap events in the retained snapshot interval. Inputs/outputs: context -&gt; event slice. Qualification: coarse temporal boundary.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> store.heap_stop [direct, src/trace_parser/views.rs:287]</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:285 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-369-function-type-entry"><summary><code>type_entry</code> <small>function · src/trace_parser/views.rs:369</small></summary>
+<p><code>pub fn type_entry(&amp;self, id: &amp;str) -&gt; Option&lt;&amp;crate::dwarf::TypeEntry&gt;</code></p>
+<p>Resolve a trace-local DWARF type ID to its record. Inputs/outputs: type ID -&gt; borrowed type. Qualification: static metadata only.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:369 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-414-function-source-expression"><summary><code>source_expression</code> <small>function · src/trace_parser/views.rs:414</small></summary>
+<p><code>pub fn source_expression(&amp;self, id: &amp;str) -&gt; QueryResult&lt;&amp;crate::clang_ast::SourceExpression&gt;</code></p>
+<p>Resolve an AST expression ID to its syntax record. Inputs/outputs: expression ID -&gt; borrowed AST. Qualification: never execution proof.</p>
+<p><strong>Incoming reviewed relationships:</strong> sem.source [direct, src/trace_parser/semantic.rs:292]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:414 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-433-function-raw"><summary><code>raw</code> <small>function · src/trace_parser/views.rs:433</small></summary>
+<p><code>pub fn raw(&amp;self) -&gt; RawTraceView&lt;&#x27;_&gt;</code></p>
+<p>Expose existing raw queries without duplication. Inputs/outputs: store -&gt; raw facade. Qualification: zero allocation.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> store.input [conceptual, src/trace_parser/views.rs:433]</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:433 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-views-rs-438-function-semantic-input"><summary><code>semantic_input</code> <small>function · src/trace_parser/views.rs:438</small></summary>
+<p><code>pub fn semantic_input(&amp;self) -&gt; SemanticInputView&lt;&#x27;_&gt;</code></p>
+<p>Borrow the Stage 1 semantic-input facade. Inputs/outputs: store -&gt; borrowed view. Qualification: not src/semantic (Stage 2).</p>
+<p><strong>Incoming reviewed relationships:</strong> store.open [conceptual, src/trace_parser/views.rs:438]; store.raw [conceptual, src/trace_parser/views.rs:433]</p>
+<p><strong>Outgoing reviewed relationships:</strong> store.validated [conceptual, src/trace_parser/semantic.rs:47]; ctx.checkpoint [direct, src/trace_parser/views.rs:114]</p>
+<p><a href="../../src/trace_parser/views.rs">Open local source</a> · src/trace_parser/views.rs:438 · <a href="parser-ownership-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-realloc-deep.html">Realloc verification and TP8-F01</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-1485-function-realloc-link"><summary><code>realloc_link</code> <small>function · src/trace_parser/validation.rs:1485</small></summary>
+<p><code>pub(crate) fn realloc_link&lt;&#x27;a&gt;( block: &amp;crate::models::HeapBlockInfo, current: Option&lt;&amp;crate::models::AllocationLifetime&gt;, previous: Option&lt;&amp;crate::models::AllocationLifetime&gt;, events: impl Iterator&lt;Item = &amp;&#x27;a crate::models::HeapEvent&gt;, previous_events: impl Iterator&lt;Item = &amp;&#x27;a crate::models::HeapEvent&gt;, ) -&gt; ReallocLink</code></p>
+<p>Corroborate an explicit realloc predecessor from events/lifetimes. Inputs/outputs: block + lifetimes + events -&gt; link result. Qualification: ID existence is insufficient.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.heap [direct, src/trace_parser/validation.rs:1778]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:1485 · <a href="parser-realloc-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-1568-function-validate-heap"><summary><code>validate_heap</code> <small>function · src/trace_parser/validation.rs:1568</small></summary>
+<p><code>fn validate_heap(trace: &amp;DebugSessionTrace, builder: &amp;mut Builder)</code></p>
+<p>Audit heap identity, sequence, intervals and realloc links. Inputs/outputs: heap records -&gt; findings. Qualification: realloc corroboration required.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.deep [direct, src/trace_parser/validation.rs:259]</p>
+<p><strong>Outgoing reviewed relationships:</strong> val.realloc [direct, src/trace_parser/validation.rs:1778]; val.process [direct, src/trace_parser/validation.rs:1734]</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:1568 · <a href="parser-realloc-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-semantic-deep.html">TP-6 validated semantic evidence</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-38-function-validated-semantic"><summary><code>validated_semantic</code> <small>function · src/trace_parser/semantic.rs:38</small></summary>
+<p><code>pub fn validated_semantic(&amp;self) -&gt; ValidatedSemanticView&lt;&#x27;_&gt;</code></p>
+<p>Run one deep pass and retain its report. Inputs/outputs: store -&gt; validated view. Qualification: queries do not revalidate.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> val.deep [direct, src/trace_parser/semantic.rs:41]; sem.qualify [data, src/trace_parser/semantic.rs:61]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:38 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-61-function-qualify"><summary><code>qualify</code> <small>function · src/trace_parser/semantic.rs:61</small></summary>
+<p><code>pub(crate) fn qualify(&amp;self, confidence: EvidenceConfidence) -&gt; EvidenceConfidence</code></p>
+<p>Downgrade all confidence on structural corruption. Inputs/outputs: confidence -&gt; qualified confidence. Qualification: global only for corruption.</p>
+<p><strong>Incoming reviewed relationships:</strong> sem.validated [data, src/trace_parser/semantic.rs:61]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:61 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-72-function-variable"><summary><code>variable</code> <small>function · src/trace_parser/semantic.rs:72</small></summary>
+<p><code>pub fn variable(&amp;self, reference: &amp;EvidenceRef) -&gt; QueryResult&lt;VariableEvidence&lt;&#x27;a&gt;&gt;</code></p>
+<p>Resolve a variable observation and optional static links. Inputs/outputs: EvidenceRef -&gt; variable evidence. Qualification: value is not initialization.</p>
+<p><strong>Incoming reviewed relationships:</strong> sem.target [direct, src/trace_parser/semantic.rs:139]</p>
+<p><strong>Outgoing reviewed relationships:</strong> ev.resolve [direct, src/trace_parser/semantic.rs:73]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:72 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-134-function-variable-target"><summary><code>variable_target</code> <small>function · src/trace_parser/semantic.rs:134</small></summary>
+<p><code>pub fn variable_target( &amp;self, pointer: &amp;VariableEvidence&lt;&#x27;_&gt;, ) -&gt; QueryResult&lt;Relationship&lt;&#x27;a, VariableInfo&gt;&gt;</code></p>
+<p>Resolve a recorded variable identity at the same checkpoint. Inputs/outputs: variable -&gt; target relationship. Qualification: duplicates are ambiguous.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> sem.variable [direct, src/trace_parser/semantic.rs:139]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:134 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-205-function-heap-reference"><summary><code>heap_reference</code> <small>function · src/trace_parser/semantic.rs:205</small></summary>
+<p><code>pub fn heap_reference(&amp;self, reference: &amp;EvidenceRef) -&gt; QueryResult&lt;HeapEvidence&lt;&#x27;a&gt;&gt;</code></p>
+<p>Resolve an allocation reference before numeric ID lookup. Inputs/outputs: EvidenceRef -&gt; heap evidence. Qualification: foreign reference rejected.</p>
+<p><strong>Incoming reviewed relationships:</strong> consumer.heap_events [direct, src/trace_parser/consumer.rs:94]</p>
+<p><strong>Outgoing reviewed relationships:</strong> ev.resolve [direct, src/trace_parser/semantic.rs:206]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:205 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-225-function-heap"><summary><code>heap</code> <small>function · src/trace_parser/semantic.rs:225</small></summary>
+<p><code>pub fn heap(&amp;self, allocation_id: u64) -&gt; HeapEvidence&lt;&#x27;a&gt;</code></p>
+<p>Join lifetime, block, events and realloc confidence. Inputs/outputs: allocation ID -&gt; heap evidence. Qualification: observed-PID scope qualifies identity.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> idx.alloc [data, src/trace_parser/semantic.rs:227]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:225 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-291-function-source-expression"><summary><code>source_expression</code> <small>function · src/trace_parser/semantic.rs:291</small></summary>
+<p><code>pub fn source_expression(&amp;self, id: &amp;str) -&gt; SourceExpressionEvidence&lt;&#x27;a&gt;</code></p>
+<p>Expose static AST evidence and heap-call candidates. Inputs/outputs: expression ID -&gt; source evidence. Qualification: execution confidence unavailable.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> store.source_expr [direct, src/trace_parser/semantic.rs:292]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:291 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-321-function-checkpoint"><summary><code>checkpoint</code> <small>function · src/trace_parser/semantic.rs:321</small></summary>
+<p><code>pub fn checkpoint(&amp;self, index: usize) -&gt; QueryResult&lt;CheckpointEvidence&lt;&#x27;a&gt;&gt;</code></p>
+<p>Return one checkpoint with stop-local positions. Inputs/outputs: index -&gt; checkpoint evidence. Qualification: no inferred stop.</p>
+<p><strong>Incoming reviewed relationships:</strong> consumer.summary [direct, src/trace_parser/consumer.rs:59]</p>
+<p><strong>Outgoing reviewed relationships:</strong> ctx.checkpoint [direct, src/trace_parser/semantic.rs:322]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:321 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-330-function-execution"><summary><code>execution</code> <small>function · src/trace_parser/semantic.rs:330</small></summary>
+<p><code>pub fn execution(&amp;self) -&gt; ExecutionEvidence&lt;&#x27;a&gt;</code></p>
+<p>Expose status, coverage, gaps and counts. Inputs/outputs: store -&gt; execution evidence. Qualification: coverage is not process-tree proof.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:330 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-345-function-diagnostics"><summary><code>diagnostics</code> <small>function · src/trace_parser/semantic.rs:345</small></summary>
+<p><code>pub fn diagnostics(&amp;self) -&gt; DiagnosticEvidence&lt;&#x27;a&gt;</code></p>
+<p>Borrow compiler/crash/sanitizer/Valgrind reports. Inputs/outputs: store -&gt; diagnostic evidence. Qualification: session-wide, not causal joins.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:345 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-357-function-valgrind-error"><summary><code>valgrind_error</code> <small>function · src/trace_parser/semantic.rs:357</small></summary>
+<p><code>pub fn valgrind_error(&amp;self, index: usize) -&gt; QueryResult&lt;ValgrindEvidence&lt;&#x27;a&gt;&gt;</code></p>
+<p>Expose independent Valgrind error evidence. Inputs/outputs: index -&gt; Valgrind evidence. Qualification: primary allocation ID always None.</p>
+<p><strong>Incoming reviewed relationships:</strong> consumer.valgrind_page [direct, src/trace_parser/consumer.rs:82]</p>
+<p><strong>Outgoing reviewed relationships:</strong> ev.ref [direct, src/trace_parser/semantic.rs:360]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:357 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-semantic-rs-378-function-process-coverage"><summary><code>process_coverage</code> <small>function · src/trace_parser/semantic.rs:378</small></summary>
+<p><code>pub fn process_coverage(&amp;self) -&gt; ProcessCoverageEvidence&lt;&#x27;a&gt;</code></p>
+<p>Expose typed heap process scope and unknown descendants. Inputs/outputs: store -&gt; process evidence. Qualification: unknown stays unavailable.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> scope.from_history [direct, src/trace_parser/semantic.rs:380]</p>
+<p><a href="../../src/trace_parser/semantic.rs">Open local source</a> · src/trace_parser/semantic.rs:378 · <a href="parser-semantic-deep.html">Implementation chapter</a></p></details>
+</section>
+<section class="inventory-file"><h3><a href="parser-validation-deep.html">Deep validation architecture</a></h3>
+<details class="symbol" id="symbol-src-trace-parser-mod-rs-406-function-validate-deep"><summary><code>validate_deep</code> <small>function · src/trace_parser/mod.rs:406</small></summary>
+<p><code>pub fn validate_deep(&amp;self) -&gt; ValidationReport</code></p>
+<p>Opt into cross-record validation. Inputs/outputs: store -&gt; findings. Qualification: never rejects a partial trace just for being partial.</p>
+<p><strong>Incoming reviewed relationships:</strong> store.validated [direct, src/trace_parser/semantic.rs:41]</p>
+<p><strong>Outgoing reviewed relationships:</strong> validation.deep [direct, src/trace_parser/mod.rs:407]; val.deep [direct, src/trace_parser/mod.rs:407]</p>
+<p><a href="../../src/trace_parser/mod.rs">Open local source</a> · src/trace_parser/mod.rs:406 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-243-function-validate-deep"><summary><code>validate_deep</code> <small>function · src/trace_parser/validation.rs:243</small></summary>
+<p><code>pub fn validate_deep(trace: &amp;DebugSessionTrace) -&gt; ValidationReport</code></p>
+<p>Run engine and specialized validation passes. Inputs/outputs: trace -&gt; report. Qualification: linear in retained records.</p>
+<p><strong>Incoming reviewed relationships:</strong> store.validate [direct, src/trace_parser/mod.rs:407]; val.builder [data, src/trace_parser/validation.rs:267]; sem.validated [direct, src/trace_parser/semantic.rs:41]</p>
+<p><strong>Outgoing reviewed relationships:</strong> val.instructions [direct, src/trace_parser/validation.rs:256]; val.snapshots [direct, src/trace_parser/validation.rs:257]; val.source [direct, src/trace_parser/validation.rs:258]; val.heap [direct, src/trace_parser/validation.rs:259]; val.dwarf [direct, src/trace_parser/validation.rs:260]; val.ast [direct, src/trace_parser/validation.rs:261]</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:243 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-270-function-validate-dwarf-registry"><summary><code>validate_dwarf_registry</code> <small>function · src/trace_parser/validation.rs:270</small></summary>
+<p><code>fn validate_dwarf_registry(trace: &amp;DebugSessionTrace, builder: &amp;mut Builder)</code></p>
+<p>Check duplicate DWARF type/declaration/CU identities. Inputs/outputs: registry -&gt; findings. Qualification: optional registry absent is allowed.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.deep [direct, src/trace_parser/validation.rs:260]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:270 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-317-function-validate-ast-registry"><summary><code>validate_ast_registry</code> <small>function · src/trace_parser/validation.rs:317</small></summary>
+<p><code>fn validate_ast_registry(trace: &amp;DebugSessionTrace, builder: &amp;mut Builder)</code></p>
+<p>Check AST identity and cross-registry references. Inputs/outputs: source registry -&gt; findings. Qualification: syntax never execution.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.deep [direct, src/trace_parser/validation.rs:261]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:317 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-821-function-push"><summary><code>push</code> <small>function · src/trace_parser/validation.rs:821</small></summary>
+<p><code>fn push( &amp;mut self, severity: ValidationSeverity, code: &amp;&#x27;static str, detail: impl Into&lt;String&gt;, location: ValidationLocation, )</code></p>
+<p>Aggregate findings by severity/code with first location. Inputs/outputs: finding -&gt; compact report entry. Qualification: counts repetitions.</p>
+<p><strong>Incoming reviewed relationships:</strong> None in curated graph</p>
+<p><strong>Outgoing reviewed relationships:</strong> val.deep [data, src/trace_parser/validation.rs:267]</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:821 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-860-function-validate-instruction-events"><summary><code>validate_instruction_events</code> <small>function · src/trace_parser/validation.rs:860</small></summary>
+<p><code>fn validate_instruction_events(trace: &amp;DebugSessionTrace, builder: &amp;mut Builder)</code></p>
+<p>Check event ordering, references and recorded shape. Inputs/outputs: events -&gt; findings. Qualification: gap is not event.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.deep [direct, src/trace_parser/validation.rs:256]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:860 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-1002-function-validate-snapshots"><summary><code>validate_snapshots</code> <small>function · src/trace_parser/validation.rs:1002</small></summary>
+<p><code>fn validate_snapshots(trace: &amp;DebugSessionTrace, builder: &amp;mut Builder)</code></p>
+<p>Check snapshot, variable, caller and pointer references. Inputs/outputs: snapshots -&gt; findings. Qualification: missing capture is partial/unavailable.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.deep [direct, src/trace_parser/validation.rs:257]</p>
+<p><strong>Outgoing reviewed relationships:</strong> val.pointer [direct, src/trace_parser/validation.rs:1219]</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:1002 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+<details class="symbol" id="symbol-src-trace-parser-validation-rs-1419-function-validate-source-checkpoints"><summary><code>validate_source_checkpoints</code> <small>function · src/trace_parser/validation.rs:1419</small></summary>
+<p><code>fn validate_source_checkpoints(trace: &amp;DebugSessionTrace, builder: &amp;mut Builder)</code></p>
+<p>Verify source checkpoint positions map to snapshots. Inputs/outputs: checkpoint list -&gt; findings. Qualification: empty list is normal.</p>
+<p><strong>Incoming reviewed relationships:</strong> val.deep [direct, src/trace_parser/validation.rs:258]</p>
+<p><strong>Outgoing reviewed relationships:</strong> None in curated graph</p>
+<p><a href="../../src/trace_parser/validation.rs">Open local source</a> · src/trace_parser/validation.rs:1419 · <a href="parser-validation-deep.html">Implementation chapter</a></p></details>
+</section></div>
+<h2 id="related-reading">Related reading <a class="anchor" href="#related-reading" aria-label="Link to Related reading">#</a></h2>
+<p>See <a href="parser-algorithms.html">algorithms and invariants</a>, the eight <a href="parser-walkthroughs.html">walkthroughs</a>, and the interactive <a href="call-flow.html">call-flow explorer</a>. Engine counterparts remain in the <a href="engine-functions.html">DOC-2 function reference</a>.</p></article><nav class="pager" aria-label="Adjacent pages"><a href="parser-handbook.html">← Parser source file handbook</a><a href="walkthroughs.html">Execution walkthroughs →</a></nav><footer class="footer">Visual C Stage 1 · Offline documentation · <a href="handoff.html">Evidence contract</a> · <a href="../stage1-final-audit.md">Freeze audit (Markdown)</a></footer></main><aside class="right-toc" aria-label="On this page"><p>On this page</p><nav><a href="#key-terms" class="toc-2">Key terms</a><a href="#the-big-picture" class="toc-2">The big picture</a><a href="#scope" class="toc-2">Scope</a><a href="#review-status" class="toc-3">Review status</a><a href="#parser-graph-entries" class="toc-3">Parser graph entries</a><a href="#related-reading" class="toc-2">Related reading</a></nav></aside></div>
+<div class="search-overlay" hidden><div class="search-dialog" role="dialog" aria-modal="true" aria-label="Search documentation"><label for="site-search">Search Stage 1 reference <kbd>Esc</kbd></label><input type="search" id="site-search" placeholder="Try “realloc”, “EvidenceRef”, “GDB” …" autocomplete="off"><div class="search-results" role="status" aria-live="polite"></div></div></div></body></html>

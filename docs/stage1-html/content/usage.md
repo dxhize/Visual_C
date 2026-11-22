@@ -1,4 +1,17 @@
-# Practical usage · from C file to borrowed evidence
+# 61 · Practical usage · from C file to borrowed evidence
+
+> **In one sentence:** This page is the hands-on route: record a small C program, open the resulting JSON, and ask one careful question at a time.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **CLI** | The commands and flags you type to run the trace engine. |
+| **Consumer** | Your Rust code reading the finished trace through the parser's public API. |
+
+> **Example.** After recording, check the program's outcome and the validation report. Then request a checkpoint's first page; if there are more than 128 results, request the next page explicitly.
+>
+> **What not to assume:** The example's chosen stop and address are observations from one run, not identifiers you can reuse in another run.
 
 ## Level 1 · Intuition
 

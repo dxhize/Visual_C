@@ -1,31 +1,104 @@
-# GDB/MI execution and checkpoints
+# 15 · GDB/MI execution and checkpoints
+
+> **In one sentence:** A debugger pause is a *photograph*, not a video of everything between two pauses. The engine must also tell a command reply apart from a real new stop.
+
+## Key terms
+
+| Term | Meaning |
+|---|---|
+| **Program counter (PC)** | The machine address of the instruction GDB is **about to** execute at a stop. It is not automatically an instruction that already ran. |
+| **MI acknowledgement** | GDB saying it *accepted* a command (`^running`). A separate `*stopped` message says the program actually stopped later. |
+| **Inferior** | The program GDB is controlling. |
+
+> **Example.** At one stop, GDB reads `sum=10`. That value belongs to *that stop*. If an instruction step never reports another stop, the engine can't claim the attempted instruction completed.
+
+> **Three different numbers:** a **stop counter**, a **snapshot's vector index** and an **attempted-instruction position** are separate. Never swap them.
 
 ## Level 1 · Intuition
 
-A stopped program is observable; running code between stops is not automatically known. The GDB/MI2 driver sends commands, waits for the corresponding responses and asynchronous stops, and inspects bounded source state. At a stop the PC names the **next** instruction. The engine records an instruction attempt from that *before* address and a *next* address only when observed. Source checkpoints are selected stops, not a reconstruction of every intermediate state.
+A stopped program is observable; code running between stops is not automatically known. The GDB/MI2 driver sends commands, waits for each response and for the asynchronous stops, and inspects bounded source state.
+
+- At a stop, the PC names the **next** instruction.
+- An instruction attempt is recorded from that *before* address, plus a *next* address **only when observed**.
+- Source checkpoints are **selected** stops, not a reconstruction of every intermediate state.
 
 {{diagram:checkpoint}}
 
 ## Level 2 · Command/response lifecycle
 
-A GDB session launches the debug binary, stops at entry and identifies a followed inferior. The engine classifies frames as user, runtime, library or unknown; collects stack/source context at checkpoints; drains allocator telemetry while the inferior is stopped; snapshots variables, bytes and live heap subject to budgets; and records that snapshot with a monotonic `stop_id`. In dual mode it attempts `-exec-step-instruction` and separately waits for `*stopped` (a tokened `^running` is only an acknowledgement). The `InstructionEvent` stores the before PC, attempted `event_id`, source context, thread/PID, `stop_id_before`/optional `stop_id_after`, outcome and optional next PC. An async missing-stop wait is classified differently from a whole-session deadline; a missing response poisons the command session rather than giving late output to a future command.
+### What the engine does at a chosen pause
 
-Outcomes include `completed`, `faulted`, `interrupted` and `unknown`. Breakpoints do not prove the attempted instruction completed. Library/source stepping introduces [TraceGap](model.html#events-gaps-and-checkpoints) records with attempted-position boundaries, not guessed counts. A user callback can be captured by bounded entry-breakpoint discovery; unobserved callbacks cannot be inferred from a static source call. GDB is in all-stop mode, but external processes are not paused and a multi-threaded selected-thread timeline is incomplete. A forked child is not promised GDB snapshots.
+1. GDB starts the debug program and pauses it.
+2. The engine notes the **function and source line**.
+3. It reads available variables and heap bytes, **within the configured budgets**.
+4. It collects new allocator log lines.
+5. It assigns the stop a `stop_id` that increases as stops are observed.
 
-### Worked stop → parser query
+### Stepping one instruction
 
-At source line 15 of `fixtures/c/phase8b_defined.c`, the audited live capture recorded an integer `sum` with displayed value `"10"` and raw bytes `"0a000000"` (Linux little-endian), while native GDB in a *separate* run independently printed `sum=10`. A later `TraceStore` can retrieve the snapshot using its vector index, and `checkpoint_summary()` can page its variables. Neither the stop ID nor the value of `instruction_position` should be used as that vector index. See the [API walkthrough](usage.html#checkpoints-and-paging).
+In *dual* source-and-instruction mode, the engine can send `-exec-step-instruction`.
+
+```
+engine ──► -exec-step-instruction
+GDB    ──► ^running        ← only means "I started the step"
+GDB    ──► *stopped        ← NOW we know where execution stopped
+```
+
+An `InstructionEvent` stores the address *before* the attempted step, its event number and context, and a next address only when observed.
+
+| Situation | How it's handled |
+|---|---|
+| The stop never arrives | Reported differently from the **whole session** running out of time |
+| A command reply is missing | Late text is **not** handed to a different command |
+| Breakpoint hit | Gives the engine a stop, but that alone doesn't prove the attempted instruction finished |
+| Stepping skips a library interval | A [TraceGap](model.html#events-gaps-and-checkpoints) marks what was **not** recorded, instead of inventing a number of missing instructions |
+
+### How a step is classified
+
+A step can be recorded as **completed**, **faulted**, **interrupted** or **unknown**.
+
+### What GDB does not cover
+
+- The engine may set bounded breakpoints to catch some callbacks, but a function *appearing in source* is not evidence it was called.
+- GDB pauses its selected debugging session. Outside processes and unfollowed fork children are not guaranteed snapshots.
+- Observing one thread does not give a complete timeline of all threads.
+
+### Worked example: a stop, then a parser query
+
+At source line 15 of `fixtures/c/phase8b_defined.c`, the audited live capture recorded:
+
+| Item | Value |
+|---|---|
+| Variable | integer `sum` |
+| Displayed value | `"10"` |
+| Raw bytes | `"0a000000"` (Linux little-endian) |
+| Independent check | Native GDB, in a *separate* run, printed `sum=10` |
+
+A later `TraceStore` can fetch that snapshot by its **vector index**, and `checkpoint_summary()` can page its variables. Neither the stop ID nor the value of `instruction_position` should be used as that vector index. See the [API walkthrough](usage.html#checkpoints-and-paging).
 
 ## Level 3 · Source and invariants
 
-- `src/gdb_mi.rs` owns MI command tokens, async records, stop backlog, frame parsing, selected-thread tracking and memory reads. `src/mi_parser.rs` parses MI syntax.
-- `src/trace.rs` orchestrates the stop loop and `push_snapshot`. `src/recorder.rs::{checkpoint, event, gap, event_outcome}` appends bounded canonical records and journal lines.
-- `src/models.rs::{SnapshotObservation, InstructionEvent, TraceGap}` defines the serializable identities. `src/trace_parser/indexes.rs::OrderingFacts` enables binary search only when order is verified.
+| File | Owns |
+|---|---|
+| `src/gdb_mi.rs` | MI command tokens, async records, stop backlog, frame parsing, selected-thread tracking, memory reads |
+| `src/mi_parser.rs` | MI syntax parsing |
+| `src/trace.rs` | The stop loop and `push_snapshot` |
+| `src/recorder.rs::{checkpoint, event, gap, event_outcome}` | Appends bounded canonical records and journal lines |
+| `src/models.rs::{SnapshotObservation, InstructionEvent, TraceGap}` | The serializable identities |
+| `src/trace_parser/indexes.rs::OrderingFacts` | Enables binary search **only when order is verified** |
 
 ```json
 {"step_index":0,"observation":{"stop_id":1,"instruction_position":0,"heap_event_count":0}}
 ```
 
-The JSON above is **illustrative and deliberately partial**; a real `ExecutionSnapshot` has required file, function, call stack and variable fields. `stop_id=1` is a debugger stop counter, `step_index=0` a snapshot vector index, and `instruction_position=0` a count of attempts before this stop. See [schema identity domains](schema.html#identity-domains).
+This JSON is **illustrative and deliberately partial**. A real `ExecutionSnapshot` has required file, function, call stack and variable fields. In it:
 
-> WARNING: Recording a `checkpoint_id` on an instruction event associates it with the most recent checkpoint, **not** a claim that its instruction happened precisely at the checkpoint stop or that a source-line AST expression executed.
+| Field | What it is |
+|---|---|
+| `stop_id=1` | A debugger **stop counter** |
+| `step_index=0` | A **snapshot vector index** |
+| `instruction_position=0` | A **count of attempts** before this stop |
+
+See [schema identity domains](schema.html#identity-domains).
+
+> **Warning:** Recording a `checkpoint_id` on an instruction event associates it with the *most recent* checkpoint. It is **not** a claim that the instruction happened precisely at that checkpoint stop, or that a source-line AST expression executed.

@@ -1,4 +1,17 @@
-# TP-5 · Deep structural validation
+# 44 · TP-5 · Deep structural validation
+
+> **In one sentence:** A file can be readable JSON and still tell an impossible story. Validation asks whether its records agree, without demanding that every possible event was observed.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Structural corruption** | A contradiction: for example, a claimed realloc predecessor conflicts with the recorded creation event. |
+| **Partial coverage** | A legitimate missing stretch, such as a crash or exhausted recording limit. Partial does not automatically mean corrupt. |
+
+> **Example.** If a trace reports a block came from `realloc` of ID 7, validation checks the old and new events, PID and lifetimes. If those contradict, do not display the link as certain, even though the raw field is preserved.
+>
+> **What not to assume:** `TraceStore::open` checks the format. Call `validated_semantic()` or deep validation explicitly for relationship checks.
 
 ## Level 1 · Intuition
 
@@ -8,9 +21,9 @@ A JSON file can have the right *shape* and still contradict itself. TP-5's opt-i
 
 ## Level 2 · Architecture
 
-`validate_deep()` aggregates `ValidationFinding { severity, code, detail, location, occurrences }` in a `ValidationReport`. Its four severities are **StructuralCorruption**, **PartialCoverage**, **UnavailableEvidence**, **OptionalAbsence**. `is_structurally_sound()` means no structural finding—not complete instruction, process, byte or diagnostic coverage. `is_partial()` concerns only partial findings. TP-6 creates this report once; it downgrades all semantic confidence to `Contradictory` when the report is unsound, while retaining raw records for investigation.
+`validate_deep()` runs a list of consistency checks and collects the results in a `ValidationReport`. Each finding says **where** a problem was found, **what kind** it was, and how often it occurred. There are four important kinds: **StructuralCorruption** means records contradict one another; **PartialCoverage** means some intended observations are missing; **UnavailableEvidence** means a particular link cannot be supported; **OptionalAbsence** means an optional source of information is not there. `is_structurally_sound()` means there was no contradiction. It does **not** promise that all instructions, processes or bytes were captured. `is_partial()` asks a separate question about missing coverage. TP-6 runs this check once when you ask for its validated view. If structural contradictions exist, it refuses to give definite semantic confidence, while leaving raw records visible for investigation.
 
-The pass reuses `processor::validate()` and checks event/disassembly/checkpoint references, event/stop ordering, snapshot indices, source-checkpoint bounds, gaps and attempted counts, duplicate heap/lifetime/metadata identities, pointer status vs claimed heap IDs, heap PID/history annotations, static links and diagnostic/coverage coherence. `address_only` with a definite allocation ID is contradictory even if a block contains that address. A false `complete_all_processes` annotation is unsupported. Legacy *missing* provenance or process scope is not synthesized; it is unavailable/unknown.
+The checks ask practical questions: Do referenced snapshots and instructions exist? Are recorded stops in the required order? Do the counts agree? Are two different heap blocks claiming the same lifetime ID? Does a pointer marked `address_only` incorrectly claim a definite allocation origin? Does a trace claim all child processes were observed without evidence? The validator also checks static metadata links and whether reports agree with their stated coverage. For example, a pointer address inside block 7 is **not enough** to justify a claim that block 7 created that pointer. Older traces may simply lack a provenance or process-scope field: that means **unavailable**, not “the parser has filled it in.”
 
 ### Realloc link verification
 

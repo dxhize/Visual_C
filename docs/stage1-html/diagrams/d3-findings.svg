@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1060 410" role="img" aria-labelledby="t desc"><title id="t">Finding classification</title><desc id="desc">Structural corruption, partial coverage, unavailable evidence and optional absence are distinct. is_structurally_sound ignores partial/unavailable/optional; is_partial is separate.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="1060" height="410" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Finding classification</text>
+<path d="M 201 150 L 254 125" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 210 194 L 245 196" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 187 230 L 268 275" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 210 217 L 465 288" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 97 L 680 128" stroke="#657890" stroke-width="2" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<path d="M 435 200 L 875 200" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 435 298 L 875 217" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<path d="M 655 288 L 875 227" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="20" y="150" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="30" y="176" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">Validation finding</text>
+<rect x="245" y="45" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="255" y="71" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Structural corruption</text>
+<rect x="245" y="160" width="190" height="80" rx="10" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="255" y="186" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#185a97">Partial coverage</text>
+<rect x="245" y="275" width="190" height="80" rx="10" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="255" y="301" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#8b4146">Unavailable evidence</text>
+<rect x="465" y="275" width="190" height="80" rx="10" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="475" y="301" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#555a85">Optional absence</text>
+<rect x="680" y="100" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="690" y="126" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">is_structurally_sound</text>
+<rect x="875" y="160" width="190" height="80" rx="10" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="885" y="186" font-family="system-ui,sans-serif" font-size="14" font-weight="700" fill="#825329">ValidationReport</text>
+<text x="24" y="390" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Solid: observed/control/data transfer · Dashed: independent, candidate or conceptual (see caption)</text></svg>

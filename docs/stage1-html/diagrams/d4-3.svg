@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 610" role="img" aria-labelledby="t desc"><title id="t">Walkthrough 3: malloc to lifetime</title><desc id="desc">Linked --wrap_malloc calls the real allocator, updates a PID-local table, appends a sequenced event row, Rust reads complete rows, HeapTimeline ingests a verified prefix and final assembly records a lifetime.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="780" height="610" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Walkthrough 3: malloc to lifetime</text>
+<rect x="55" y="50" width="666" height="70" rx="11" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="69" y="79" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#555a85">__wrap_malloc</text>
+<text x="69" y="103" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Caller PC, size, real pointer</text>
+<path d="M 388 121 V 139" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="148" width="666" height="70" rx="11" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="69" y="177" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#185a97">PID-local table + event</text>
+<text x="69" y="201" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">ID, sequence, address</text>
+<path d="M 388 219 V 237" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="246" width="666" height="70" rx="11" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="69" y="275" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#8b4146">Event file</text>
+<text x="69" y="299" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Complete line or loss</text>
+<path d="M 388 317 V 335" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="344" width="666" height="70" rx="11" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="69" y="373" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#185a97">EventFileReader / HeapTimeline</text>
+<text x="69" y="397" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Verified prefix, block state</text>
+<path d="M 388 415 V 433" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="442" width="666" height="70" rx="11" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="69" y="471" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#825329">allocation_lifetimes</text>
+<text x="69" y="495" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Parser indexes by ID</text>
+<text x="24" y="588" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Blue: engine  ·  Green: parser  ·  Amber: evidence  ·  Red: partial/unknown  ·  Purple: source</text></svg>

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 780 512" role="img" aria-labelledby="t desc"><title id="t">Schema gate after deserialization</title><desc id="desc">serde checks the model shape first, then validate_schema_version accepts only version 2. A malformed model is a syntax error; a valid model with another version is a schema error.</desc>
+<defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto"><path d="M 0 0 L 10 5 L 0 10 z" fill="#657890"/></marker></defs>
+<rect width="780" height="512" rx="16" fill="#fafcff"/>
+<text x="24" y="32" font-family="system-ui,sans-serif" font-size="17" font-weight="700" fill="#213a54">Schema gate after deserialization</text>
+<rect x="55" y="50" width="666" height="70" rx="11" fill="#eeeeff" stroke="#555a85" stroke-width="1.5"/>
+<text x="69" y="79" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#555a85">JSON text</text>
+<text x="69" y="103" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">UTF-8 document</text>
+<path d="M 388 121 V 139" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="148" width="666" height="70" rx="11" fill="#e7f2ff" stroke="#185a97" stroke-width="1.5"/>
+<text x="69" y="177" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#185a97">serde model</text>
+<text x="69" y="201" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Shape and field types</text>
+<path d="M 388 219 V 237" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="246" width="666" height="70" rx="11" fill="#ffeded" stroke="#8b4146" stroke-width="1.5"/>
+<text x="69" y="275" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#8b4146">schema version</text>
+<text x="69" y="299" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">found / supported</text>
+<path d="M 388 317 V 335" stroke="#657890" stroke-width="2" marker-end="url(#arrow)"/>
+<rect x="55" y="344" width="666" height="70" rx="11" fill="#fff3e0" stroke="#825329" stroke-width="1.5"/>
+<text x="69" y="373" font-family="system-ui,sans-serif" font-size="15" font-weight="700" fill="#825329">TraceStore</text>
+<text x="69" y="397" font-family="system-ui,sans-serif" font-size="12.4" fill="#33465c">Only after both checks</text>
+<text x="24" y="490" font-family="system-ui,sans-serif" font-size="12" fill="#44566b">Blue: engine  ·  Green: parser  ·  Amber: evidence  ·  Red: partial/unknown  ·  Purple: source</text></svg>

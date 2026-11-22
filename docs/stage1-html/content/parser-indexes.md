@@ -1,4 +1,17 @@
-# TP-2 · Compact, position-only indexes
+# 42 · TP-2 · Compact, position-only indexes
+
+> **In one sentence:** The parser keeps an index the way a book keeps page numbers. It does not photocopy every page of the book.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Position index** | A small table that says which position in the original trace array contains a record you asked for. |
+| **Borrowed result** | A view of the existing saved record, not a newly invented or copied instruction event. |
+
+> **Example.** If allocation 7 has events at positions 2 and 10, the index stores those two positions. A query uses them to return the original events, in their recorded order.
+>
+> **What not to assume:** An index lets you find a record quickly; it cannot prove that a recorded relationship is correct.
 
 ## Level 1 · Intuition
 
@@ -8,9 +21,9 @@ A large trace repeats instruction addresses and source lines thousands of times.
 
 ## Level 2 · What is indexed
 
-`TraceIndexes::build` eagerly constructs the index during `TraceStore::assemble`. `ExecutionsIndex` groups all retained event positions for each disassembly table ID using contiguous offset arrays. `SourceIndex` interns complete file paths and exact `(file,line)` keys, mapping to static instruction IDs and **all** dynamic event positions; the reverse mapping retrieves source positions for a disassembled instruction. `AllocationIndex` maps allocation ID to event positions, final state position and lifetime position. `MetadataIndex` maps trace-local DWARF/AST IDs and source/heap-call candidate IDs to registry positions. Only positions/keys are retained; no large memory bytes, snapshots or events are cloned into indexes.
+When `TraceStore` is created, `TraceIndexes::build` makes lookup tables **once**. `ExecutionsIndex` answers “at which saved event positions did instruction 12 appear?” It keeps a compact range of position numbers for each compiled instruction. `SourceIndex` answers “which recorded events had this **exact file path and line**?” It also lets you go back from an instruction to recorded source positions. `AllocationIndex` answers “where are the events, final block and lifetime for allocation ID 7?” `MetadataIndex` locates DWARF and Clang source/type records by their IDs. These tables store numbers and keys, not second copies of instruction events, snapshots or raw bytes.
 
-Direct vector access needs no index for snapshot index or `event_id`. GDB stop IDs and checkpoint event runs use verified monotonic ordering and binary searches, not a stop hash map. Heap-event intervals use neighboring **retained** snapshots' cumulative `heap_event_count` boundaries; skipped stops make timing coarser, not an exact join. Imported broken order yields `OrderingViolation` rather than an unreliable binary-search result. No source-basename equivalence and no address-to-lifetime join are cached.
+If you already have a snapshot's **vector position**, the parser can look it up directly. Other questions, such as “which snapshot has GDB stop ID 17?”, use a fast binary search only after checking that the imported stop IDs are in order. A broken order produces `OrderingViolation`, not a guessed answer. To show heap events between two saved snapshots, the parser uses their recorded running event counts. If an intermediate stop was never saved, that interval is only an approximate time window: it does not prove the event happened at the later stop. The index never treats equal filename endings or matching addresses as proven identities.
 
 ### Mini example
 

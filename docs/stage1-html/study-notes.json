@@ -1,0 +1,392 @@
+{
+  "index": {
+    "intro": "Think of this site as the manual for a scientific recording. First the program runs and we collect evidence; afterward, readers ask questions of that saved evidence.",
+    "terms": [["Trace", "The saved record of one bounded program execution, including what was captured and what could not be captured."], ["Stage 1", "The part of Visual C that compiles, records, exports, loads and checks this evidence. The later semantic engine is a different layer."]],
+    "example": "If a paused program shows four bytes for `sum`, you can display those four bytes. You cannot conclude from that read alone that `sum` was initialized earlier, or that every child process was observed.",
+    "boundary": "Use the introductory pages first. The source-file and function indexes are detailed references for when you want to follow a particular implementation."
+  },
+  "reading": {
+    "intro": "You do not have to read every source file in order. Start with a question, find the relevant story, and only then open the implementation.",
+    "terms": [["Source index", "A list of files and definitions with paths you can open. A listing tells you where code exists, not that it ran in a particular recording."], ["Verified call-flow edge", "A relationship whose source was checked. An arrow labeled 'conceptual' explains architecture; it is not a runtime function call."]],
+    "example": "To find why an allocation is missing, start at the heap overview, follow the event-reader and coverage links, and compare those records with the actual trace. A matching address alone will not answer the question.",
+    "boundary": "The browser search works offline; links into source show `path:line` even if your browser cannot jump to that line."
+  },
+  "engine-architecture": {
+    "intro": "The engine is a coordinator, not one giant debugger command. It asks several smaller parts to compile, observe, record and export a result.",
+    "terms": [["Supervisor", "The part that sets deadlines and manages child tool processes, so a hung compiler or debugger does not silently run forever."], ["Subsystem", "A group of related source files: for example `gdb_mi` talks to GDB, while `recorder` saves what was observed."]],
+    "example": "When GDB pauses, the engine checks the stop reason, collects the current frame, reads new allocator log lines, and saves a snapshot. Later it may run a sanitizer in a separate execution.",
+    "boundary": "A diagram of the normal route is not a promise that every optional tool ran, nor that every instruction between two stops was seen."
+  },
+  "parser-architecture": {
+    "intro": "The parser works after recording. Its job is to make a saved trace safe and convenient to inspect without pretending it can watch the program again.",
+    "terms": [["Deserialize", "Turn JSON text into Rust records. This proves that the file is readable in the expected format, not that its claims agree."], ["Validate", "Check relationships between records: for example, whether a claimed realloc predecessor has supporting events."]],
+    "example": "A JSON file can say `old_id=7` even when event 7 was a different allocation. Loading succeeds because the field is well-formed; deep validation rejects the unsupported relationship.",
+    "boundary": "Query results borrow the original records. The parser does not repair contradictory JSON by guessing which record the author meant."
+  },
+  "identity-contracts": {
+    "intro": "Several things in a trace are numbers. They are not interchangeable just because their printed values happen to match.",
+    "terms": [["Identity domain", "What a number identifies: a debugger stop, an array position, a process, or a heap lifetime. Each kind has its own rules."], ["Provenance", "Evidence about where a pointer actually came from, not merely which recorded block happens to contain its address."]],
+    "example": "One block can be freed and another allocated at address `0x1000`. The address is the same, but the wrapper gives the two lifetimes different IDs. A pointer containing `0x1000` does not tell us which lifetime produced it.",
+    "boundary": "A source-line match or matching value from a Valgrind run is a possible clue, not proof of a link to the main debugger run."
+  },
+  "resource-boundaries": {
+    "intro": "Different limits protect different stages. A limit on what gets written to a file is not a limit on every byte the process holds in memory.",
+    "terms": [["Journal cap", "The maximum size of the stream of JSONL records written while tracing."], ["Export cap", "The maximum size of one final JSON document written to a destination; it does not cap the already-built trace in RAM."]],
+    "example": "A 2 KB journal can stop growing while the final JSON still takes 22 KB. That is expected: they are different products with different caps, and the missing journal tail must remain visible.",
+    "boundary": "Neither successful import nor resource enforcement makes running untrusted C code into a secure sandbox."
+  },
+  "repository": {
+    "intro": "This page is a map from a question to the directory that can answer it. You do not have to memorize the repository.",
+    "terms": [["Production source", "The Rust and C code that runs the actual recording or parser, rather than a test or a generated HTML page."], ["Fixture", "A small example C program used to check a behavior in tests."]],
+    "example": "If you want to understand how a C allocation becomes a trace record, open `c_runtime/alloc_tracker.c`, then `src/allocation_tracker.rs`, then the heap parser chapters.",
+    "boundary": "A file's presence does not mean its optional feature ran in every trace. Inspect the recording's stage statuses too."
+  },
+  "files": {
+    "intro": "Use this as a table of contents for the actual source tree. A path helps you locate an implementation; it is not an execution log.",
+    "terms": [["Generated catalog", "A listing built by scanning the current source tree, so you can navigate even when a file has no long explanation yet."], ["Source location", "A file and line number where a definition can be read. The number may shift after code edits."]],
+    "example": "Searching `src/gdb_mi.rs` helps you locate debugger commands. It does not show that a particular command ran in your saved trace; that requires recorded evidence.",
+    "boundary": "For a story about how files cooperate, use the walkthroughs rather than treating adjacent file names as a call chain."
+  },
+  "functions": {
+    "intro": "This is a lookup tool for code names, not a list of functions executed by your program.",
+    "terms": [["Definition", "The place in a Rust or C file where a function or type is declared."], ["Call-flow link", "A separate, reviewed arrow showing that one piece of code calls another, transfers data, or describes a conceptual boundary."]],
+    "example": "Find `validate_deep` here to open its source. Then use the validation chapter to learn why it distinguishes a corrupt trace from a partial one.",
+    "boundary": "A function found by a source scanner is not automatically explained or verified as a runtime call."
+  },
+  "dependencies": {
+    "intro": "A dependency tells you that one part of the code refers to another. It does not tell you what happened in an individual C execution.",
+    "terms": [["Module", "A named group of Rust definitions, often backed by a source file or directory."], ["Dependency", "A source-level reference, such as using another module's type. Some dependencies are about data, not function calls."]],
+    "example": "The parser depends on the shared `models` definitions because it reads the trace format the engine wrote. The parser does not thereby take control of the running debugger.",
+    "boundary": "Follow reviewed call-flow edges when you need a particular call path; a module arrow alone is not that proof."
+  },
+  "call-flow": {
+    "intro": "Use this interactive map to follow a reviewed path through Stage 1 source code. The arrow labels tell you what sort of relationship is being shown.",
+    "terms": [["Direct", "A checked call expression in source code: one function explicitly calls another."], ["Conceptual", "Two parts belong to the same explanation, but the arrow does not assert a runtime function call."]],
+    "example": "Select the path from `trace_program` to GDB capture. Open each source link if you want to check exactly where a function is called; use the other arrow types for tool or data boundaries.",
+    "boundary": "An arrow between source functions is not proof that this route ran in every recorded trace."
+  },
+  "engine-build": {
+    "intro": "Before a debugger can inspect C, GCC has to build a program. This page explains the builds and what happens when compilation fails.",
+    "terms": [["Debug build", "An executable with source-to-machine debug information and the project's allocation wrapper linked in."], ["Sanitizer build", "A separate executable with compiler-added memory checks; it may fail or be skipped independently."]],
+    "example": "For `return missing_symbol;`, GCC emits a compiler error. The trace keeps that error and has zero GDB snapshots, rather than inventing a run that never started.",
+    "boundary": "A successful sanitizer *build* does not mean its separate execution ran or found no errors."
+  },
+  "engine-debugger": {
+    "intro": "A debugger pause is a photograph, not a video of everything between two pauses. The engine must also distinguish a command reply from a real new stop.",
+    "terms": [["Program counter (PC)", "The machine address of the instruction GDB is about to execute at a stop; it is not automatically an already executed instruction."], ["MI acknowledgement", "GDB saying it accepted a command. The separate `*stopped` message says the program actually stopped later."]],
+    "example": "At one stop, GDB reads `sum=10`. That value belongs to that stop. If an instruction step never reports another stop, the engine cannot claim that the attempted instruction completed.",
+    "boundary": "A stop counter, a snapshot's vector index and an attempted instruction position are three different numbers."
+  },
+  "engine-memory": {
+    "intro": "A variable may have a displayed value, a memory address, and captured raw bytes. Those are related observations, but they answer different questions.",
+    "terms": [["Frame activation", "One particular call of a function. Two recursive calls have two activations even if both have a local named `n`."], ["Captured prefix", "The bytes actually read from the start of an object. A missing tail has not been filled with zero."]],
+    "example": "For `int *p`, `address` is where the variable `p` itself lives; `points_to` is the address stored inside it. Reading `p` successfully does not prove the memory at its target is still alive or initialized.",
+    "boundary": "The debugger may read bytes from an uninitialized object. Readability is not an initialization test."
+  },
+  "engine-metadata": {
+    "intro": "The engine gets type information from the built program and optional syntax information from the source. Neither one is a replacement for reading runtime memory.",
+    "terms": [["DWARF", "Compiler-written debug information describing compiled types, declarations and source locations."], ["AST", "Clang's tree of written C syntax; it can show that a call appears in source without showing that the program took that branch."]],
+    "example": "DWARF can describe where `struct Pair.y` is located inside a compiled struct. GDB can capture the bytes at a stop. Clang might find a written `malloc` call. They answer three different questions.",
+    "boundary": "A same-line source match is a candidate, especially if macros or multiple calls share that line."
+  },
+  "engine-heap": {
+    "intro": "Allocations are best understood as lifetimes, not just addresses. A freed address may be used again for a new block.",
+    "terms": [["Wrapper", "A small function inserted before a linked call to `malloc`, `calloc`, `realloc` or `free`. It logs the call and passes it on to the real allocator."], ["Lifetime ID", "A number assigned to a tracked allocation's period of existence. Two blocks can share an address without sharing this ID."]],
+    "example": "`malloc` creates ID 1 at address A; `free` closes ID 1; a later `malloc` at A creates ID 2. A successful in-place `realloc` also starts a new lifetime ID in this engine, despite retaining address A.",
+    "boundary": "The logger cannot promise to see allocators that run wholly inside unwrapped shared libraries."
+  },
+  "engine-diagnostics": {
+    "intro": "Memory-error tools can add valuable clues, but they run separately from the main GDB observation.",
+    "terms": [["Valgrind", "A tool that runs the program under memory checking and reports leaks or invalid accesses, generally more slowly."], ["Sanitizer", "Compiler-inserted checks in a separately built program, such as AddressSanitizer for memory misuse."]],
+    "example": "A Valgrind leak at line 52 may point you to useful source code. It cannot identify allocation 17 from the debugger's run just because that run also visited line 52.",
+    "boundary": "Each analysis records its own status. A skipped or failed analysis is not the same as 'checked and no errors found.'"
+  },
+  "engine-process": {
+    "intro": "A process can create child processes. Seeing events from two PIDs does not prove there were only two processes.",
+    "terms": [["PID", "The operating system's process ID. Wrapper event lines include it so events from parent and observed children remain separate."], ["ACK", "A final status message from an observed process reporting its last event number and whether writes failed."]],
+    "example": "If a child prints nothing and never writes to the wrapper file, the event reader cannot discover it by looking at recorded PIDs. The parent and observed PIDs might have complete logs while that child remains unknown.",
+    "boundary": "Complete history for observed event PIDs is not a census of every descendant of a fork."
+  },
+  "engine-limits": {
+    "intro": "The recording has several budgets, and each budget has a different job. Ask what was limited before interpreting a shortened trace.",
+    "terms": [["Snapshot limit", "A bound on how many stopped-state snapshots can be retained."], ["Journal versus export", "The JSONL journal grows during capture; the final JSON is a separate document made afterward, with its own byte limit."]],
+    "example": "A capped journal may be 1,961 bytes while the final JSON is 22,883 bytes. That does not break the cap: the first cap applied only to the journal.",
+    "boundary": "Even a successful JSON export limit does not constrain memory already used to assemble the trace."
+  },
+  "engine-entry-deep": {
+    "intro": "This page follows the front door: command-line arguments become a tracing request, and errors become meaningful exit results.",
+    "terms": [["CLI", "Command-line interface: the flags and file names passed when starting `c-trace-engine`."], ["Configuration precedence", "The rule deciding whether a CLI flag or a config-file value wins when both specify the same setting."]],
+    "example": "When you pass a C file and `--max-steps 50`, `main` converts them into `TraceConfig`. The tracing code receives those values rather than repeatedly reading command-line text.",
+    "boundary": "A bad flag is an input error. A compiler diagnostic is a recorded C build result. Do not treat them as the same failure."
+  },
+  "engine-compiler-deep": {
+    "intro": "This is the code-level explanation of how GCC commands are assembled, started and interpreted.",
+    "terms": [["Argv", "The exact list of arguments passed to an operating-system process. Looking at it is safer than imagining what shell command was run."], ["Diagnostic fallback", "If GCC cannot produce one structured warning format, the engine tries a supported alternative instead of silently losing errors."]],
+    "example": "The debug GCC command includes the wrapper source and `--wrap` linker switches; the separate sanitizer command has different flags. A warning from either build has a file, line and message when GCC supplies them.",
+    "boundary": "A compiler subprocess timing out is not the same event as GCC completing and rejecting invalid C source."
+  },
+  "engine-gdb-deep": {
+    "intro": "This chapter explains the machinery that sends GDB commands and waits for responses while the program runs and pauses.",
+    "terms": [["Token", "A number attached to a debugger command so its reply can be routed to the command that asked for it."], ["Asynchronous stop", "A separate GDB message announcing that the program paused, possibly after a command was acknowledged."]],
+    "example": "GDB may answer `4^running` to command 4. That only means it started the requested continuation; a later `*stopped` tells us where the program actually paused.",
+    "boundary": "Missing a reply must not let late output answer the next command. Missing a stop is a different timeout condition."
+  },
+  "engine-mi-deep": {
+    "intro": "MI2 looks like text, but it has grammar. This parser turns one complete GDB line into fields before the engine interprets it.",
+    "terms": [["Lexer", "The first pass that separates characters into pieces such as numbers, commas, quoted strings and braces."], ["Record", "One parsed GDB message. `^done` is a command result, while `*stopped` is a report that the program stopped."]],
+    "example": "For `4^done,frame={func=\"main\"}`, the lexer sees token 4, the result marker, and a `frame` field. The parser builds a structured result for command 4, not a new program stop.",
+    "boundary": "A partial or malformed line does not become a valid frame or a fabricated checkpoint."
+  },
+  "engine-recorder-deep": {
+    "intro": "The recorder is the notebook used during debugging. It appends observations and records where the notebook could not keep up.",
+    "terms": [["Checkpoint", "A saved view of the program at a particular observed stop, including bounded variables and heap state."], ["Gap", "An explicitly marked stretch whose exact instruction events were not retained. It is not a guessed list of instructions."]],
+    "example": "If stepping skips a library call, the recorder saves the known stop and a gap marker. It does not invent one event per unknown library instruction.",
+    "boundary": "Resident memory, streamed journal bytes and exported JSON have separate accounting and limits."
+  },
+  "engine-stack-deep": {
+    "intro": "This chapter explains why the same local name can refer to different storage in different function calls.",
+    "terms": [["Call frame", "The debugger's record of one active function call: function name, position, and where it is stopped."], ["Lexical scope", "The part of a function's source where a declaration is in scope. Two nested blocks may both declare `value`."]],
+    "example": "In `recurse(3)` calling `recurse(2)`, both frames can display a local named `value`. Their activation IDs and observed frame positions keep them apart.",
+    "boundary": "A visible name or matching address does not by itself prove two observations refer to one lifetime."
+  },
+  "engine-dwarf-deep": {
+    "intro": "DWARF is the compiler's description of the finished executable. This page explains how that description becomes trace-local type and declaration entries.",
+    "terms": [["ELF", "The executable file format of the debug program; DWARF sections live inside it."], ["DIE", "A debug-information entry: one DWARF record for something such as a type, variable or member."]],
+    "example": "A GCC-produced struct entry can say that member `count` starts four bytes into the struct. It cannot say that a particular stopped instance's bytes were initialized.",
+    "boundary": "Missing or compiler-dependent DWARF facts stay missing; the engine should not replace them with a guessed textbook layout."
+  },
+  "engine-ast-deep": {
+    "intro": "Clang's AST describes what the source code says. It is useful for navigation, but its expressions are not an execution log.",
+    "terms": [["AST", "Abstract syntax tree: a structured version of source constructs such as function calls, declarations and fields."], ["Source span", "The file and character range where Clang located a written construct."]],
+    "example": "If the source contains `if (0) malloc(40);`, Clang can still find the `malloc` expression. The debugger may never execute it.",
+    "boundary": "Macros, flags and same-line calls can make a source-to-event match ambiguous. Keep candidates visibly different from confirmed events."
+  },
+  "engine-allocator-deep": {
+    "intro": "This is the implementation of the C allocation detour. Its job is to record calls it intercepts without changing what the allocator returns.",
+    "terms": [["`--wrap`", "A linker feature that routes a linked `malloc` call to `__wrap_malloc`; the wrapper calls `__real_malloc` after recording it."], ["Event ACK", "A separate end-of-process status line giving the last event number and failed-write count, when normal shutdown permits it."]],
+    "example": "The program calls `malloc(24)`. The wrapper calls the real allocator once, assigns an ID if it can track the result, and writes a PID/sequence-tagged line to its own file. Rust later reads that file.",
+    "boundary": "A missing final ACK, a torn write or a silent fork child lowers certainty. The wrapper does not intercept every internal library allocator."
+  },
+  "engine-heap-deep": {
+    "intro": "This Rust code turns individual wrapper log lines into an ordered account of allocation lifetimes.",
+    "terms": [["Event tailer", "A reader that takes new, complete lines from the event file rather than rereading all of it as a new history."], ["Heap timeline", "The accumulated view of which tracked block was created, resized, freed or still observed."]],
+    "example": "An allocated event starts ID 1. A later free closes ID 1. A new allocation can reuse the same address but must become ID 2; the timeline does not merge them.",
+    "boundary": "Missing lines or process acknowledgements mean the timeline has an observed prefix, not necessarily complete history."
+  },
+  "engine-diagnostics-deep": {
+    "intro": "Diagnostics are additional, separate experiments on the C program. This page follows their launches and saved reports.",
+    "terms": [["Independent execution", "A new run, distinct from the GDB run. Address and allocation order may change."], ["Stage status", "A separate result for each tool: succeeded, failed, skipped or timed out, with partial evidence if available."]],
+    "example": "A sanitizer reports a use-after-free at line 30. Preserve that report and its own status. Do not translate its pointer into a GDB-run allocation ID from a different execution.",
+    "boundary": "Failure to launch Valgrind is not evidence that Valgrind ran and found no bug."
+  },
+  "engine-fusion-deep": {
+    "intro": "Fusion adds *references between existing records*. It does not rewrite the values GDB saw or invent an executed source expression.",
+    "terms": [["Correlation", "Finding a carefully checked way to point from one provider's record to another provider's record."], ["Candidate", "A plausible possible match that does not meet the requirements for an exact same-execution link."]],
+    "example": "A GDB variable can carry a unique DWARF declaration ID and then point to a matching Clang declaration. If two declarations compete, the link is left unset instead of choosing the first one.",
+    "boundary": "A Clang `malloc` on the same line as a heap event is still only a source-call candidate."
+  },
+  "engine-supervision-deep": {
+    "intro": "The supervisor watches tools and deadlines so a failed child process does not masquerade as a completed trace.",
+    "terms": [["Deadline", "The maximum allowed time for a supervised task or session."], ["Process group", "A way to manage a tool and its child processes together when stopping or cancelling work."]],
+    "example": "If GDB stops responding, the supervisor records a timeout and tries to clean up its process group. Any already captured snapshots remain partial observations.",
+    "boundary": "Time, journal, JSON export, parser input and assembled process memory are different resource limits."
+  },
+  "engine-export-deep": {
+    "intro": "Recording in memory, writing a stream during the run and exporting a final JSON file are three separate steps.",
+    "terms": [["JSONL journal", "One JSON object per line written while the program is observed; it can preserve a prefix of events."], ["Preflight", "A size check before committing the final JSON file, so an oversized export is rejected before replacing an existing file."]],
+    "example": "If the final JSON would exceed its byte limit, export stops without presenting a partly valid final document. If the journal stopped earlier, it still cannot rebuild final reports it never contained.",
+    "boundary": "A final-document byte cap does not constrain the trace already held in RAM, and a successful file commit cannot be undone by a later stdout error."
+  },
+  "engine-walkthroughs": {
+    "intro": "Each section follows one actual route through several engine files. Read it as a story of what data changes hands.",
+    "terms": [["Call path", "The sequence of checked functions and tool boundaries used in a particular explanation."], ["Intermediate data", "A record made between input and output, such as a GDB stop or a wrapper event line."]],
+    "example": "For an allocation story, follow a C `malloc` call to the wrapper's file, then the Rust reader, then the saved heap event. At each step ask what might have been missed.",
+    "boundary": "An example route does not assert that optional stages ran in every execution or that a source candidate proves a runtime call."
+  },
+  "engine-handbook": {
+    "intro": "This is a reading guide for engine source files, not a claim that you need to understand every helper before using the trace.",
+    "terms": [["Orchestrator", "Code such as `trace.rs` that decides which stage runs next and handles its result."], ["File chapter", "A focused explanation of the responsibilities and limitations of one source file."]],
+    "example": "Start with `trace.rs` to see the big sequence, then visit `gdb_mi.rs` if your question is about debugger replies, or `allocation_tracker.rs` if it is about heap events.",
+    "boundary": "Source file order is not the same as runtime execution order, especially for optional or failed stages."
+  },
+  "engine-algorithms": {
+    "intro": "An algorithm is the rule the code follows. An invariant is a condition the code tries to keep true while following that rule.",
+    "terms": [["Invariant", "A checkable rule, such as 'a later recorded stop must not be relabeled as an earlier one.'"], ["Bounded", "A request is limited by time, record count or bytes, and the limitation is reported rather than silently ignored."]],
+    "example": "When a GDB step times out, the algorithm records that failure instead of turning the attempted instruction into a completed instruction. This preserves the invariant that attempts and completions are different.",
+    "boundary": "A proof about an algorithm under recorded inputs is not a promise that external tools never fail or that all processes were observed."
+  },
+  "engine-functions": {
+    "intro": "Use this reference when you already have a function name and want to find its purpose, source and reviewed connections.",
+    "terms": [["Signature", "The function name, inputs and output written in source code."], ["Reviewed graph entry", "A function whose purpose and linked relationships were checked against source instead of guessed from its name."]],
+    "example": "Look up `run_gdb_phase`, then follow its links to the stop loop. The entry tells you where to read, while the debugger chapter explains what the stop actually means.",
+    "boundary": "A direct source call may be conditional. The catalog does not prove that it executed in a particular trace."
+  },
+  "model": {
+    "intro": "The data model is the shape of the saved recording. Think of it as labeled folders, not a reconstruction of missing history.",
+    "terms": [["Snapshot", "One saved view at a debugger pause: where the program stopped, what variables were read, and what heap blocks were observed."], ["Optional field", "A value that can be missing because the tool did not record or could not establish it; missing is not automatically false."]],
+    "example": "A trace may contain a variable's displayed value but no raw bytes, or a heap event with no source location. Both can be valid partial evidence if the missing part is kept visible.",
+    "boundary": "A shortened JSON field example on this page illustrates the schema; it is not a complete file you can import."
+  },
+  "parser-ingestion": {
+    "intro": "Opening a trace is like opening a notebook: check that it is the right kind of notebook before relying on what its pages claim.",
+    "terms": [["Schema", "The agreed JSON field format. Stage 1 uses schema version 2 for supported V2.1 and V2.2 recordings."], ["JSONL", "One JSON object per line. The runtime journal is not the final trace document and cannot reconstruct missing reports."]],
+    "example": "`TraceStore::open` can read a well-formed `old_id=7`. That still does not prove allocation 7 is the right predecessor; only deeper validation can examine the supporting events.",
+    "boundary": "An unsupported older example or malformed input fails import. A supported but incomplete trace may load and remain incomplete."
+  },
+  "parser-indexes": {
+    "intro": "The parser keeps an index the way a book keeps page numbers. It does not photocopy every page of the book.",
+    "terms": [["Position index", "A small table that says which position in the original trace array contains a record you asked for."], ["Borrowed result", "A view of the existing saved record, not a newly invented or copied instruction event."]],
+    "example": "If allocation 7 has events at positions 2 and 10, the index stores those two positions. A query uses them to return the original events, in their recorded order.",
+    "boundary": "An index lets you find a record quickly; it cannot prove that a recorded relationship is correct."
+  },
+  "parser-views": {
+    "intro": "A view is a convenient way to look at the trace you already loaded. It does not own a second independent history.",
+    "terms": [["Arc", "Rust's shared-ownership handle: several readers can refer to the same underlying saved trace without copying all its records."], ["EvidenceRef", "A citation to one original record, tied to the trace it came from."]],
+    "example": "Two readers cloned from one `TraceStore` can resolve the same citation. If you independently load the same JSON again, its references belong to a different trace owner and are rejected as foreign.",
+    "boundary": "A borrowed view cannot recreate a value the engine never captured."
+  },
+  "parser-validation": {
+    "intro": "A file can be readable JSON and still tell an impossible story. Validation asks whether its records agree, without demanding that every possible event was observed.",
+    "terms": [["Structural corruption", "A contradiction: for example, a claimed realloc predecessor conflicts with the recorded creation event."], ["Partial coverage", "A legitimate missing stretch, such as a crash or exhausted recording limit. Partial does not automatically mean corrupt."]],
+    "example": "If a trace reports a block came from `realloc` of ID 7, validation checks the old and new events, PID and lifetimes. If those contradict, do not display the link as certain, even though the raw field is preserved.",
+    "boundary": "`TraceStore::open` checks the format. Call `validated_semantic()` or deep validation explicitly for relationship checks."
+  },
+  "parser-semantic": {
+    "intro": "A confidence label always describes a *particular claim*. 'I read these bytes' and 'these bytes were initialized' are not the same claim.",
+    "terms": [["Definite", "The named observation or relationship is supported under its stated limits; it does not mean the whole execution was complete."], ["Candidate", "Evidence fits one explanation, but does not prove it. An address inside a heap block is a candidate for a match, not pointer origin."]],
+    "example": "GDB might definitely have captured four bytes of a pointer. The pointer's allocation origin can still be unavailable, especially if its address was reused.",
+    "boundary": "Never promote an AST source call to an executed call, or Valgrind's separate-run address to a primary-run allocation ID."
+  },
+  "parser-consumer": {
+    "intro": "A checkpoint summary groups related questions about one recorded stop so callers do not have to hunt through unrelated arrays.",
+    "terms": [["Consumer", "Code such as a UI or analysis example that asks the parser questions about a trace."], ["Page", "An explicitly requested slice of results. This API returns at most 128 entries in one request; ask for the next slice if there are more."]],
+    "example": "For a stop with 300 variable records, request positions 0–127, then 128–255, then 256–299. Returning just the first page without saying so would hide evidence.",
+    "boundary": "Grouping nearby events is a navigation convenience, not proof that a particular source expression caused one."
+  },
+  "parser-ingestion-deep": {
+    "intro": "This is the code-level route from bytes on disk to a canonical, indexed `TraceStore`.",
+    "terms": [["Decode", "Parse JSON text into Rust's saved-trace types after input and schema checks."], ["Gate", "A check that rejects something too large, malformed, journal-shaped or from an unsupported schema before it is trusted as a full trace."]],
+    "example": "A valid final JSON passes the input-size and schema gates and gets an index. A JSONL event journal fails reconstruction because it lacks some final reports and state.",
+    "boundary": "A successful decode is only a format result. Structural and semantic validation remain separate actions."
+  },
+  "parser-ownership-deep": {
+    "intro": "This page explains who owns the saved trace and why queries can return original records without making copies.",
+    "terms": [["Canonical owner", "The one shared `Arc<DebugSessionTrace>` holding the records for this loaded trace."], ["Foreign trace", "A second independent load, even from identical JSON, with a different owner. Its citations cannot be used against the first load."]],
+    "example": "The parser returns a reference to snapshot 3's variable rather than copying its bytes. An `EvidenceRef` carries enough ownership context to reject a mistaken cross-trace lookup.",
+    "boundary": "A weak reference does not keep a dropped trace alive or make numeric IDs transferable between loads."
+  },
+  "parser-indexes-deep": {
+    "intro": "These are the actual lookup-table designs behind the fast queries. Start with the book-index idea before reading the array layouts.",
+    "terms": [["CSR", "Compressed sparse row: two compact arrays tell you where the positions for one key begin and end. Think of a table of contents pointing to a short run of page numbers."], ["Canonical array", "The original trace's ordered list of events or snapshots; the index stores positions into it rather than duplicating records."]],
+    "example": "If static instruction 4 was observed at event positions 2, 9 and 20, CSR stores those positions together. Looking up instruction 4 retrieves the three original events in their saved order.",
+    "boundary": "Fast lookup is not validation. If an imported event names an invalid instruction, deep validation reports it instead of fixing it by guessing."
+  },
+  "parser-validation-deep": {
+    "intro": "This chapter shows how the parser checks imported records against one another and reports contradictions separately from missing evidence.",
+    "terms": [["Validation finding", "A report entry with a code, severity and location saying what check failed or what evidence is missing."], ["Aggregation", "Repeated findings can be counted together without erasing where they first appeared."]],
+    "example": "A trace that stops because of a time limit can be structurally sound and partial. A trace that claims one realloc has two incompatible predecessors is structurally corrupt.",
+    "boundary": "The parser retains the original raw fields for investigation; it does not turn a contradiction into a supported semantic link."
+  },
+  "parser-realloc-deep": {
+    "intro": "`realloc` can resize or move a block, fail, or in the observed glibc case free it when asked for size zero. Those cases must not be confused.",
+    "terms": [["Predecessor", "The older allocation lifetime that a successful `realloc` actually continued from, if supported by recorded events."], ["Corroborate", "Check other independent records—creation events, PID, sequence and lifetime boundaries—instead of trusting just one `old_id` number."]],
+    "example": "An imported block says `realloc_from_id=2`, but its creation event is an ordinary `malloc`. The predecessor number exists, yet the event contradicts the claimed relationship; the parser rejects the link.",
+    "boundary": "A reused or unchanged address is never enough to establish a realloc edge. A failed realloc leaves the old block alive."
+  },
+  "parser-coverage-deep": {
+    "intro": "Two attractive shortcuts are unsafe: guessing where a pointer originated from its address, and claiming every child process was seen because the observed event logs are complete.",
+    "terms": [["Address containment", "The number inside a pointer falls inside the current range of a recorded heap block. It does not tell us how the pointer was obtained."], ["Observed-PID scope", "The particular processes that wrote events and whose available event history was checked; it is not a list of every fork descendant."]],
+    "example": "A silent child can run without an event line. The known parent PID's log might be complete while the child's activity is still unknown.",
+    "boundary": "Treat imported claims of a definite allocation ID from `address_only`, or of all-descendant completeness, as contradictions rather than convenient facts."
+  },
+  "parser-semantic-deep": {
+    "intro": "This code turns validated raw records into answers with confidence labels. Each label belongs to the exact claim being made.",
+    "terms": [["Evidence view", "A borrowed bundle of an original record, optional metadata and carefully scoped confidence about relationships."], ["Valid byte range", "The captured prefix of an object's memory at one stop. It does not say the rest is zero or initialized."]],
+    "example": "A variable view can say the displayed value was observed, while the pointer origin is unavailable and the byte capture is partial. Those labels do not have to agree.",
+    "boundary": "An AST call is a source candidate; an independent Valgrind report has no exact primary-run allocation ID."
+  },
+  "parser-consumer-deep": {
+    "intro": "This chapter explains the bounded API a UI or analysis tool can call to inspect a checkpoint without creating a parallel evidence model.",
+    "terms": [["Checkpoint summary", "A convenient starting point for one saved stop and its related, qualified questions."], ["Explicit pagination", "The caller chooses a start and end for each slice, at most 128 records. More results require another request."]],
+    "example": "Request the first 128 variables, process them, and then request the next 128. The summary never quietly turns '300 available' into '128 total.'",
+    "boundary": "A nearby allocation event or source expression is not automatically the cause of this particular stop."
+  },
+  "parser-data-structures": {
+    "intro": "This page names the Rust containers that hold saved evidence and the small indexes that point into it.",
+    "terms": [["Vector", "An ordered list; a position such as `snapshots[3]` identifies the fourth saved snapshot, not necessarily debugger stop ID 3."], ["Reference", "A checked pointer to an existing record. An `EvidenceRef` is also tied to its trace owner."]],
+    "example": "The trace owns the actual heap events. An allocation index keeps the positions of events with ID 7, so a query can borrow the original event records.",
+    "boundary": "Do not compare unrelated numbers—event position, allocation ID, PID and memory address—as if they were one identity."
+  },
+  "parser-algorithms": {
+    "intro": "The parser's algorithms explain how loading, indexing and checking work; none of them is a replay of the C program.",
+    "terms": [["Binary search", "A fast search on a list whose order was checked first. If imported ordering is broken, the parser refuses this shortcut."], ["Invariant", "A rule a query depends on, such as stop IDs increasing in the recorded order."]],
+    "example": "To find a stop by ID, the parser first needs evidence that the snapshot list is ordered. An unsorted import produces an ordering error instead of a guessed nearest stop.",
+    "boundary": "Performance of an index does not make malformed imported relationships trustworthy."
+  },
+  "parser-walkthroughs": {
+    "intro": "These are short guided routes through parser code: start with one question and follow the records it touches.",
+    "terms": [["Entry point", "The public function a caller uses first, such as `TraceStore::open` or `validated_semantic()`."], ["Intermediate record", "An existing trace value or index position examined along the way; not a reconstructed missing observation."]],
+    "example": "To inspect one variable, open the trace, validate it, locate its exact checkpoint reference, then ask TP-6 for a borrowed variable view and qualified memory evidence.",
+    "boundary": "An illustrated path shows how code can work, not that its optional branch ran in every trace."
+  },
+  "parser-handbook": {
+    "intro": "This is a guide to where parser behavior lives in the repository, organized by the question you are trying to answer.",
+    "terms": [["TP", "Trace Parser phase; the numbered phases introduced loading, indexes, validation, evidence views and bounded consumer queries."], ["Source chapter", "A focused explanation of the implementation in one parser file."]],
+    "example": "If `TraceStore::open` rejects a file, read the ingestion chapter. If it loads but a realloc link is rejected, read validation and the realloc repair chapter.",
+    "boundary": "Finding a type or helper in the handbook does not mean that a particular imported trace passed its checks."
+  },
+  "parser-functions": {
+    "intro": "This catalog helps you find reviewed parser functions and the source lines that implement them.",
+    "terms": [["Public query", "A function other code may call to read existing trace evidence."], ["Reviewed relationship", "A call or data link checked against source and labeled by what it actually means."]],
+    "example": "Find `checkpoint_summary`, then follow its source link. Its page queries keep the original evidence references and enforce the 128-record page limit.",
+    "boundary": "A function list is not a run log. Look at the trace to see which observations actually exist."
+  },
+  "walkthroughs": {
+    "intro": "These are complete stories from a C example through recording and later reading. Use one story at a time rather than memorizing every subsystem first.",
+    "terms": [["Route", "The ordered steps from a C action, through GCC/GDB/wrapper, into saved JSON and finally a parser query."], ["Oracle", "An independently checked expected fact used by a test, such as C's `sizeof` or a native GDB value."]],
+    "example": "In the heap story, follow `malloc` to a wrapper event, then a lifetime record, then an indexed query. Ask at each arrow whether the next tool saw this *same* execution.",
+    "boundary": "Illustrative event rows and historical audit measurements are labeled; do not treat them as the current program's addresses or complete importable JSON."
+  },
+  "usage": {
+    "intro": "This page is the hands-on route: record a small C program, open the resulting JSON, and ask one careful question at a time.",
+    "terms": [["CLI", "The commands and flags you type to run the trace engine."], ["Consumer", "Your Rust code reading the finished trace through the parser's public API."]],
+    "example": "After recording, check the program's outcome and the validation report. Then request a checkpoint's first page; if there are more than 128 results, request the next page explicitly.",
+    "boundary": "The example's chosen stop and address are observations from one run, not identifiers you can reuse in another run."
+  },
+  "api": {
+    "intro": "An API is the set of functions another Rust program is allowed to call. This reference states their inputs, outputs and limits.",
+    "terms": [["Borrowed", "The returned view points to records owned by the `TraceStore`; it cannot outlive that store."], ["Out of range", "A request for a position that does not exist in a recorded collection; it is an error, not an empty fabricated record."]],
+    "example": "Load a trace, call `validated_semantic()`, then ask for an actual snapshot index and an explicitly bounded page of its variables. The result points into the same saved trace.",
+    "boundary": "An API signature is not a runnable full example; use the practical usage page for imports and setup."
+  },
+  "stage1-api": {
+    "intro": "This is a compact map of what Stage 1 gives to other code. It distinguishes loading the recording from checking its claims.",
+    "terms": [["TraceStore", "The owner of one loaded trace and its lookup indexes."], ["Validated view", "A read-only interface made after the deeper consistency check, with confidence attached to specific questions."]],
+    "example": "A consumer can follow an evidence reference to a variable at stop 4, inspect its captured bytes, and still report the variable's pointer origin as unknown.",
+    "boundary": "Do not treat `TraceStore::from_trace` or successful JSON import as a deep semantic validation."
+  },
+  "schema": {
+    "intro": "The schema lists the JSON fields that save a recording. The most important reading habit is to ask what each number identifies.",
+    "terms": [["Schema version", "The format version. The supported V2.1 and V2.2 traces here use version 2; not every older example file can be imported."], ["Nullable", "A field can say 'no value recorded.' That is not the same as 'the value was zero' or 'nothing happened.'"]],
+    "example": "An event can have `allocation_id=2`, while its `address` is `0x705010`. A later block can also live at `0x705010` with a different ID. Keep the ID and address separate.",
+    "boundary": "Short JSON projections show selected fields for study, not full documents to paste into the parser."
+  },
+  "handoff": {
+    "intro": "Stage 1 hands later code evidence, not unquestionable conclusions. This page says exactly where that handoff ends.",
+    "terms": [["Freeze contract", "The agreed, tested behavior and limits downstream code must preserve rather than silently broaden."], ["Qualified evidence", "A recorded fact together with its scope, confidence, source and missing-data conditions."]],
+    "example": "Stage 2 may draw a variable's observed bytes and label their capture status. It must not infer that a pointer owns the heap block whose current address matches it.",
+    "boundary": "Stage 1 is not a sandbox, a whole-process-tree recorder, an initialized-memory oracle or a guarantee of assembled-trace RAM."
+  },
+  "glossary": {
+    "intro": "Use this as a quick translation when you meet a technical word elsewhere. Return to its linked chapter for the full example.",
+    "terms": [["Evidence", "Something actually recorded or statically described, with a source and limits."], ["Inference", "A conclusion drawn *from* evidence. It may be useful, but it should never be relabeled as a directly recorded fact."]],
+    "example": "GDB recorded `raw_bytes_hex=0a000000`. 'Four bytes were read' describes evidence. 'The C initializer ran' would be an inference that those bytes alone do not support.",
+    "boundary": "A word such as 'complete' always needs a scope: complete for which processes, time interval and kind of record?"
+  },
+  "limitations": {
+    "intro": "This page is part of the explanation, not fine print. A good UI shows what a trace cannot say alongside what it can.",
+    "terms": [["Partial trace", "A recording in which some intended observations were not retained, perhaps after a crash, timeout or budget limit."], ["Unknown", "The system lacks sufficient evidence. It is not equivalent to false, zero, freed or no bug."]],
+    "example": "A silent child might create allocations without producing wrapper log lines. A complete log for the parent does not make that child's history appear.",
+    "boundary": "Missing observations, independent diagnostic runs and RAM limits remain real even when the JSON file loaded successfully."
+  }
+}

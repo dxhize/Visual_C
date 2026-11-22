@@ -1,295 +1,179 @@
-# c-trace-engine
+# Visual C — C Trace Engine
 
-## V2: synchronized source and instruction recording
+Visual C records a **bounded execution of a C program** and lets Rust code inspect the saved evidence. The Trace Engine builds a debug executable with GCC, observes selected stops with GDB/MI2, logs allocator calls it can intercept, and writes a schema-v2 JSON trace. The Trace Parser loads that trace once, indexes positions and offers borrowed, confidence-qualified queries. Valgrind and sanitizer findings come from **separate program runs**; they cannot identify an exact allocation from the primary GDB run.
 
-Dual capture is now the default. Source checkpoints and executed-instruction
-attempts come from **one GDB run**, not two executions. Legacy JSON fields are
-retained with `schema_version: 2`; see [V2 schema and semantics](docs/v2.md).
-New to the engine or want the plain-language version? Start with
-**[The Trace Engine](docs/trace-engine.html)** — a visual, self-contained
-introduction (pipeline, trace contents, guarantees, limits). For a conceptual
-architectural overview (channels, budgets, the stop loop, the trust model),
-see [Engine architecture](docs/architecture.md). Building on traces from Rust?
-**[Trace Parser (TP-1/TP-2/TP-3)](docs/trace-parser.md)** ingests V2/V2.1
-traces and journals, adds shared compact indexes and explicit deep validation,
-and exposes borrowed raw and semantic-input views over one canonical
-`TraceStore`.
+**Start with the [offline Stage 1 documentation](docs/stage1-html/index.html)** for the study-friendly, 67-chapter guide (open the HTML file directly). [Stage 1's final audit](docs/stage1-final-audit.md) approves its *bounded* evidence contract. Stage 2 currently provides an [SE-1 runtime object registry](docs/semantic-se1.md) and [SE-2 observation-scoped memory layouts](docs/semantic-se2.md); it does **not** provide a pointer graph, execution simulator, or proof of C initialization. The offline website documents Stage 1, not Stage 2 internals.
 
-```sh
-cargo run -- sample.c --timeout 20 --output trace.json
-cargo run -- sample.c --trace-mode dual --sanitizer-trigger always
-cargo run -- sample.c --trace-mode source             # lower-cost capture
-cargo run -- sample.c --max-instruction-events 5000 --max-gdb-commands 50000
-cargo run -- sample.c --journal run.jsonl --journal-only --output index.json
-cargo run -- fixtures/c/globals.c --memory-region '&global_value:4'
-```
+## Requirements
 
-`--timeout` is a **whole-pipeline monotonic deadline**, including builds and
-analyses. Expired sessions do not start new diagnostic passes. Process cleanup
-has a two-second grace allowance. Filesystem/export latency is not a real-time
-guarantee. `--max-trace-bytes` (128 MiB default) bounds JSONL journal
-records, **not** final JSON. `--max-json-export-bytes` (independent 128 MiB
-default) bounds each UTF-8 final JSON document including indentation and its
-terminal newline; use a larger explicit value for larger traces. At the exact
-byte limit export succeeds; one byte over fails with exit 1 and no stdout
-from budget rejection. No trace fields are truncated. File export uses an
-atomically renamed sibling temp file; stdout write failures may still leave
-partial bytes and, if a file was already committed, that valid file. The
-limit bounds serialization/export, **not** memory used to construct the trace.
-Run `cargo run -- --help` for the full option list.
+- Linux, Rust/Cargo, GCC and GDB for live tracing. Python 3 is used for the documentation builder and the optional inspection commands below.
+- Valgrind, Clang and `addr2line` supply optional diagnostics/source information; if unavailable, check the trace's stage results rather than assuming a clean analysis.
+- The resource controls are **not a security sandbox**. Run untrusted C inside separate OS/container/VM isolation.
 
-New modules: `supervisor.rs` (deadlines/child ownership), `recorder.rs`
-(disassembly/register/event recording), `processor.rs` (validation/replay),
-`memory.rs` (evidence-based pointer/symbol enrichment), and `storage.rs`
-(incremental, recoverable JSONL). Instruction gaps and missing values are
-explicit, including skipped allocator wrappers and libraries.
-
-Dependencies: Rust/Cargo, Linux, GCC, GDB; Valgrind and addr2line are optional.
-GCC sanitizer runtime availability is detected at link time. Everything runs
-locally; no cloud service is required.
-
-A standalone Rust CLI that takes a configurable C project, compiles it with
-GCC, executes it under GDB/MI2 while recording execution snapshots and heap
-allocation events, runs an independent Valgrind analysis plus a separate
-sanitizer pass, and emits a single structured JSON
-[`DebugSessionTrace`](examples/example_trace.json).
-
-It is the backend for a future offline-first visual C IDE: every artifact in
-the trace — snapshots, variables, pointer links, heap blocks, allocation
-history, compiler diagnostics, crashes and memory-analysis findings — is
-derived from real observations of the program. The engine never fabricates
-values it could not observe; unobservable data is `null`.
+Work from the repository root. For the examples below, `/tmp/visual-c-hello.json` is a disposable output file; use your own path if you need to retain a recording. Check `cargo run --release -- --help` for every flag and its accepted values.
 
 ## Quick start
 
 ```sh
-cargo run -- sample.c
+cargo build --release
+target/release/c-trace-engine fixtures/c/hello.c \
+  --trace-mode source --timeout 35 --sanitizer-trigger never \
+  --output /tmp/visual-c-hello.json > /dev/null
+python3 -m json.tool /tmp/visual-c-hello.json > /tmp/visual-c-hello-pretty.json
+head -60 /tmp/visual-c-hello-pretty.json
+cargo run --release --example stage1_public_consumer_audit -- /tmp/visual-c-hello.json
 ```
 
-writes the trace to stdout and exits `0` on success. Useful variants:
+`--output` writes a JSON file **and** the program still writes the same JSON to stdout; `> /dev/null` hides the duplicate. A successful export has exit code `0` even if the traced C program crashed, timed out or hit a recording limit; inspect `execution_status`, `coverage`, `heap_history` and `stage_results`. Compile rejection can still write a diagnostic JSON trace and exits `2`; configuration, tool or export errors exit `1` and may leave no usable file.
+
+## Usable commands
+
+The commands in this section use files that ship with this repository. Inspection examples use `/tmp/visual-c-hello.json` from Quick start; Stage 2 examples use `/tmp/visual-c-dual.json` from the dual-mode command below. Commands that invoke GCC/GDB may take longer on slower machines. Run `cargo build --release` once before using `target/release/c-trace-engine` directly.
+
+### Build and run recordings
 
 ```sh
-cargo run -- sample.c --output trace.json          # also save to a file
-cargo run -- sample.c -- --verbose 42              # args for the program
-cargo run -- fixtures/c/multi_file/main.c --add-source fixtures/c/multi_file/helper.c
-cargo run -- sample.c --timeout 3 --max-steps 200 --max-snapshots 100
-cargo run -- sample.c --config build.json          # JSON BuildConfig file
-cargo run -- sample.c --clang-ast                   # optional Clang source syntax
-cargo run -- broken.c                              # exit code 2 + diagnostics
+# Show all options and recognized values.
+cargo run --release -- --help
+
+# Lower-cost source checkpoints, saving the trace to a file.
+target/release/c-trace-engine fixtures/c/hello.c \
+  --trace-mode source --timeout 35 --sanitizer-trigger never \
+  --output /tmp/visual-c-hello.json > /dev/null
+
+# Source + attempted-instruction recording of a real heap fixture.
+target/release/c-trace-engine fixtures/c/phase8b_defined.c \
+  --trace-mode dual --max-steps 350 --timeout 50 \
+  --sanitizer-trigger never --no-pretty \
+  --output /tmp/visual-c-dual.json > /dev/null
+
+# Supply arguments to the C program AFTER -- (engine options go before it).
+# The fixture's 'normal 2' mode performs two allocation/free pairs.
+target/release/c-trace-engine fixtures/c/phase8r2_basic.c \
+  --compiler-flag=-pthread --linker-flag=-pthread \
+  --trace-mode source --timeout 35 --sanitizer-trigger never \
+  --output /tmp/visual-c-args.json -- normal 2 > /dev/null
+
+# Compile and link two C translation units.
+target/release/c-trace-engine fixtures/c/multi_file/main.c \
+  --add-source fixtures/c/multi_file/helper.c --timeout 35 \
+  --sanitizer-trigger never --output /tmp/visual-c-multi.json > /dev/null
+
+# Opt in to Clang source metadata (requires Clang); it is NOT execution proof.
+target/release/c-trace-engine fixtures/c/hello.c \
+  --clang-ast --timeout 35 --sanitizer-trigger never \
+  --output /tmp/visual-c-clang.json > /dev/null
+
+# Run the independent sanitizer pass as well (requires sanitizer runtime).
+target/release/c-trace-engine fixtures/c/invalid_write.c \
+  --timeout 50 --sanitizer-trigger always \
+  --output /tmp/visual-c-diagnostics.json > /dev/null
 ```
 
-Optional Phase 6 source metadata (`--clang-ast`, or `"clang_ast": true` in
-the JSON configuration) records bounded Clang AST syntax in the trace-level
-`source_metadata` registry. Use `--clang-path PATH` to select Clang. This pass
-does not change GCC compilation or runtime observations; if Clang is missing
-or rejects a GCC-compatible program, the trace records the extraction
-limitation and continues. See `docs/trace-engine-phase6.md`.
+The program's arguments can also be passed with repeated `--arg VALUE`. The last example can record a *crash* and still exit `0` if exporting its trace succeeds. Valgrind may run as its own stage when installed, regardless of `--sanitizer-trigger never` (that flag controls the sanitizer pass only). Each run can have different addresses, PIDs and allocation order.
 
-## Exit codes
-
-| Code | Meaning |
-|------|---------|
-| `0`  | A trace was produced (execution completed, crashed, timed out, hit a limit). |
-| `2`  | Compilation failed; a partial trace with the compiler diagnostics is still emitted. |
-| `1`  | Operational/export error (including final JSON budget, write failure or cancellation). A stdout write failure can leave partial bytes; never treat nonzero exit as successful export. |
-
-## Trace contents (abridged)
-
-```jsonc
-{
-  "execution_status": "completed | compile_failed | crashed | timeout | step_limit_reached | output_limit_reached | ...",
-  "compiled_successfully": true,
-  "compile_errors": [ { "file": "...", "line": 1, "column": 15, "kind": "error", "message": "..." } ],
-  "snapshots": [                     // one per GDB stop in user code (bounded)
-    {
-      "step_index": 0, "file": "sample.c", "line": 30, "func": "main",
-      "call_stack": [...], "variables": [ { "name": "arr", "c_type": "int *",
-      "value": "0x0", "address": "0x7fff...", "points_to": "0x0", "raw_bytes_hex": "..." } ],
-      "heap_blocks": [ { "allocation_id": 1, "address": "0x705010", "size_bytes": 12,
-                         "raw_bytes_hex": "00000000...", "allocation_file": "sample.c",
-                         "allocation_line": 30 } ],
-      "stdout_so_far": "..."
-    }
-  ],
-  "heap_events":  [ { "event_type": "allocated", "allocation_id": 1, "size_bytes": 12 }, ... ],
-  "heap_state":   [ { "allocation_id": 1, "allocation_type": "malloc", "is_freed": false, ... } ],
-  "crash_report": { "signal_name": "SIGSEGV", "file": "...", "line": 7, "backtrace": [...],
-                    "asan_summary": "SUMMARY: AddressSanitizer: SEGV ..." },
-  "sanitizer_report": { "reproduction": "reproduced", "message": "..." },
-  "valgrind_report": { "errors": [...], "detailed_errors": [...], "definitely_lost_bytes": 0, ... },
-  "analysis_notes": [ "..." ],       // degradations, fallbacks, skipped analyses
-  "resource_usage": { "wall_time_ms": 3085, "gdb_commands_issued": 455,
-                      "snapshots_captured": 26, "limits_triggered": [] },
-  "session_meta": { "gcc_version": "...", "gdb_version": "...", "valgrind_version": "..." }
-}
-```
-
-See [`examples/example_trace.json`](examples/example_trace.json) for a full
-real document produced by `cargo run -- sample.c`.
-
-## How it works
-
-```
-                     ┌──────────────┐
-  .c sources ───────▶│   compiler   │──▶ program_debug  (+ alloc_tracker.c)
-  BuildConfig ──────▶│  (GCC/SARIF) │──▶ program_asan   (sanitizers)
-                     └──────────────┘
-                            │
-                     ┌──────▼───────┐     pty (program stdout, never mixed with MI)
-                     │ gdb_mi.rs    │◀──▶ gdb --interpreter=mi2
-                     │ trace.rs     │     step / finish / continue loop
-                     └──────┬───────┘
-                            │  per stop: variables, frames, live heap reads
-                            ▼
-                     alloc_events.txt ◀── __wrap_malloc/calloc/realloc/free
-                     (dedicated file)      (link-time -Wl,--wrap instrumentation)
-                            │
-        ┌───────────────────┼────────────────────┐
-        ▼                   ▼                    ▼
-  Valgrind (XML)     sanitized run        addr2line batch
-  memcheck report    (crash pass only)    (caller file:line resolution)
-        └───────────────────┴────────────────────┘
-                            ▼
-                     DebugSessionTrace (JSON)
-```
-
-1. **Build** (`compiler.rs`): every translation unit is compiled with `-g -O0`
-   plus GCC's machine-readable diagnostics (`sarif-stderr` first, with
-   fallbacks for older GCC), linked with a small C runtime that intercepts
-   `malloc/calloc/realloc/free` via `-Wl,--wrap=...` and appends one event
-   line per operation to a dedicated trace file. A second, sanitizer-built
-   binary (ASan, plus UBSan when installed) is produced for the crash
-   diagnostic pass; if a sanitizer runtime is missing the engine degrades
-   and records a note.
-2. **Execute** (`gdb_mi.rs`, `trace.rs`): the debug binary runs under GDB in
-   MI2 mode with a token-matched command/response layer and a dedicated pty
-   for program output. The engine breaks at `main`, instruction-steps in user
-   code (source-steps in reduced mode), and `finish`es out of non-user frames.
-   At source checkpoints it captures call stack, variables (own address, pointed-to address,
-   raw bytes), live heap block contents read through GDB within the
-   per-snapshot memory budget, and the program output so far.
-3. **Heap reconstruction** (`allocation_tracker.rs`): the event file is
-   ingested into a PID-separated timeline of **observed** allocations, callers,
-   realloc chains and final status; `addr2line` resolves caller PCs to
-   `file:line` in one batched call. `heap_history.complete` covers only verified
-   observed PIDs and the followed inferior, **not** unobserved fork children.
-   `process_scope`, `observed_event_pids`, `followed_inferior_pid` and
-   `unobserved_process_coverage="unknown"` make this limit explicit. GDB
-   follows one inferior; child instruction/snapshot capture is not claimed.
-4. **Independent analyses**: Valgrind runs the program separately (its XML
-   parsed with `roxmltree`). Its findings remain independent; the optional
-   source-site helper only records exact-path/line *candidates*, never
-   primary-run allocation IDs from a separate execution. The sanitized binary runs as a diagnostic pass when the
-   configured trigger fires — by default on a crash *or* when Valgrind
-   reported memory errors (`--sanitizer-trigger`; V2.1). Native sanitizer
-   findings are retained; a crash summary is attached only when source-site
-   evidence supports correlation.
-
-Partial results are always preserved: a timeout, step limit or crash yields
-a trace with everything captured up to that point.
-
-Traces emit `schema_version: 2` and `stage_results` to distinguish completed,
-failed, timed-out, and skipped analyses. Older trace JSON without these fields
-remains deserializable; absent stage metadata is unknown, not a clean result.
-
-### V2.1: what changed and why
-
-The V2 audit measured per-instruction CPU register collection at ~90 % of
-debugger command time. Since register visualization is not part of the GUI
-plan, V2.1 removes the collection itself (not just the JSON fields):
-instruction addresses always came from GDB stop frames, so dual-level
-source+assembly tracing, snapshots, heap tracking and crash handling are
-unchanged, while dual-mode wall time improved 2.0×–3.2× on the audit
-benchmarks (e.g. the finite-loop workload: 19.11 s → 6.10 s). Details and
-evidence: [`docs/v2.1/`](docs/v2.1/summary.md).
-
-## Resource limits
-
-| Flag | Default | Enforced by |
-|------|---------|-------------|
-| `--max-steps` | 1000 | engine step loop |
-| `--timeout` (s) | 10 | monotonic whole-session deadline, including compilation and analysis |
-| `--max-memory-mb` | 256 | inferior `prlimit` after the initial stop; delegated cgroup when available |
-| `--max-output-bytes` | 1048576 | program output head capture; terminate on exhaustion |
-| `--max-heap-allocations` | 10000 | timeline |
-| `--max-snapshots` | 1000 | snapshot list |
-| `--max-snapshot-memory-bytes` | 1048576 | variables + heap reads per snapshot |
-| `--max-memory-read-bytes` | 4096 | one `-data-read-memory-bytes` call |
-| `--max-processes` | 16 | cgroup v2 `pids.max` (best effort) |
-| `--max-variables` | 24 | per-snapshot introspection |
-
-**These limits are not a security sandbox.** They protect the *engine and
-the user session* from runaway programs; a hostile binary can still do harm
-on the host machine. Real isolation needs a container or VM.
-
-Platform notes: Linux `RLIMIT_NPROC` is per real user id, not per process
-tree, so it is deliberately not used (it would break GDB's own spawning on
-a normal desktop session). Process-tree caps work only when a delegated
-cgroup v2 subtree is available; otherwise the engine keeps rlimits for CPU
-and file size and says so in `analysis_notes`.
-
-## CLI > config file > defaults
-
-Scalar flags override the JSON config file; list flags (`--define`,
-`--compiler-flag`, …) **append** to the file's lists. See
-[`docs/build-config.md`](docs/build-config.md) for the exact field mapping
-(the file is the same shape the future GUI will edit).
-
-## Limitations & known deviations
-
-* `--wrap` instrumentation covers the program's own allocator calls; memory
-  allocated *inside* libc/other shared libraries is invisible to the
-  timeline (Valgrind still sees it all — it is the independent check).
-* A freed block's raw bytes are the **last bytes captured while it was
-  alive**; freed memory contents are not read after the fact.
-* The sanitized pass is ASan-only when libubsan is not installed (the
-  engine notes this in `analysis_notes`). Since V2.1 the pass is triggered
-  by `sanitizer_trigger` (default: crash or Valgrind memory errors); ASan
-  need not reproduce every Valgrind finding.
-* Per-instruction CPU register values are **not collected** since V2.1
-  (audit: ~90 % of command time, no GUI consumer); legacy V2 traces
-  containing register payloads still deserialize.
-* Program output and GDB console chatter are kept separate (pty); the
-  MI-facing `@` target stream is treated as program output for GDB versions
-  without tty support.
-* Dual mode captures rich checkpoints at source transitions; all recorded
-  instruction attempts remain ordered, including repeated source lines.
-* Multi-thread/fork instruction interleavings, JIT/self-modifying code and hard
-  engine-RSS limits are not implemented. See [explicit limitations](docs/v2.md).
-
-## Generated examples
-
-[`examples/v21_manifest.json`](examples/v21_manifest.json) records the V2.1
-examples' actual outcomes, counts, sizes and register-capture evidence
-(`register_time_us == 0`, no `registers` key in any event):
-
-- [`v21_normal.json`](examples/v21_normal.json): normal source-only capture.
-- [`v21_loop.json`](examples/v21_loop.json): finite loop, dual level.
-- [`v21_heap.json`](examples/v21_heap.json): heap allocation/free, pointers, dual level.
-- [`v21_crash.json`](examples/v21_crash.json): null write and faulting instruction.
-- [`v21_dual.json`](examples/v21_dual.json): synchronized C/assembly and heap.
-- [`v21_bounded_infinite.json`](examples/v21_bounded_infinite.json): deadline and partial results.
-
-The superseded V2 examples (`v2_success.json`, `v2_null_pointer.json`,
-`v2_bounded_infinite.json`, `v2_dual.json` with their
-[`v2_manifest.json`](examples/v2_manifest.json)) are kept for historical
-before/after comparison; they contain register payloads that V2.1 no longer
-collects.
-
-## Development
+### Configuration, limits and journal
 
 ```sh
-cargo test --lib      # unit tests; one live GDB lifecycle regression skips if absent
-cargo test --test integration   # full pipeline against real gcc/gdb/valgrind
-cargo test --test v2 -- --test-threads=1  # dual-level and reliability regressions
-python3 scripts/benchmark.py            # build first; three serial samples per case
+# A working config-file example. CLI scalar options override its values.
+python3 - <<'PY'
+import json
+from pathlib import Path
+Path('/tmp/visual-c-config.json').write_text(json.dumps({
+    'source': 'fixtures/c/hello.c',
+    'limits': {'timeout_seconds': 35, 'max_steps': 80},
+    'output_file': '/tmp/visual-c-config-trace.json'
+}))
+PY
+target/release/c-trace-engine --config /tmp/visual-c-config.json \
+  --sanitizer-trigger never > /dev/null
+
+# Bound separate workloads: stop attempts, debugger commands, JSONL bytes,
+# final JSON bytes, and memory captured per checkpoint are different limits.
+target/release/c-trace-engine fixtures/c/finite_loop.c \
+  --trace-mode dual --timeout 35 --max-steps 120 \
+  --max-instruction-events 5000 --max-gdb-commands 50000 \
+  --max-snapshot-memory-bytes 4096 --max-trace-bytes 1048576 \
+  --max-json-export-bytes 1048576 --sanitizer-trigger never \
+  --output /tmp/visual-c-bounded.json > /dev/null
+
+# Save incremental JSONL alongside full final JSON. Make a fresh directory:
+# the engine deliberately refuses to overwrite an existing journal.
+journal_dir=$(mktemp -d /tmp/visual-c-journal-XXXXXX)
+target/release/c-trace-engine fixtures/c/hello.c \
+  --trace-mode source --timeout 35 --sanitizer-trigger never \
+  --journal "$journal_dir/session.jsonl" \
+  --output /tmp/visual-c-journal-trace.json > /dev/null
 ```
 
-The integration suite skips gracefully (with a printed reason) when a tool
-is missing. Layout: `src/` modules mirror the pipeline stages; `c_runtime/`
-holds the embedded C tracking runtime; `fixtures/c/` one deliberate bug per
-file for manual and automated testing; `docs/v2.1/` holds the V2.1 update
-reports (register dependency audit, schema, fixes F-01…F-06, correctness,
-performance, tests, summary).
+A JSONL journal is **not** a complete JSON trace and cannot be opened as a full `TraceStore`. `--journal-only` requires `--journal` and can omit resident instruction arrays. `--max-trace-bytes` limits the journal, while `--max-json-export-bytes` limits each emitted JSON document; **neither bounds the RAM already used to assemble the trace**. See [resource boundaries](docs/stage1-html/engine-limits.html) and [config-file fields](docs/build-config.md).
 
-License: MIT.
+### Inspect recordings and run consumers
+
+```sh
+# Pretty-print the file produced in Quick start.
+python3 -m json.tool /tmp/visual-c-hello.json > /tmp/visual-c-hello-pretty.json
+head -60 /tmp/visual-c-hello-pretty.json
+
+# Print separately recorded outcome, capture counts and stage statuses.
+python3 - <<'PY'
+import json
+from pathlib import Path
+t = json.loads(Path('/tmp/visual-c-hello.json').read_text())
+for key in ('schema_version', 'execution_status', 'compiled_successfully',
+            'coverage', 'heap_history', 'stage_results'):
+    print(f'{key}: {t.get(key)}')
+print('snapshots:', len(t.get('snapshots', [])))
+print('heap events:', len(t.get('heap_events', [])))
+PY
+
+# Stage 1: validation, scoped coverage and bounded public parser queries.
+cargo run --release --example stage1_public_consumer_audit -- /tmp/visual-c-hello.json
+
+# Stage 2 SE-1: object IDs, observations and heap-lifetime queries.
+cargo run --release --example semantic_se1 -- /tmp/visual-c-dual.json
+
+# Stage 2 SE-2: observed layouts and bounded child queries; with no supplied,
+# independently verified target ELF, typed-byte decoding remains unavailable.
+cargo run --release --example semantic_se2_bench -- /tmp/visual-c-dual.json
+
+# The six supported, checked-in V2.1 inputs also load (without tracing C).
+cargo run --release --example stage1_public_consumer_audit -- examples/v21_dual.json
+```
+
+A `TraceStore` load checks **schema compatibility only**. `validated_semantic()` separately checks structural relationships. A pointer's numeric address inside a block is not proven pointer provenance; full captured bytes do not prove initialization. The four older pre-V2.1 `examples/v2_*.json` files are historical comparison artifacts, **not** supported imports. For SE-2 typed decoding, the caller must independently establish that an explicitly supplied ELF describes the recorded target; schema v2 does not serialize target byte order or prove ELF identity.
+
+### Tests, formatting and documentation
+
+```sh
+cargo check --all-targets
+cargo fmt --all -- --check
+cargo clippy --all-targets -- -D warnings
+cargo build --release
+cargo test --no-fail-fast -- --test-threads=1
+
+# Focused Stage 2 tests (live tests need GCC and GDB).
+cargo test --test semantic_registry_se1 --test semantic_registry_se1_edges -- --test-threads=1
+cargo test --test semantic_layout_se2 --test semantic_layout_se2_live -- --test-threads=1
+
+# Regenerate/check the offline Stage 1 HTML from its content/*.md sources.
+python3 docs/stage1-html/build.py
+python3 docs/stage1-html/check.py
+
+# Optional browser smoke test: requires Node 22 and google-chrome.
+node docs/stage1-html/browser-check.mjs
+
+# Optional local server; then visit http://localhost:8000/index.html
+python3 -m http.server 8000 -d docs/stage1-html
+```
+
+You can also open [`docs/stage1-html/index.html`](docs/stage1-html/index.html) directly with `file://`; no server or network is necessary. To edit or rebuild the documentation, follow the [site maintenance guide](docs/stage1-html/README.md). [`docs/stage1-html/stage1-complete-text.md`](docs/stage1-html/stage1-complete-text.md) collects its 67 chapter texts for review; the editable per-chapter sources are under `docs/stage1-html/content/`.
+
+## Evidence and scope
+
+1. **A checkpoint is a stopped observation**, not a video of every instruction. Instruction gaps, limits, crashes and missing bytes stay explicit. GDB follows one inferior; completion for observed event PIDs does not prove that silent fork descendants were discovered.
+2. **Allocator IDs come from intercepted calls in the primary run.** A later allocation can reuse an old address. Independent Valgrind/sanitizer source-site matches are clues, never exact primary-run allocation identities.
+3. **Static metadata describes code, not execution.** DWARF describes the GCC-built artifact; optional Clang AST describes source expressions. A source call candidate does not prove the call ran.
+4. **Borrowed evidence keeps history intact.** The parser shares one canonical trace, checks trace-scoped references, and caps TP-7 result pages at 128. SE-1 IDs are trace-scoped; SE-2 paths describe *one* observation, with child pages capped at 64. Neither layer overwrites captured bytes after a free or address reuse.
+
+For background, consult the [Stage 1 API and limitations](docs/stage1-html/handoff.html), [SE-1](docs/semantic-se1.md), [SE-2](docs/semantic-se2.md), [V2.1 update](docs/v2.1/summary.md), and [V2 format history](docs/v2.md). License: MIT.

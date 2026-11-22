@@ -1,4 +1,17 @@
-# DebugSessionTrace · the recorded data model
+# 40 · DebugSessionTrace · the recorded data model
+
+> **In one sentence:** The data model is the shape of the saved recording. Think of it as labeled folders, not a reconstruction of missing history.
+
+## Key terms
+
+| Term | Plain meaning |
+|---|---|
+| **Snapshot** | One saved view at a debugger pause: where the program stopped, what variables were read, and what heap blocks were observed. |
+| **Optional field** | A value that can be missing because the tool did not record or could not establish it; missing is not automatically false. |
+
+> **Example.** A trace may contain a variable's displayed value but no raw bytes, or a heap event with no source location. Both can be valid partial evidence if the missing part is kept visible.
+>
+> **What not to assume:** A shortened JSON field example on this page illustrates the schema; it is not a complete file you can import.
 
 ## Level 1 · Intuition
 
@@ -8,7 +21,7 @@ A trace is not a video of a program. It is a set of timestamped/stopped observat
 
 ## Level 2 · Record relationships
 
-`DebugSessionTrace` flattens `RecordingData` into the top-level JSON object (`#[serde(flatten)]`), while keeping `snapshots`, `heap_events`, `heap_state`, stage results, compilation diagnostics, optional reports and static metadata alongside it. `recording.instruction_events[]` in Rust appears as top-level `instruction_events` in JSON. `source_checkpoints[]` stores **indices into snapshots** rather than cloned snapshots. `disassembly_table` contains unique address/text table entries; instruction events refer by `instruction_id`, while repeated dynamic visits retain separate event positions. `trace_gaps` record unknown intervals at attempted positions, not fake events. `allocation_lifetimes`, final `heap_state` and chronological `heap_events` are distinct views of observed heap activity. `coverage` (user-code instruction scope), `heap_history` (verified observed-PID events), `storage` and `stage_results` are independent dimensions.
+Picture the JSON as a notebook with several sections written at different times. In Rust, `DebugSessionTrace` holds the notebook; `RecordingData` is folded into the top-level JSON, so Rust's `recording.instruction_events` appears as JSON's `instruction_events`. Each `source_checkpoints` entry points to a saved snapshot **by array position**, not by including a second snapshot copy. `disassembly_table` is a dictionary of instructions; a saved instruction event refers to a dictionary entry by `instruction_id`. Running the same instruction three times still gives **three separate events**. `trace_gaps` mark intervals without exact captured events. Heap events list observed operations in time order; `allocation_lifetimes` describe a block's start and end; `heap_state` describes saved block state. They answer different questions. Instruction `coverage`, heap `heap_history`, journal `storage` and the outcomes in `stage_results` can be complete or partial **independently**.
 
 ### Events, gaps and checkpoints
 
